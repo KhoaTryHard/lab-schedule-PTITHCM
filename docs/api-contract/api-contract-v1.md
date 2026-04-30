@@ -1,19 +1,24 @@
-# API Contract v1 - Skeleton
+# API Contract v1
 
-Base URL local:
+**Base URL:** `http://localhost:4000/api`  
+**Định dạng (Format):** JSON  
+**Quyền truy cập (Roles):** `ACADEMIC_OFFICER` (CBDT), `LECTURER` (GV), `STUDENT` (SV), `TECHNICIAN` (KTV), `ADMIN`
 
-```text
-http://localhost:4000/api
-```
+## Mã lỗi chung (Common Error Codes)
+- `400 Bad Request`: Lỗi tham số hoặc dữ liệu đầu vào. (Ví dụ: `INVALID_INPUT`, `MISSING_FIELD`)
+- `401 Unauthorized`: Chưa đăng nhập hoặc Token hết hạn. (Ví dụ: `UNAUTHORIZED`, `TOKEN_EXPIRED`)
+- `403 Forbidden`: Không có quyền truy cập endpoint này. (Ví dụ: `FORBIDDEN`)
+- `404 Not Found`: Không tìm thấy tài nguyên. (Ví dụ: `NOT_FOUND`)
+- `500 Internal Server Error`: Lỗi hệ thống backend. (Ví dụ: `SERVER_ERROR`)
+
+---
 
 ## 1. Health
-
-```http
-GET /health
-```
-
-Response:
-
+- **Mục đích:** Kiểm tra trạng thái hoạt động của server.
+- **Endpoint:** `GET /health`
+- **Quyền truy cập:** Public
+- **Request:** Không có
+- **Response (200 OK):**
 ```json
 {
   "success": true,
@@ -26,41 +31,159 @@ Response:
 }
 ```
 
+---
+
 ## 2. Auth
 
-```http
-POST /auth/login
-GET /auth/me
-POST /auth/logout
-```
-
-## 3. Room scope
-
-```http
-GET /rooms/scope
-```
-
-Chỉ trả phòng trong scope:
-
+### 2.1. Đăng nhập
+- **Mục đích:** Xác thực người dùng và cấp token.
+- **Endpoint:** `POST /auth/login`
+- **Quyền truy cập:** Public
+- **Mã lỗi riêng:** `INVALID_CREDENTIALS` (401)
+- **Request Body:**
 ```json
-["2B11", "2B21", "2B31"]
+{
+  "username": "user1",
+  "password": "password123"
+}
+```
+- **Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Demo login successful",
+  "data": {
+    "token": "demo-token",
+    "user": {
+      "id": 1,
+      "username": "user1",
+      "full_name": "Demo Academic Officer",
+      "role_code": "CBDT"
+    }
+  }
+}
 ```
 
-## 4. Schedule requests
-
-```http
-GET /schedule-requests
-POST /schedule-requests
+### 2.2. Lấy thông tin người dùng hiện tại
+- **Mục đích:** Trả về thông tin của user đang đăng nhập.
+- **Endpoint:** `GET /auth/me`
+- **Quyền truy cập:** Đã đăng nhập (Any Role)
+- **Headers:** `Authorization: Bearer <token>`
+- **Request:** Không có
+- **Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Success",
+  "data": {
+    "id": 1,
+    "username": "user1",
+    "full_name": "Demo Academic Officer",
+    "role_code": "CBDT"
+  }
+}
 ```
 
-## 5. Check constraints
-
-```http
-POST /schedules/check-constraints
+### 2.3. Đăng xuất
+- **Mục đích:** Hủy token hiện tại.
+- **Endpoint:** `POST /auth/logout`
+- **Quyền truy cập:** Đã đăng nhập (Any Role)
+- **Headers:** `Authorization: Bearer <token>`
+- **Request:** Không có
+- **Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Logout successful",
+  "data": null
+}
 ```
 
-Request mẫu:
+---
 
+## 3. Rooms
+
+### 3.1. Lấy danh sách phòng trong scope
+- **Mục đích:** Trả về danh sách phòng máy dùng để xếp lịch.
+- **Endpoint:** `GET /rooms/scope`
+- **Quyền truy cập:** Đã đăng nhập (Any Role)
+- **Headers:** `Authorization: Bearer <token>`
+- **Request:** Không có
+- **Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Success",
+  "data": ["2B11", "2B21", "2B31"]
+}
+```
+
+---
+
+## 4. Schedule Requests (Yêu cầu xếp lịch)
+
+### 4.1. Lấy danh sách yêu cầu
+- **Mục đích:** Xem danh sách các yêu cầu xếp lịch thực hành.
+- **Endpoint:** `GET /schedule-requests`
+- **Quyền truy cập:** `ACADEMIC_OFFICER`, `ADMIN`
+- **Headers:** `Authorization: Bearer <token>`
+- **Query Params:** `?status=pending` (Tùy chọn)
+- **Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Success",
+  "data": [
+    {
+      "id": 1,
+      "title": "Schedule request for CNPM",
+      "status": "pending",
+      "created_at": "2026-04-28T10:00:00Z"
+    }
+  ],
+  "meta": {
+    "total": 1,
+    "page": 1,
+    "limit": 10
+  }
+}
+```
+
+### 4.2. Tạo yêu cầu xếp lịch
+- **Mục đích:** Tạo một yêu cầu xếp lịch mới để chạy thuật toán.
+- **Endpoint:** `POST /schedule-requests`
+- **Quyền truy cập:** `ACADEMIC_OFFICER`, `ADMIN`
+- **Headers:** `Authorization: Bearer <token>`
+- **Request Body:**
+```json
+{
+  "title": "Schedule request HK2-2026",
+  "semester": "HK2-2026"
+}
+```
+- **Response (201 Created):**
+```json
+{
+  "success": true,
+  "message": "Request created successfully",
+  "data": {
+    "id": 1,
+    "title": "Schedule request HK2-2026",
+    "status": "pending"
+  }
+}
+```
+
+---
+
+## 5. Schedules (Lịch thực hành)
+
+### 5.1. Kiểm tra ràng buộc (Check Constraints)
+- **Mục đích:** Kiểm tra tính hợp lệ của một phương án xếp lịch (so với các ràng buộc cứng).
+- **Endpoint:** `POST /schedules/check-constraints`
+- **Quyền truy cập:** `ACADEMIC_OFFICER`, `ADMIN`
+- **Headers:** `Authorization: Bearer <token>`
+- **Request Body:**
 ```json
 {
   "room_code": "2B11",
@@ -69,18 +192,58 @@ Request mẫu:
   "day_of_week": 3,
   "time_slot": "7-10",
   "start_date": "2026-04-28",
-  "end_date": "2026-04-28"
+  "end_date": "2026-05-28"
+}
+```
+- **Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Constraint check stub",
+  "data": {
+    "passed": true,
+    "results": [
+      {
+        "code": "ROOM_SCOPE",
+        "passed": true,
+        "message": "Room 2B11 is in MVP scope"
+      },
+      {
+        "code": "HOLIDAY_BLOCKED",
+        "passed": true,
+        "message": "Date is not blocked by demo holiday rule"
+      },
+      {
+        "code": "ROOM_CONFLICT",
+        "passed": true,
+        "message": "Stub: no room conflict detected"
+      },
+      {
+        "code": "LECTURER_CONFLICT",
+        "passed": true,
+        "message": "Stub: no lecturer conflict detected"
+      },
+      {
+        "code": "CAPACITY_OK",
+        "passed": true,
+        "message": "Stub: room has enough usable computers"
+      },
+      {
+        "code": "SOFTWARE_OK",
+        "passed": true,
+        "message": "Stub: required software is installed"
+      }
+    ]
+  }
 }
 ```
 
-## 6. Auto arrange
-
-```http
-POST /schedules/auto-arrange
-```
-
-Request mẫu:
-
+### 5.2. Chạy thuật toán tự động xếp lịch (Auto Arrange)
+- **Mục đích:** Chạy thuật toán để tự động tìm phương án xếp lịch (phòng/ca) tốt nhất.
+- **Endpoint:** `POST /schedules/auto-arrange`
+- **Quyền truy cập:** `ACADEMIC_OFFICER`, `ADMIN`
+- **Headers:** `Authorization: Bearer <token>`
+- **Request Body:**
 ```json
 {
   "request_id": 1,
@@ -91,13 +254,11 @@ Request mẫu:
   "preferred_day_of_week": 3,
   "preferred_time_slot": "7-10",
   "start_date": "2026-04-28",
-  "end_date": "2026-04-28",
+  "end_date": "2026-05-28",
   "required_software_ids": [1, 2]
 }
 ```
-
-Response mẫu:
-
+- **Response (200 OK):**
 ```json
 {
   "success": true,
@@ -111,12 +272,55 @@ Response mẫu:
       "time_slot": "7-10",
       "start_date": "2026-04-28",
       "end_date": "2026-04-28",
-      "score": 90
+      "score": 90,
+      "reasons": [
+        "In MVP room scope",
+        "Passes demo hard constraints",
+        "Ranked by simple rule-based scoring stub"
+      ]
     },
-    "ranked_options": [],
+    "ranked_options": [
+      {
+        "room_code": "2B11",
+        "day_of_week": 3,
+        "time_slot": "7-10",
+        "start_date": "2026-04-28",
+        "end_date": "2026-04-28",
+        "score": 90,
+        "reasons": [
+          "In MVP room scope",
+          "Passes demo hard constraints",
+          "Ranked by simple rule-based scoring stub"
+        ]
+      },
+      {
+        "room_code": "2B21",
+        "day_of_week": 3,
+        "time_slot": "7-10",
+        "start_date": "2026-04-28",
+        "end_date": "2026-04-28",
+        "score": 85,
+        "reasons": [
+          "In MVP room scope",
+          "Passes demo hard constraints",
+          "Ranked by simple rule-based scoring stub"
+        ]
+      },
+      {
+        "room_code": "2B31",
+        "day_of_week": 3,
+        "time_slot": "7-10",
+        "start_date": "2026-04-28",
+        "end_date": "2026-04-28",
+        "score": 80,
+        "reasons": [
+          "In MVP room scope",
+          "Passes demo hard constraints",
+          "Ranked by simple rule-based scoring stub"
+        ]
+      }
+    ],
     "failed_reasons": []
   }
 }
 ```
-
-Ghi chú: file này là skeleton để Duy tiếp tục hoàn thiện contract thật.
