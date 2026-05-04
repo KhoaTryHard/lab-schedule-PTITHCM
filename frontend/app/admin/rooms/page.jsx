@@ -1,29 +1,35 @@
-import AppShell from '../../../components/layout/AppShell';
-import DataTable from '../../../components/common/DataTable';
-import { ROOM_SCOPE } from '../../../lib/constants';
+import DataTable from "../../../components/common/DataTable";
+import { ROOM_SCOPE } from "../../../lib/constants";
 
+/**
+ * Hàm nhận vào: không nhận props.
+ * Hàm xử lý: tạo dữ liệu mẫu cho bảng quản lý thiết bị và phòng máy.
+ * Hàm trả về: JSX hiển thị danh sách phòng máy đang thuộc phạm vi MVP.
+ */
 export default function RoomsPage() {
   const rows = ROOM_SCOPE.map((roomCode, index) => ({
     id: index + 1,
-    room_code: roomCode,
-    status: 'available',
-    scope: 'In-scope MVP'
+    roomCode,
+    status: "Sẵn sàng",
+    scope: "Phạm vi MVP",
   }));
 
   return (
-    <AppShell>
-      <div className="card">
-        <h1>Quản lý phòng máy</h1>
-        <p>Chỉ quản lý 3 phòng trong MVP.</p>
-        <DataTable
-          columns={[
-            { key: 'room_code', label: 'Phòng' },
-            { key: 'status', label: 'Trạng thái' },
-            { key: 'scope', label: 'Scope' }
-          ]}
-          rows={rows}
-        />
-      </div>
-    </AppShell>
+    <section className="card">
+      <h2>Quản lý thiết bị và phòng máy</h2>
+      <p>
+        Khu vực này đang đại diện cho nhóm chức năng quản lý thiết bị của quản
+        trị viên. Hiện tại hệ thống đang theo dõi 3 phòng máy trong phạm vi
+        MVP.
+      </p>
+      <DataTable
+        columns={[
+          { key: "roomCode", label: "Phòng máy" },
+          { key: "status", label: "Trạng thái" },
+          { key: "scope", label: "Phạm vi" },
+        ]}
+        rows={rows}
+      />
+    </section>
   );
 }
