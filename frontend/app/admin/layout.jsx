@@ -1,4 +1,5 @@
 import AppShell from "../../components/layout/AppShell";
+import RoleGuard from "../../components/layout/RoleGuard";
 
 // Mảng menu của vai trò quản trị viên dùng để render sidebar bên trái.
 const adminNavItems = [
@@ -21,19 +22,21 @@ const adminNavItems = [
 
 /**
  * Hàm nhận vào: children là toàn bộ nội dung của các trang con trong nhánh /admin.
- * Hàm xử lý: bọc mọi trang quản trị viên bằng AppShell và truyền danh sách menu sidebar.
+ * Hàm xử lý: kiểm tra quyền QTV rồi bọc trang quản trị bằng AppShell.
  * Hàm trả về: JSX của layout quản trị viên dùng chung.
  */
 export default function AdminLayout({ children }) {
   return (
-    <AppShell
-      navItems={adminNavItems}
-      brandTitle="Quản trị viên"
-      brandSubtitle="Quản trị viên"
-      userName="Admin PTIT HCM"
-      userRole="Quản trị hệ thống"
-    >
-      {children}
-    </AppShell>
+    <RoleGuard allowedRoles={["QTV"]}>
+      <AppShell
+        navItems={adminNavItems}
+        brandTitle="Quản trị viên"
+        brandSubtitle="Quản trị hệ thống"
+        userName="Admin PTIT HCM"
+        userRole="Quản trị hệ thống"
+      >
+        {children}
+      </AppShell>
+    </RoleGuard>
   );
 }

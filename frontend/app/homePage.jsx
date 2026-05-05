@@ -551,12 +551,9 @@ const homePage = () => {
             </div>
             <p className="footerDescription">
               Hệ thống quản lý lịch thực hành phòng máy dành cho Học viện Công
-              nghệ Bưu chính Viễn thông cơ sở TP.HCM, tập trung vào xếp lịch,
-              công bố lịch và hỗ trợ phối hợp giữa các vai trò nghiệp vụ.
+              nghệ Bưu chính Viễn thông cơ sở thành phố Hồ Chí Minh.
             </p>
-            <p className="footerCopy">
-              © 2026 PTIT HCM Management System. Nhóm Hai4.
-            </p>
+            <p className="footerCopy">© 2026 PTITHCM GROUP HAI4</p>
           </div>
         </div>
       </footer>
