@@ -3,7 +3,11 @@
   grid-template-columns: 280px minmax(0, 1fr);
   min-height: 100vh;
   background:
-    radial-gradient(circle at top right, rgba(139, 0, 0, 0.08), transparent 24%),
+    radial-gradient(
+      circle at top right,
+      rgba(139, 0, 0, 0.08),
+      transparent 24%
+    ),
     linear-gradient(180deg, #f9f7f7 0%, #f3f4f6 100%);
 }
 
@@ -33,6 +37,8 @@
   place-items: center;
   width: 52px;
   height: 52px;
+  border: none;
+  cursor: pointer;
   border-radius: 18px;
   background: linear-gradient(180deg, #8b0000 0%, #610000 100%);
   color: #ffffff;
@@ -40,6 +46,10 @@
   font-weight: 800;
   letter-spacing: 0.04em;
   box-shadow: 0 14px 28px rgba(97, 0, 0, 0.18);
+}
+
+.brandMark:hover {
+  transform: translateY(-1px);
 }
 
 .brandContent {
@@ -164,38 +174,56 @@
   position: sticky;
   top: 0;
   z-index: 20;
-  padding: 22px 28px;
+  padding: 10px 10px;
   border-bottom: 1px solid rgba(97, 0, 0, 0.09);
   background: rgba(255, 255, 255, 0.78);
   backdrop-filter: blur(16px);
 }
 
 .topBarHeading {
-  max-width: 1280px;
-  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topBarBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  border: 1px solid rgba(139, 0, 0, 0.18);
+  border-radius: 12px;
+  background: rgba(139, 0, 0, 0.08);
+  color: #8b0000;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .topBarEyebrow {
   margin: 0;
   color: #8b0000;
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .topBarTitle {
-  margin: 8px 0 0;
+  margin: 0;
   color: #121c2a;
-  font-size: clamp(24px, 2.8vw, 34px);
+  font-size: clamp(18px, 2vw, 26px);
   font-weight: 800;
   line-height: 1.2;
+  white-space: nowrap;
 }
 
 .mainContent {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 28px;
+  max-width: 100%;
+  margin: 0;
+  padding: 8px;
 }
 
 @media (max-width: 960px) {
@@ -218,5 +246,35 @@
 
   .mainContent {
     padding: 20px 16px 28px;
+  }
+}
+
+.shellCollapsed {
+  grid-template-columns: 88px minmax(0, 1fr);
+}
+
+.sidebarCollapsed {
+  padding: 24px 10px;
+}
+
+.navItemCollapsed {
+  justify-content: center;
+  padding: 0;
+}
+
+.sidebarFooterCollapsed {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+@media (max-width: 768px) {
+  .topBarHeading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .topBarTitle {
+    white-space: normal;
   }
 }

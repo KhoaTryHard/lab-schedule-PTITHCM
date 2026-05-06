@@ -1,5 +1,5 @@
 "use client";
-
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 
 import styles from "./appShell.module.css";
@@ -19,13 +19,21 @@ const defaultNavItems = [
     href: "/academic/auto-arrange",
   },
   { icon: "school", itemName: "Lịch thực hành", href: "/academic/schedules" },
-  { icon: "search", itemName: "Lịch giảng viên", href: "/lecturer/my-schedule" },
+  {
+    icon: "search",
+    itemName: "Lịch giảng viên",
+    href: "/lecturer/my-schedule",
+  },
   {
     icon: "equipment",
     itemName: "Lịch kỹ thuật viên",
     href: "/technician/room-schedule",
   },
-  { icon: "settings", itemName: "Lịch sinh viên", href: "/student/my-schedule" },
+  {
+    icon: "settings",
+    itemName: "Lịch sinh viên",
+    href: "/student/my-schedule",
+  },
 ];
 
 /**
@@ -69,7 +77,9 @@ function checkActivePath(pathname, href) {
  * Hàm trả về: object menu đang active, nếu không có thì trả về phần tử đầu tiên.
  */
 function findCurrentNavItem(navItems, pathname) {
-  const matchedItem = navItems.find((item) => checkActivePath(pathname, item.href));
+  const matchedItem = navItems.find((item) =>
+    checkActivePath(pathname, item.href),
+  );
 
   return matchedItem || navItems[0] || null;
 }
@@ -100,16 +110,41 @@ export default function AppShell({
   const currentNavItem = findCurrentNavItem(sidebarItems, pathname);
   const currentPageTitle = pageTitle || currentNavItem?.itemName || "Tổng quan";
   const avatarText = createAvatarText(userName);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   return (
-    <div className={styles.shell}>
-      <aside className={styles.sidebar}>
+    <div
+      className={
+        isSidebarCollapsed
+          ? `${styles.shell} ${styles.shellCollapsed}`
+          : styles.shell
+      }
+    >
+      <aside
+        className={
+          isSidebarCollapsed
+            ? `${styles.sidebar} ${styles.sidebarCollapsed}`
+            : styles.sidebar
+        }
+      >
         <div className={styles.brandBlock}>
-          <div className={styles.brandMark}>PT</div>
-          <div className={styles.brandContent}>
-            <p className={styles.brandTitle}>{brandTitle}</p>
-            <p className={styles.brandSubtitle}>{brandSubtitle}</p>
-          </div>
+          <button
+            type="button"
+            className={styles.brandMark}
+            onClick={() => setIsSidebarCollapsed((prev) => !prev)}
+            aria-label={
+              isSidebarCollapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"
+            }
+            aria-expanded={!isSidebarCollapsed}
+          >
+            PT
+          </button>
+          {!isSidebarCollapsed && (
+            <div className={styles.brandContent}>
+              <p className={styles.brandTitle}>{brandTitle}</p>
+              <p className={styles.brandSubtitle}>{brandSubtitle}</p>
+            </div>
+          )}
         </div>
 
         <nav className={styles.navList} aria-label="Điều hướng vai trò">
@@ -120,23 +155,32 @@ export default function AppShell({
               itemName={item.itemName}
               href={item.href}
               isActive={checkActivePath(pathname, item.href)}
+              isCollapsed={isSidebarCollapsed}
             />
           ))}
         </nav>
 
-        <div className={styles.sidebarFooter}>
+        <div
+          className={
+            isSidebarCollapsed
+              ? `${styles.sidebarFooter} ${styles.sidebarFooterCollapsed}`
+              : styles.sidebarFooter
+          }
+        >
           <div className={styles.userAvatar}>{avatarText}</div>
-          <div className={styles.userContent}>
-            <p className={styles.userName}>{userName}</p>
-            <p className={styles.userRole}>{userRole}</p>
-          </div>
+          {!isSidebarCollapsed && (
+            <div className={styles.userContent}>
+              <p className={styles.userName}>{userName}</p>
+              <p className={styles.userRole}>{userRole}</p>
+            </div>
+          )}
         </div>
       </aside>
 
       <div className={styles.workspace}>
         <header className={styles.topBar}>
           <div className={styles.topBarHeading}>
-            <p className={styles.topBarEyebrow}>Bảng điều khiển quản trị</p>
+            <span className={styles.topBarBadge}>BẢNG ĐIỀU KHIỂN QUẢN TRỊ</span>
             <h1 className={styles.topBarTitle}>{currentPageTitle}</h1>
           </div>
         </header>
