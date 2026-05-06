@@ -1074,6 +1074,245 @@
   gap: 10px;
 }
 
+.guidePage {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.guideHero {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  border: 1px solid rgba(139, 0, 0, 0.08);
+  border-radius: 20px;
+  background: linear-gradient(180deg, #ffffff 0%, #fff8f8 100%);
+}
+
+.guideHeroTitle {
+  margin: 0;
+  color: #0f172a;
+  font-size: clamp(28px, 3vw, 38px);
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.guideHeroText {
+  margin: 0;
+  max-width: 860px;
+  color: #475569;
+  font-size: 15px;
+  line-height: 1.8;
+}
+
+.guideBadgeList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.guideBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(139, 0, 0, 0.08);
+  color: #8b0000;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.guideActionBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.guideCopyButton {
+  background: #475569;
+}
+
+.guideLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.75fr) minmax(280px, 0.9fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.guideMain,
+.guideAside {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.guideAside {
+  position: sticky;
+  top: 92px;
+}
+
+.guideSection {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border: 1px solid rgba(139, 0, 0, 0.08);
+  border-radius: 18px;
+  background: #ffffff;
+}
+
+.guideSectionTitle {
+  margin: 0;
+  color: #0f172a;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.guideSectionBody {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  color: #334155;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.guideSectionBody p,
+.guideSectionBody ul,
+.guideSectionBody ol {
+  margin: 0;
+}
+
+.guideSectionBody ul,
+.guideSectionBody ol {
+  padding-left: 22px;
+}
+
+.guideSectionBody li + li {
+  margin-top: 6px;
+}
+
+.guideStepList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  list-style: none;
+  padding-left: 0;
+}
+
+.guideStepList > li {
+  padding: 14px 16px;
+  border: 1px solid rgba(139, 0, 0, 0.08);
+  border-radius: 16px;
+  background: linear-gradient(180deg, #ffffff 0%, #fffafa 100%);
+}
+
+.guideStepList > li > p {
+  margin-top: 6px;
+}
+
+.guideNoteBox {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid rgba(180, 83, 9, 0.16);
+  border-radius: 16px;
+  background: #fffaf1;
+}
+
+.guideNoteBox strong {
+  color: #7c2d12;
+  font-size: 14px;
+}
+
+.guideTocCard {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border: 1px solid rgba(139, 0, 0, 0.08);
+  border-radius: 18px;
+  background: #ffffff;
+}
+
+.guideTocList {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.guideTocList a {
+  color: #334155;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.guideTocList a:hover {
+  color: #8b0000;
+}
+
+.guideChecklist {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #334155;
+}
+
+.guideChecklistCompact {
+  gap: 10px;
+}
+
+.guideStatusGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.guideStatusCard {
+  padding: 14px 16px;
+  border: 1px solid rgba(139, 0, 0, 0.08);
+  border-radius: 16px;
+  background: linear-gradient(180deg, #ffffff 0%, #fff9f9 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.guideStatusTitle {
+  margin: 0;
+  color: #0f172a;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.guideStatusBadgeWrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.guideProblemList {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.guideProblemList > li {
+  padding: 14px 16px;
+  border: 1px solid rgba(139, 0, 0, 0.08);
+  border-radius: 16px;
+  background: linear-gradient(180deg, #ffffff 0%, #fffafa 100%);
+}
+
+.guideProblemList > li > ul {
+  margin-top: 8px;
+}
+
 @media (max-width: 1280px) {
   .roomsStatGrid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1143,6 +1382,14 @@
   .reportMetricGrid {
     grid-template-columns: 1fr;
   }
+
+  .guideLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .guideAside {
+    position: static;
+  }
 }
 
 @media (max-width: 900px) {
@@ -1176,6 +1423,10 @@
 
   .reportFilterGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .guideStatusGrid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1262,5 +1513,9 @@
   .reportDonut {
     width: 150px;
     height: 150px;
+  }
+
+  .guideActionBar {
+    flex-direction: column;
   }
 }

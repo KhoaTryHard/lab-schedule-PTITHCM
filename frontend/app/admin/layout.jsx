@@ -18,7 +18,7 @@ const adminNavItems = [
     itemName: "Thống kê & báo cáo",
     href: "/admin/reports",
   },
-  { icon: "settings", itemName: "Cài đặt", href: "/admin/settings" },
+  { icon: "settings", itemName: "Hướng dẫn sử dụng", href: "/admin/settings" },
 ];
 
 /**
