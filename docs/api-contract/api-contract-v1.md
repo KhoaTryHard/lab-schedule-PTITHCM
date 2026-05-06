@@ -118,6 +118,84 @@
 }
 ```
 
+### 3.2. MVP room list
+- **Purpose:** Return room records from MySQL, limited to MVP scope `2B11`, `2B21`, `2B31`.
+- **Endpoint:** `GET /rooms`
+- **Access:** `ADMIN` (QTV), `ACADEMIC_OFFICER` (CBDT), `TECHNICIAN` (KTV)
+- **Headers:** `Authorization: Bearer <token>`
+- **Query Params:** `room_code`, `room_status`, `scope=mvp`, `in_scope=true` (optional)
+- **Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Success",
+  "data": [
+    {
+      "id": 1,
+      "room_code": "2B11",
+      "total_computers": 40,
+      "broken_computers": 2,
+      "reserved_teacher_computers": 1,
+      "usable_computers": 38,
+      "usable_student_computers": 37,
+      "room_status": "available",
+      "notes": "Ready for lab schedule"
+    }
+  ]
+}
+```
+
+### 3.3. MVP room detail
+- **Purpose:** Return one room record from MySQL if it belongs to MVP scope.
+- **Endpoint:** `GET /rooms/:id`
+- **Access:** `ADMIN` (QTV), `ACADEMIC_OFFICER` (CBDT), `TECHNICIAN` (KTV)
+- **Headers:** `Authorization: Bearer <token>`
+- **Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Success",
+  "data": {
+    "id": 1,
+    "room_code": "2B11",
+    "total_computers": 40,
+    "broken_computers": 2,
+    "reserved_teacher_computers": 1,
+    "usable_computers": 38,
+    "usable_student_computers": 37,
+    "room_status": "available",
+    "notes": "Ready for lab schedule"
+  }
+}
+```
+
+### 3.4. Update MVP room status/notes
+- **Purpose:** Update safe baseline fields for one MVP room.
+- **Endpoint:** `PATCH /rooms/:id`
+- **Access:** `ADMIN` (QTV), `ACADEMIC_OFFICER` (CBDT)
+- **Headers:** `Authorization: Bearer <token>`
+- **Request Body:**
+```json
+{
+  "room_status": "available",
+  "notes": "Updated by W2-05 backend baseline"
+}
+```
+- **Valid room_status values:** `available`, `maintenance`, `out_of_order`, `locked`
+- **Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Success",
+  "data": {
+    "id": 1,
+    "room_code": "2B11",
+    "room_status": "available",
+    "notes": "Updated by W2-05 backend baseline"
+  }
+}
+```
+
 ---
 
 ## 4. Schedule Requests (Yêu cầu xếp lịch)
