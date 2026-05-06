@@ -1,5 +1,4 @@
 import DataTable from "../../../components/common/DataTable";
-import { ROOM_SCOPE } from "../../../lib/constants";
 
 /**
  * Hàm nhận vào: không nhận props.

@@ -130,17 +130,18 @@ export default function LoginPage() {
         </div>
 
         {errorMessage ? (
-          <p role="alert" style={{ color: "#a30b37", fontWeight: 600 }}>
-            {errorMessage}
-          </p>
+          <div className="authErrorMessage" role="alert">
+            <span className="authErrorIcon">!</span>
+            <p>{errorMessage}</p>
+          </div>
         ) : null}
 
         <button
-          className="authPrimaryButton"
+          className={`authPrimaryButton ${isSubmitting ? "authPrimaryButtonLoading" : ""}`}
           type="submit"
           disabled={isSubmitting}
         >
-          {isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}
+          {isSubmitting ? "Đang xác thực..." : "Đăng nhập"}
         </button>
       </form>
     </section>

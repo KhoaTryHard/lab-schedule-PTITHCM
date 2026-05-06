@@ -1,11 +1,12 @@
 import AppShell from "../../components/layout/AppShell";
 import RoleGuard from "../../components/layout/RoleGuard";
+import "./admin.css";
 
 // Mảng menu của vai trò quản trị viên dùng để render sidebar bên trái.
 const adminNavItems = [
   { icon: "dashboard", itemName: "Tổng quan", href: "/admin" },
   { icon: "person", itemName: "Quản lý tài khoản", href: "/admin/accounts" },
-  { icon: "equipment", itemName: "Quản lý thiết bị", href: "/admin/rooms" },
+  { icon: "equipment", itemName: "Quản phòng máy và thiết bị", href: "/admin/rooms" },
   {
     icon: "school",
     itemName: "Quản lý dữ liệu đào tạo",
