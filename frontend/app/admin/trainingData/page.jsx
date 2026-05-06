@@ -449,13 +449,6 @@ const trainingQuickItems = [
     boxLabel: "Biểu mẫu LHP",
     buttonLabel: "Thêm mới",
   },
-  {
-    key: "import",
-    title: "Import dữ liệu đào tạo Excel",
-    iconName: "import",
-    boxLabel: "File đào tạo",
-    buttonLabel: "Import",
-  },
 ];
 
 // Mảng cột dùng cho DataTable theo từng tab quản lý.
