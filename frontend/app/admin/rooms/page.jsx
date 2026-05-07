@@ -2,9 +2,8 @@
 
 import { useMemo, useState } from "react";
 
-import { CardUI, UploadCard } from "../../../components/common/cardUI.jsx";
+import { CardCreateUpload } from "../../../components/accounts/cardUI.jsx";
 import DataTable from "../../../components/common/DataTable.jsx";
-import SectionLayout from "../../../components/common/SectionLayout.jsx";
 
 // Mảng dữ liệu mock cho danh sách phòng máy, bám gần các field chính trong DB.
 const roomMockItems = [
@@ -365,7 +364,7 @@ function buildStatusBadge(status) {
     "Đang sửa": "roomStatusWarning",
     "Tạm khóa": "roomStatusDanger",
     "Tạm ngưng": "roomStatusDanger",
-    Hỏng: "roomStatusDanger",
+    "Hỏng": "roomStatusDanger",
     "Đã thay": "roomStatusNeutral",
   };
 
@@ -379,6 +378,18 @@ function buildStatusBadge(status) {
  * Hàm xử lý: dựng card thống kê ở đầu trang theo phong cách đồng bộ với admin/accounts.
  * Hàm trả về: JSX của một card thống kê.
  */
+function RoomStatCard({ iconName, title, value }) {
+  return (
+    <article className="accountSummaryCard roomStatCard">
+      <div className="roomStatIconWrap">
+        {renderRoomIcon(iconName, "roomStatIcon", 24)}
+      </div>
+      <p className="roomStatTitle">{title}</p>
+      <h3 className="roomStatValue">{value}</h3>
+    </article>
+  );
+}
+
 /**
  * Hàm nhận vào: không nhận props.
  * Hàm xử lý: dựng giao diện quản lý phòng máy và thiết bị cho quản trị viên bằng mock data, hỗ trợ tab, tìm kiếm, lọc trạng thái và khối khai báo bên phải.
@@ -486,7 +497,8 @@ export default function RoomsPage() {
       const matchedKeyword =
         !normalizedKeyword || searchTarget.includes(normalizedKeyword);
       const matchedStatus =
-        statusFilter === "all" || software.installation_status === statusFilter;
+        statusFilter === "all" ||
+        software.installation_status === statusFilter;
 
       return matchedKeyword && matchedStatus;
     });
@@ -622,13 +634,13 @@ export default function RoomsPage() {
 
   return (
     <div>
-      <section className="card summaryCardGrid">
+      <section className="card roomsStatGrid">
         {roomStats.map((statItem) => (
-          <CardUI
+          <RoomStatCard
             key={statItem.title}
-            icon={renderRoomIcon(statItem.iconName, "summaryCardIcon", 20)}
+            iconName={statItem.iconName}
             title={statItem.title}
-            number={statItem.value}
+            value={statItem.value}
           />
         ))}
       </section>
@@ -712,8 +724,8 @@ export default function RoomsPage() {
               <div className="roomEmptyState">
                 <h4>Chưa có dữ liệu phù hợp</h4>
                 <p>
-                  Không tìm thấy bản ghi phù hợp với từ khóa hoặc trạng thái
-                  hiện tại.
+                  Không tìm thấy bản ghi phù hợp với từ khóa hoặc trạng thái hiện
+                  tại.
                 </p>
               </div>
             )}
@@ -721,22 +733,27 @@ export default function RoomsPage() {
         </div>
 
         <aside className="card roomsSecondaryPanel">
-          <SectionLayout
-            title="KHAI BÁO NHANH"
-            message="Tải nhanh tệp khai báo cho phòng máy, thiết bị và phần mềm theo mẫu của khoa."
-            direction={1}
-            className="card roomUploadPanel"
-          >
-            {roomUploadItems.map((uploadItem) => (
-              <UploadCard
-                key={uploadItem.key}
-                icon={renderRoomIcon(uploadItem.iconName, "uploadCardIconSvg", 22)}
-                title={uploadItem.title}
-                fileLabel="Excel"
-                buttonLabel="Tải"
-              />
-            ))}
-          </SectionLayout>
+          <div className="card roomUploadPanel">
+            <h5 className="accountUploadTitle">KHAI BÁO NHANH</h5>
+            <p className="roomSectionText roomUploadText">
+              Tải nhanh tệp khai báo cho phòng máy, thiết bị và phần mềm theo
+              mẫu của khoa.
+            </p>
+
+            <div className="roomUploadGrid">
+              {roomUploadItems.map((uploadItem) => (
+                <CardCreateUpload
+                  key={uploadItem.key}
+                  iconNode={renderRoomIcon(
+                    uploadItem.iconName,
+                    "uploadCardIconSvg",
+                    22,
+                  )}
+                  NameCard={uploadItem.title}
+                />
+              ))}
+            </div>
+          </div>
         </aside>
       </section>
     </div>

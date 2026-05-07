@@ -2,9 +2,8 @@
 
 import { useMemo, useState } from "react";
 
-import { CardUI, UploadCard } from "../../../components/common/cardUI.jsx";
+import { CardCreateUpload } from "../../../components/accounts/cardUI.jsx";
 import DataTable from "../../../components/common/DataTable.jsx";
-import SectionLayout from "../../../components/common/SectionLayout.jsx";
 
 // Mảng dữ liệu mock cho học kỳ, giữ field gần bảng semesters để nối API sau thuận tiện hơn.
 const semesterMockItems = [
@@ -419,35 +418,35 @@ const trainingQuickItems = [
     key: "semester",
     title: "Thêm học kỳ",
     iconName: "semester",
-    fileLabel: "Biểu mẫu HK",
+    boxLabel: "Biểu mẫu HK",
     buttonLabel: "Thêm mới",
   },
   {
     key: "week",
     title: "Thêm tuần học",
     iconName: "week",
-    fileLabel: "Biểu mẫu tuần",
+    boxLabel: "Biểu mẫu tuần",
     buttonLabel: "Thêm mới",
   },
   {
     key: "slot",
     title: "Thêm ca học",
     iconName: "slot",
-    fileLabel: "Biểu mẫu ca",
+    boxLabel: "Biểu mẫu ca",
     buttonLabel: "Thêm mới",
   },
   {
     key: "course",
     title: "Thêm học phần",
     iconName: "course",
-    fileLabel: "Biểu mẫu HP",
+    boxLabel: "Biểu mẫu HP",
     buttonLabel: "Thêm mới",
   },
   {
     key: "section",
     title: "Thêm lớp học phần",
     iconName: "section",
-    fileLabel: "Biểu mẫu LHP",
+    boxLabel: "Biểu mẫu LHP",
     buttonLabel: "Thêm mới",
   },
 ];
@@ -703,6 +702,18 @@ function buildCurrentBadge(isCurrent) {
  * Hàm xử lý: dựng card thống kê đầu trang theo cùng style với rooms/accounts.
  * Hàm trả về: JSX của một card thống kê.
  */
+function TrainingStatCard({ iconName, title, value }) {
+  return (
+    <article className="accountSummaryCard roomStatCard">
+      <div className="roomStatIconWrap">
+        {renderTrainingIcon(iconName, "roomStatIcon", 24)}
+      </div>
+      <p className="roomStatTitle">{title}</p>
+      <h3 className="roomStatValue">{value}</h3>
+    </article>
+  );
+}
+
 /**
  * Hàm nhận vào: tabKey là tab đang chọn và item là bản ghi dữ liệu của tab đó.
  * Hàm xử lý: trả về chuỗi mục tiêu dùng để tìm kiếm mềm theo đúng nghiệp vụ của từng tab.
@@ -996,38 +1007,41 @@ export default function TrainingDataPage() {
 
   return (
     <div>
-      <section className="card summaryCardGrid">
+      <section className="card roomsStatGrid">
         {trainingStats.map((statItem) => (
-          <CardUI
+          <TrainingStatCard
             key={statItem.title}
-            icon={renderTrainingIcon(statItem.iconName, "summaryCardIcon", 20)}
+            iconName={statItem.iconName}
             title={statItem.title}
-            number={statItem.value}
+            value={statItem.value}
           />
         ))}
       </section>
 
       <section className="card managementAccount">
-        <SectionLayout
-          title="KHAI BÁO NHANH"
-          message="Chuẩn bị biểu mẫu và thêm nhanh học kỳ, ca học, học phần hoặc lớp học phần phục vụ xếp lịch thực hành."
-          direction={0}
-          className="card accountUploadSection"
-        >
-          {trainingQuickItems.map((quickItem) => (
-            <UploadCard
-              key={quickItem.key}
-              icon={renderTrainingIcon(
-                quickItem.iconName,
-                "uploadCardIconSvg",
-                22,
-              )}
-              title={quickItem.title}
-              fileLabel={quickItem.fileLabel}
-              buttonLabel={quickItem.buttonLabel}
-            />
-          ))}
-        </SectionLayout>
+        <div className="card accountUploadSection">
+          <h5 className="accountUploadTitle">KHAI BÁO NHANH</h5>
+          <p className="roomSectionText accountUploadDescription">
+            Chuẩn bị biểu mẫu và thêm nhanh học kỳ, ca học, học phần hoặc lớp
+            học phần phục vụ xếp lịch thực hành.
+          </p>
+
+          <div className="card trainingUploadGrid">
+            {trainingQuickItems.map((quickItem) => (
+              <CardCreateUpload
+                key={quickItem.key}
+                iconNode={renderTrainingIcon(
+                  quickItem.iconName,
+                  "uploadCardIconSvg",
+                  22,
+                )}
+                NameCard={quickItem.title}
+                boxLabel={quickItem.boxLabel}
+                buttonLabel={quickItem.buttonLabel}
+              />
+            ))}
+          </div>
+        </div>
 
         <div className="card accountsView trainingPrimaryPanel">
           <div className="card optionView roomToolbar">
