@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 
-import { CardUI } from "../../../components/common/cardUI.jsx";
 import DataTable from "../../../components/common/DataTable.jsx";
 
 // Mảng dữ liệu mock cho lịch thực hành, bám gần bảng lab_schedule_entries để nối API sau dễ hơn.
@@ -1046,6 +1045,19 @@ function calculatePercentage(value, total) {
  * Hàm xử lý: dựng card thống kê tổng quan cho đầu trang reports.
  * Hàm trả về: JSX của một card thống kê.
  */
+function ReportStatCard({ title, value, iconName, hint }) {
+  return (
+    <article className="accountSummaryCard roomStatCard">
+      <div className="roomStatIconWrap">
+        {renderReportIcon(iconName, "roomStatIcon", 24)}
+      </div>
+      <p className="roomStatTitle">{title}</p>
+      <h3 className="roomStatValue">{value}</h3>
+      <span className="roomStatHint">{hint}</span>
+    </article>
+  );
+}
+
 /**
  * Hàm nhận vào: title, description và data của biểu đồ cột.
  * Hàm xử lý: dựng card biểu đồ cột bằng HTML/CSS thuần để hiển thị số buổi theo từng mục.
@@ -1697,41 +1709,49 @@ export default function ReportsPage() {
         title: "Tổng buổi thực hành",
         value: totalSessions,
         iconName: "schedule",
+        hint: "Tổng số lịch nằm trong phạm vi đang theo dõi.",
       },
       {
         title: "Đã công bố",
         value: publishedSessions,
         iconName: "published",
+        hint: "Các lịch đã gửi ra giảng viên, sinh viên và KTV.",
       },
       {
         title: "Đã duyệt",
         value: approvedSessions,
         iconName: "approved",
+        hint: "Lịch đã qua bước duyệt nhưng chưa công bố.",
       },
       {
         title: "Đã hủy",
         value: cancelledSessions,
         iconName: "cancelled",
+        hint: "Buổi thực hành bị hủy do phát sinh nghiệp vụ.",
       },
       {
         title: "Tỷ lệ sử dụng phòng",
         value: `${averageUsageRate}%`,
         iconName: "usage",
+        hint: "Trung bình của 3 phòng máy trong phạm vi lọc.",
       },
       {
         title: "Sự cố đang xử lý",
         value: activeIssues,
         iconName: "issue",
+        hint: "Bao gồm sự cố mới ghi nhận và đang xử lý.",
       },
       {
         title: "Thiết bị lỗi",
         value: faultyDevices,
         iconName: "device",
+        hint: "Thiết bị lỗi nhẹ, hỏng hoặc đang sửa.",
       },
       {
         title: "Phần mềm cần cập nhật",
         value: softwareAttentionItems,
         iconName: "software",
+        hint: "Các gói phần mềm thiếu, tạm ngưng hoặc cần cập nhật.",
       },
     ];
   }, [
@@ -2057,13 +2077,14 @@ export default function ReportsPage() {
         </p>
       </section>
 
-      <section className="card summaryCardGrid summaryCardGridCompact">
+      <section className="card reportStatGrid">
         {reportStats.map((statItem) => (
-          <CardUI
+          <ReportStatCard
             key={statItem.title}
-            icon={renderReportIcon(statItem.iconName, "summaryCardIcon", 20)}
             title={statItem.title}
-            number={statItem.value}
+            value={statItem.value}
+            iconName={statItem.iconName}
+            hint={statItem.hint}
           />
         ))}
       </section>
