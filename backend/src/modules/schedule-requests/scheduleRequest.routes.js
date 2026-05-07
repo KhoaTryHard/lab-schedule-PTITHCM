@@ -6,11 +6,17 @@ const { ROLES } = require('../../config/roles');
 
 const router = express.Router();
 
-router.get('/', requireAuth, listScheduleRequests);
+router.get(
+  '/',
+  requireAuth,
+  requireRoles(ROLES.ACADEMIC_OFFICER, ROLES.ADMIN),
+  listScheduleRequests
+);
+
 router.post(
   '/',
   requireAuth,
-  requireRoles([ROLES.ACADEMIC_OFFICER, ROLES.ADMIN]),
+  requireRoles(ROLES.ACADEMIC_OFFICER, ROLES.ADMIN),
   createScheduleRequest
 );
 
