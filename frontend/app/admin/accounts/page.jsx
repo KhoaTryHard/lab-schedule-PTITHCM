@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-import { CardCreateUpload, CardUI } from "../../../components/accounts/cardUI.jsx";
+import { CardUI, UploadCard } from "../../../components/common/cardUI.jsx";
 import {
   UsersIcon,
   AdminIcon,
@@ -12,6 +12,7 @@ import {
   StudentIcon,
 } from "../../../components/icons/systemIcon.jsx";
 import DataTable from "../../../components/common/DataTable.jsx";
+import SectionLayout from "../../../components/common/SectionLayout.jsx";
 
 // Mảng dữ liệu mock cho danh sách tài khoản, giữ field gần nghiệp vụ để nối API sau dễ hơn.
 const accountMockItems = [
@@ -226,35 +227,34 @@ export default function AccountsPage() {
 
   return (
     <div>
-      <section className="card card1">
+      <section className="card summaryCardGrid">
         {accountSummaryItems.map((summaryItem) => (
           <CardUI
             key={summaryItem.title}
-            IconComponent={summaryItem.icon}
-            nameCard={summaryItem.title}
-            numbers={summaryItem.value}
+            icon={summaryItem.icon}
+            title={summaryItem.title}
+            number={summaryItem.value}
           />
         ))}
       </section>
 
       <section className="card managementAccount">
-        <div className="card accountUploadSection">
-          <h5 className="accountUploadTitle">TẠO TÀI KHOẢN</h5>
-          <p className="roomSectionText accountUploadDescription">
-            Chuẩn bị biểu mẫu Excel theo từng vai trò để nhập nhanh tài khoản cho
-            cán bộ và sinh viên.
-          </p>
-
-          <div className="card uploadCardGrid">
-            {accountUploadItems.map((uploadItem) => (
-              <CardCreateUpload
-                key={uploadItem.title}
-                IconComponent={uploadItem.icon}
-                NameCard={uploadItem.title}
-              />
-            ))}
-          </div>
-        </div>
+        <SectionLayout
+          title="TẠO TÀI KHOẢN"
+          message="Chuẩn bị biểu mẫu Excel theo từng vai trò để nhập nhanh tài khoản cho cán bộ và sinh viên."
+          direction={0}
+          className="card accountUploadSection"
+        >
+          {accountUploadItems.map((uploadItem) => (
+            <UploadCard
+              key={uploadItem.title}
+              icon={uploadItem.icon}
+              title={uploadItem.title}
+              fileLabel="File excel"
+              buttonLabel={"Tải"}
+            />
+          ))}
+        </SectionLayout>
 
         <div className="card accountsView accountPrimaryPanel">
           <div className="card optionView roomToolbar">

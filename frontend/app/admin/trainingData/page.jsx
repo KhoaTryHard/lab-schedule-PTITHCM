@@ -2,8 +2,10 @@
 
 import { useMemo, useState } from "react";
 
-import { CardCreateUpload } from "../../../components/accounts/cardUI.jsx";
+import { CardUI, UploadCard } from "../../../components/common/cardUI.jsx";
 import DataTable from "../../../components/common/DataTable.jsx";
+import SectionLayout from "../../../components/common/SectionLayout.jsx";
+import { renderTrainingIcon } from "../../../components/icons/systemIcon.jsx";
 
 // Mảng dữ liệu mock cho học kỳ, giữ field gần bảng semesters để nối API sau thuận tiện hơn.
 const semesterMockItems = [
@@ -418,35 +420,35 @@ const trainingQuickItems = [
     key: "semester",
     title: "Thêm học kỳ",
     iconName: "semester",
-    boxLabel: "Biểu mẫu HK",
+    fileLabel: "Biểu mẫu HK",
     buttonLabel: "Thêm mới",
   },
   {
     key: "week",
     title: "Thêm tuần học",
     iconName: "week",
-    boxLabel: "Biểu mẫu tuần",
+    fileLabel: "Biểu mẫu tuần",
     buttonLabel: "Thêm mới",
   },
   {
     key: "slot",
     title: "Thêm ca học",
     iconName: "slot",
-    boxLabel: "Biểu mẫu ca",
+    fileLabel: "Biểu mẫu ca",
     buttonLabel: "Thêm mới",
   },
   {
     key: "course",
     title: "Thêm học phần",
     iconName: "course",
-    boxLabel: "Biểu mẫu HP",
+    fileLabel: "Biểu mẫu HP",
     buttonLabel: "Thêm mới",
   },
   {
     key: "section",
     title: "Thêm lớp học phần",
     iconName: "section",
-    boxLabel: "Biểu mẫu LHP",
+    fileLabel: "Biểu mẫu LHP",
     buttonLabel: "Thêm mới",
   },
 ];
@@ -551,110 +553,6 @@ function formatDateLabel(dateValue) {
 }
 
 /**
- * Hàm nhận vào: iconName là mã icon, className là class CSS bổ sung và size là kích thước SVG.
- * Hàm xử lý: dựng icon SVG phù hợp cho card thống kê, quick action và phần mô tả của module đào tạo.
- * Hàm trả về: JSX của icon tương ứng.
- */
-function renderTrainingIcon(iconName, className = "", size = 24) {
-  const commonProps = {
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "1.9",
-    strokeLinecap: "round",
-    strokeLinejoin: "round",
-    viewBox: "0 0 24 24",
-    width: size,
-    height: size,
-    className,
-    "aria-hidden": "true",
-  };
-
-  switch (iconName) {
-    case "overview":
-      return (
-        <svg {...commonProps}>
-          <path d="M4 19h16" />
-          <path d="M6 16V9" />
-          <path d="M12 16V5" />
-          <path d="M18 16v-3" />
-        </svg>
-      );
-    case "semester":
-      return (
-        <svg {...commonProps}>
-          <rect x="4" y="5" width="16" height="15" rx="3" />
-          <path d="M8 3v4" />
-          <path d="M16 3v4" />
-          <path d="M4 10h16" />
-        </svg>
-      );
-    case "week":
-      return (
-        <svg {...commonProps}>
-          <rect x="4" y="4" width="16" height="16" rx="3" />
-          <path d="M8 8h8" />
-          <path d="M8 12h4" />
-          <path d="M8 16h6" />
-        </svg>
-      );
-    case "slot":
-      return (
-        <svg {...commonProps}>
-          <circle cx="12" cy="12" r="8" />
-          <path d="M12 8v4l3 2" />
-        </svg>
-      );
-    case "course":
-      return (
-        <svg {...commonProps}>
-          <path d="M5 6.5A2.5 2.5 0 0 1 7.5 4H19v14H7.5A2.5 2.5 0 0 0 5 20.5Z" />
-          <path d="M5 6.5v14" />
-        </svg>
-      );
-    case "section":
-      return (
-        <svg {...commonProps}>
-          <rect x="4" y="5" width="16" height="4" rx="1.5" />
-          <rect x="4" y="10" width="16" height="4" rx="1.5" />
-          <rect x="4" y="15" width="10" height="4" rx="1.5" />
-        </svg>
-      );
-    case "cohort":
-      return (
-        <svg {...commonProps}>
-          <path d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-          <path d="M16 10a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />
-          <path d="M4 19c0-2.5 2-4 4.5-4H10c2.5 0 4.5 1.5 4.5 4" />
-          <path d="M14 19c.2-1.7 1.5-3 3.5-3H18c1 0 1.9.3 2.6.9" />
-        </svg>
-      );
-    case "lecturer":
-      return (
-        <svg {...commonProps}>
-          <rect x="4" y="4" width="16" height="12" rx="2" />
-          <path d="M8 20h8" />
-          <path d="M12 16v4" />
-          <path d="m9 9 2 2 4-4" />
-        </svg>
-      );
-    case "import":
-      return (
-        <svg {...commonProps}>
-          <path d="M12 4v10" />
-          <path d="m8.5 8.5 3.5-3.5 3.5 3.5" />
-          <path d="M5 19h14" />
-        </svg>
-      );
-    default:
-      return (
-        <svg {...commonProps}>
-          <circle cx="12" cy="12" r="8" />
-        </svg>
-      );
-  }
-}
-
-/**
  * Hàm nhận vào: status là trạng thái nghiệp vụ của học kỳ, ca học, học phần hoặc lớp học phần.
  * Hàm xử lý: ánh xạ trạng thái sang tone badge tương ứng để giao diện nhìn nhất quán với rooms.
  * Hàm trả về: JSX của badge trạng thái.
@@ -702,18 +600,6 @@ function buildCurrentBadge(isCurrent) {
  * Hàm xử lý: dựng card thống kê đầu trang theo cùng style với rooms/accounts.
  * Hàm trả về: JSX của một card thống kê.
  */
-function TrainingStatCard({ iconName, title, value }) {
-  return (
-    <article className="accountSummaryCard roomStatCard">
-      <div className="roomStatIconWrap">
-        {renderTrainingIcon(iconName, "roomStatIcon", 24)}
-      </div>
-      <p className="roomStatTitle">{title}</p>
-      <h3 className="roomStatValue">{value}</h3>
-    </article>
-  );
-}
-
 /**
  * Hàm nhận vào: tabKey là tab đang chọn và item là bản ghi dữ liệu của tab đó.
  * Hàm xử lý: trả về chuỗi mục tiêu dùng để tìm kiếm mềm theo đúng nghiệp vụ của từng tab.
@@ -1007,41 +893,38 @@ export default function TrainingDataPage() {
 
   return (
     <div>
-      <section className="card roomsStatGrid">
+      <section className="card summaryCardGrid">
         {trainingStats.map((statItem) => (
-          <TrainingStatCard
+          <CardUI
             key={statItem.title}
-            iconName={statItem.iconName}
+            icon={renderTrainingIcon(statItem.iconName, "summaryCardIcon", 20)}
             title={statItem.title}
-            value={statItem.value}
+            number={statItem.value}
           />
         ))}
       </section>
 
       <section className="card managementAccount">
-        <div className="card accountUploadSection">
-          <h5 className="accountUploadTitle">KHAI BÁO NHANH</h5>
-          <p className="roomSectionText accountUploadDescription">
-            Chuẩn bị biểu mẫu và thêm nhanh học kỳ, ca học, học phần hoặc lớp
-            học phần phục vụ xếp lịch thực hành.
-          </p>
-
-          <div className="card trainingUploadGrid">
-            {trainingQuickItems.map((quickItem) => (
-              <CardCreateUpload
-                key={quickItem.key}
-                iconNode={renderTrainingIcon(
-                  quickItem.iconName,
-                  "uploadCardIconSvg",
-                  22,
-                )}
-                NameCard={quickItem.title}
-                boxLabel={quickItem.boxLabel}
-                buttonLabel={quickItem.buttonLabel}
-              />
-            ))}
-          </div>
-        </div>
+        <SectionLayout
+          title="KHAI BÁO NHANH"
+          message="Chuẩn bị biểu mẫu và thêm nhanh học kỳ, ca học, học phần hoặc lớp học phần phục vụ xếp lịch thực hành."
+          direction={0}
+          className="card accountUploadSection"
+        >
+          {trainingQuickItems.map((quickItem) => (
+            <UploadCard
+              key={quickItem.key}
+              icon={renderTrainingIcon(
+                quickItem.iconName,
+                "uploadCardIconSvg",
+                22,
+              )}
+              title={quickItem.title}
+              fileLabel={quickItem.fileLabel}
+              buttonLabel={quickItem.buttonLabel}
+            />
+          ))}
+        </SectionLayout>
 
         <div className="card accountsView trainingPrimaryPanel">
           <div className="card optionView roomToolbar">

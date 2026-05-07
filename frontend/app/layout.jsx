@@ -1,6 +1,7 @@
 import { Be_Vietnam_Pro } from "next/font/google";
 
 import "./globals.css";
+import "../components/common/cardUI.css";
 
 const beVietnamPro = Be_Vietnam_Pro({
   subsets: ["latin", "vietnamese"],
