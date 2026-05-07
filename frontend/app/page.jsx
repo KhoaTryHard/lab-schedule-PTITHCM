@@ -1,16 +1,9 @@
-import Link from 'next/link';
+import homePage from './homePage';
 
-export default function HomePage() {
-  return (
-    <main className="page" style={{ display: 'grid', placeItems: 'center', padding: 24 }}>
-      <div className="card" style={{ maxWidth: 720 }}>
-        <span className="badge">MVP Scope: 2B11 / 2B21 / 2B31</span>
-        <h1>Lab Schedule PTIT</h1>
-        <p>
-          Hệ thống quản lý và tự động sắp xếp lịch thực hành phòng máy theo luật.
-        </p>
-        <Link className="button" href="/login">Đi đến đăng nhập</Link>
-      </div>
-    </main>
-  );
-}
+export const metadata = {
+  title: 'PTIT HCM Management System',
+  description:
+    'Trang chủ giới thiệu hệ thống quản lý lịch thực hành phòng máy tại Học viện Công nghệ Bưu chính Viễn thông cơ sở TP.HCM.'
+};
+
+export default homePage;
