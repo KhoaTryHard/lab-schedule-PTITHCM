@@ -1697,49 +1697,41 @@ export default function ReportsPage() {
         title: "Tổng buổi thực hành",
         value: totalSessions,
         iconName: "schedule",
-        hint: "Tổng số lịch nằm trong phạm vi đang theo dõi.",
       },
       {
         title: "Đã công bố",
         value: publishedSessions,
         iconName: "published",
-        hint: "Các lịch đã gửi ra giảng viên, sinh viên và KTV.",
       },
       {
         title: "Đã duyệt",
         value: approvedSessions,
         iconName: "approved",
-        hint: "Lịch đã qua bước duyệt nhưng chưa công bố.",
       },
       {
         title: "Đã hủy",
         value: cancelledSessions,
         iconName: "cancelled",
-        hint: "Buổi thực hành bị hủy do phát sinh nghiệp vụ.",
       },
       {
         title: "Tỷ lệ sử dụng phòng",
         value: `${averageUsageRate}%`,
         iconName: "usage",
-        hint: "Trung bình của 3 phòng máy trong phạm vi lọc.",
       },
       {
         title: "Sự cố đang xử lý",
         value: activeIssues,
         iconName: "issue",
-        hint: "Bao gồm sự cố mới ghi nhận và đang xử lý.",
       },
       {
         title: "Thiết bị lỗi",
         value: faultyDevices,
         iconName: "device",
-        hint: "Thiết bị lỗi nhẹ, hỏng hoặc đang sửa.",
       },
       {
         title: "Phần mềm cần cập nhật",
         value: softwareAttentionItems,
         iconName: "software",
-        hint: "Các gói phần mềm thiếu, tạm ngưng hoặc cần cập nhật.",
       },
     ];
   }, [
@@ -2069,10 +2061,9 @@ export default function ReportsPage() {
         {reportStats.map((statItem) => (
           <CardUI
             key={statItem.title}
-            icon={renderReportIcon(statItem.iconName, "summaryCardIcon", 24)}
+            icon={renderReportIcon(statItem.iconName, "summaryCardIcon", 20)}
             title={statItem.title}
             number={statItem.value}
-            message={statItem.hint}
           />
         ))}
       </section>

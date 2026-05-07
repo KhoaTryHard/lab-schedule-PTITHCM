@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 
 import { CardUI, UploadCard } from "../../../components/common/cardUI.jsx";
 import DataTable from "../../../components/common/DataTable.jsx";
+import SectionLayout from "../../../components/common/SectionLayout.jsx";
 
 // Mảng dữ liệu mock cho học kỳ, giữ field gần bảng semesters để nối API sau thuận tiện hơn.
 const semesterMockItems = [
@@ -999,7 +1000,7 @@ export default function TrainingDataPage() {
         {trainingStats.map((statItem) => (
           <CardUI
             key={statItem.title}
-            icon={renderTrainingIcon(statItem.iconName, "summaryCardIcon", 24)}
+            icon={renderTrainingIcon(statItem.iconName, "summaryCardIcon", 20)}
             title={statItem.title}
             number={statItem.value}
           />
@@ -1007,29 +1008,26 @@ export default function TrainingDataPage() {
       </section>
 
       <section className="card managementAccount">
-        <div className="card accountUploadSection">
-          <h5 className="accountUploadTitle">KHAI BÁO NHANH</h5>
-          <p className="roomSectionText accountUploadDescription">
-            Chuẩn bị biểu mẫu và thêm nhanh học kỳ, ca học, học phần hoặc lớp
-            học phần phục vụ xếp lịch thực hành.
-          </p>
-
-          <div className="card trainingUploadGrid">
-            {trainingQuickItems.map((quickItem) => (
-              <UploadCard
-                key={quickItem.key}
-                icon={renderTrainingIcon(
-                  quickItem.iconName,
-                  "uploadCardIconSvg",
-                  22,
-                )}
-                title={quickItem.title}
-                fileLabel={quickItem.fileLabel}
-                buttonLabel={quickItem.buttonLabel}
-              />
-            ))}
-          </div>
-        </div>
+        <SectionLayout
+          title="KHAI BÁO NHANH"
+          message="Chuẩn bị biểu mẫu và thêm nhanh học kỳ, ca học, học phần hoặc lớp học phần phục vụ xếp lịch thực hành."
+          direction={0}
+          className="card accountUploadSection"
+        >
+          {trainingQuickItems.map((quickItem) => (
+            <UploadCard
+              key={quickItem.key}
+              icon={renderTrainingIcon(
+                quickItem.iconName,
+                "uploadCardIconSvg",
+                22,
+              )}
+              title={quickItem.title}
+              fileLabel={quickItem.fileLabel}
+              buttonLabel={quickItem.buttonLabel}
+            />
+          ))}
+        </SectionLayout>
 
         <div className="card accountsView trainingPrimaryPanel">
           <div className="card optionView roomToolbar">

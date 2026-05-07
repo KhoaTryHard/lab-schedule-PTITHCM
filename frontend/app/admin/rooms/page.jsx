@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 
 import { CardUI, UploadCard } from "../../../components/common/cardUI.jsx";
 import DataTable from "../../../components/common/DataTable.jsx";
+import SectionLayout from "../../../components/common/SectionLayout.jsx";
 
 // Mảng dữ liệu mock cho danh sách phòng máy, bám gần các field chính trong DB.
 const roomMockItems = [
@@ -364,7 +365,7 @@ function buildStatusBadge(status) {
     "Đang sửa": "roomStatusWarning",
     "Tạm khóa": "roomStatusDanger",
     "Tạm ngưng": "roomStatusDanger",
-    "Hỏng": "roomStatusDanger",
+    Hỏng: "roomStatusDanger",
     "Đã thay": "roomStatusNeutral",
   };
 
@@ -485,8 +486,7 @@ export default function RoomsPage() {
       const matchedKeyword =
         !normalizedKeyword || searchTarget.includes(normalizedKeyword);
       const matchedStatus =
-        statusFilter === "all" ||
-        software.installation_status === statusFilter;
+        statusFilter === "all" || software.installation_status === statusFilter;
 
       return matchedKeyword && matchedStatus;
     });
@@ -626,7 +626,7 @@ export default function RoomsPage() {
         {roomStats.map((statItem) => (
           <CardUI
             key={statItem.title}
-            icon={renderRoomIcon(statItem.iconName, "summaryCardIcon", 24)}
+            icon={renderRoomIcon(statItem.iconName, "summaryCardIcon", 20)}
             title={statItem.title}
             number={statItem.value}
           />
@@ -712,8 +712,8 @@ export default function RoomsPage() {
               <div className="roomEmptyState">
                 <h4>Chưa có dữ liệu phù hợp</h4>
                 <p>
-                  Không tìm thấy bản ghi phù hợp với từ khóa hoặc trạng thái hiện
-                  tại.
+                  Không tìm thấy bản ghi phù hợp với từ khóa hoặc trạng thái
+                  hiện tại.
                 </p>
               </div>
             )}
@@ -721,25 +721,22 @@ export default function RoomsPage() {
         </div>
 
         <aside className="card roomsSecondaryPanel">
-          <div className="card roomUploadPanel">
-            <h5 className="accountUploadTitle">KHAI BÁO NHANH</h5>
-            <p className="roomSectionText roomUploadText">
-              Tải nhanh tệp khai báo cho phòng máy, thiết bị và phần mềm theo
-              mẫu của khoa.
-            </p>
-
-            <div className="roomUploadGrid">
-              {roomUploadItems.map((uploadItem) => (
-                <UploadCard
-                  key={uploadItem.key}
-                  icon={renderRoomIcon(uploadItem.iconName, "uploadCardIconSvg", 22)}
-                  title={uploadItem.title}
-                  fileLabel="Excel"
-                  buttonLabel="Tải"
-                />
-              ))}
-            </div>
-          </div>
+          <SectionLayout
+            title="KHAI BÁO NHANH"
+            message="Tải nhanh tệp khai báo cho phòng máy, thiết bị và phần mềm theo mẫu của khoa."
+            direction={1}
+            className="card roomUploadPanel"
+          >
+            {roomUploadItems.map((uploadItem) => (
+              <UploadCard
+                key={uploadItem.key}
+                icon={renderRoomIcon(uploadItem.iconName, "uploadCardIconSvg", 22)}
+                title={uploadItem.title}
+                fileLabel="Excel"
+                buttonLabel="Tải"
+              />
+            ))}
+          </SectionLayout>
         </aside>
       </section>
     </div>
