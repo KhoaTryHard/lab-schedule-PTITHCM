@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 
+import { CardUI } from "../../../components/common/cardUI.jsx";
 import DataTable from "../../../components/common/DataTable.jsx";
 
 // Mảng dữ liệu mock cho lịch thực hành, bám gần bảng lab_schedule_entries để nối API sau dễ hơn.
@@ -1045,19 +1046,6 @@ function calculatePercentage(value, total) {
  * Hàm xử lý: dựng card thống kê tổng quan cho đầu trang reports.
  * Hàm trả về: JSX của một card thống kê.
  */
-function ReportStatCard({ title, value, iconName, hint }) {
-  return (
-    <article className="accountSummaryCard roomStatCard">
-      <div className="roomStatIconWrap">
-        {renderReportIcon(iconName, "roomStatIcon", 24)}
-      </div>
-      <p className="roomStatTitle">{title}</p>
-      <h3 className="roomStatValue">{value}</h3>
-      <span className="roomStatHint">{hint}</span>
-    </article>
-  );
-}
-
 /**
  * Hàm nhận vào: title, description và data của biểu đồ cột.
  * Hàm xử lý: dựng card biểu đồ cột bằng HTML/CSS thuần để hiển thị số buổi theo từng mục.
@@ -2077,14 +2065,14 @@ export default function ReportsPage() {
         </p>
       </section>
 
-      <section className="card reportStatGrid">
+      <section className="card summaryCardGrid summaryCardGridCompact">
         {reportStats.map((statItem) => (
-          <ReportStatCard
+          <CardUI
             key={statItem.title}
+            icon={renderReportIcon(statItem.iconName, "summaryCardIcon", 24)}
             title={statItem.title}
-            value={statItem.value}
-            iconName={statItem.iconName}
-            hint={statItem.hint}
+            number={statItem.value}
+            message={statItem.hint}
           />
         ))}
       </section>

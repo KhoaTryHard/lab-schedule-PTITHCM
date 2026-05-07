@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-import { CardCreateUpload } from "../../../components/accounts/cardUI.jsx";
+import { CardUI, UploadCard } from "../../../components/common/cardUI.jsx";
 import DataTable from "../../../components/common/DataTable.jsx";
 
 // Mảng dữ liệu mock cho học kỳ, giữ field gần bảng semesters để nối API sau thuận tiện hơn.
@@ -418,35 +418,35 @@ const trainingQuickItems = [
     key: "semester",
     title: "Thêm học kỳ",
     iconName: "semester",
-    boxLabel: "Biểu mẫu HK",
+    fileLabel: "Biểu mẫu HK",
     buttonLabel: "Thêm mới",
   },
   {
     key: "week",
     title: "Thêm tuần học",
     iconName: "week",
-    boxLabel: "Biểu mẫu tuần",
+    fileLabel: "Biểu mẫu tuần",
     buttonLabel: "Thêm mới",
   },
   {
     key: "slot",
     title: "Thêm ca học",
     iconName: "slot",
-    boxLabel: "Biểu mẫu ca",
+    fileLabel: "Biểu mẫu ca",
     buttonLabel: "Thêm mới",
   },
   {
     key: "course",
     title: "Thêm học phần",
     iconName: "course",
-    boxLabel: "Biểu mẫu HP",
+    fileLabel: "Biểu mẫu HP",
     buttonLabel: "Thêm mới",
   },
   {
     key: "section",
     title: "Thêm lớp học phần",
     iconName: "section",
-    boxLabel: "Biểu mẫu LHP",
+    fileLabel: "Biểu mẫu LHP",
     buttonLabel: "Thêm mới",
   },
 ];
@@ -702,18 +702,6 @@ function buildCurrentBadge(isCurrent) {
  * Hàm xử lý: dựng card thống kê đầu trang theo cùng style với rooms/accounts.
  * Hàm trả về: JSX của một card thống kê.
  */
-function TrainingStatCard({ iconName, title, value }) {
-  return (
-    <article className="accountSummaryCard roomStatCard">
-      <div className="roomStatIconWrap">
-        {renderTrainingIcon(iconName, "roomStatIcon", 24)}
-      </div>
-      <p className="roomStatTitle">{title}</p>
-      <h3 className="roomStatValue">{value}</h3>
-    </article>
-  );
-}
-
 /**
  * Hàm nhận vào: tabKey là tab đang chọn và item là bản ghi dữ liệu của tab đó.
  * Hàm xử lý: trả về chuỗi mục tiêu dùng để tìm kiếm mềm theo đúng nghiệp vụ của từng tab.
@@ -1007,13 +995,13 @@ export default function TrainingDataPage() {
 
   return (
     <div>
-      <section className="card roomsStatGrid">
+      <section className="card summaryCardGrid">
         {trainingStats.map((statItem) => (
-          <TrainingStatCard
+          <CardUI
             key={statItem.title}
-            iconName={statItem.iconName}
+            icon={renderTrainingIcon(statItem.iconName, "summaryCardIcon", 24)}
             title={statItem.title}
-            value={statItem.value}
+            number={statItem.value}
           />
         ))}
       </section>
@@ -1028,15 +1016,15 @@ export default function TrainingDataPage() {
 
           <div className="card trainingUploadGrid">
             {trainingQuickItems.map((quickItem) => (
-              <CardCreateUpload
+              <UploadCard
                 key={quickItem.key}
-                iconNode={renderTrainingIcon(
+                icon={renderTrainingIcon(
                   quickItem.iconName,
                   "uploadCardIconSvg",
                   22,
                 )}
-                NameCard={quickItem.title}
-                boxLabel={quickItem.boxLabel}
+                title={quickItem.title}
+                fileLabel={quickItem.fileLabel}
                 buttonLabel={quickItem.buttonLabel}
               />
             ))}

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-import { CardCreateUpload, CardUI } from "../../../components/accounts/cardUI.jsx";
+import { CardUI, UploadCard } from "../../../components/common/cardUI.jsx";
 import {
   UsersIcon,
   AdminIcon,
@@ -226,13 +226,13 @@ export default function AccountsPage() {
 
   return (
     <div>
-      <section className="card card1">
+      <section className="card summaryCardGrid">
         {accountSummaryItems.map((summaryItem) => (
           <CardUI
             key={summaryItem.title}
-            IconComponent={summaryItem.icon}
-            nameCard={summaryItem.title}
-            numbers={summaryItem.value}
+            icon={summaryItem.icon}
+            title={summaryItem.title}
+            number={summaryItem.value}
           />
         ))}
       </section>
@@ -241,16 +241,18 @@ export default function AccountsPage() {
         <div className="card accountUploadSection">
           <h5 className="accountUploadTitle">TẠO TÀI KHOẢN</h5>
           <p className="roomSectionText accountUploadDescription">
-            Chuẩn bị biểu mẫu Excel theo từng vai trò để nhập nhanh tài khoản cho
-            cán bộ và sinh viên.
+            Chuẩn bị biểu mẫu Excel theo từng vai trò để nhập nhanh tài khoản
+            cho cán bộ và sinh viên.
           </p>
 
           <div className="card uploadCardGrid">
             {accountUploadItems.map((uploadItem) => (
-              <CardCreateUpload
+              <UploadCard
                 key={uploadItem.title}
-                IconComponent={uploadItem.icon}
-                NameCard={uploadItem.title}
+                icon={uploadItem.icon}
+                title={uploadItem.title}
+                fileLabel="File excel"
+                buttonLabel={"Tải"}
               />
             ))}
           </div>

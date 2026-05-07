@@ -1,0 +1,272 @@
+.accountSummaryCard {
+  min-height: 110px;
+  min-width: 100px;
+  padding: 10px 16px;
+  border: 1px solid #d9dee7;
+  border-radius: 18px;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 2px;
+}
+
+.accountSummaryCard p,
+.accountSummaryCard h3 {
+  margin: 0;
+}
+
+.accountSummaryCard h3 {
+  margin-top: 2px;
+}
+
+.summaryCard {
+  min-width: 0;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.summaryCardDiv1 {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.summaryCardDiv11 {
+  display: flex;
+  flex-shrink: 0;
+}
+
+.summaryCardDiv12 {
+  min-width: 0;
+  flex: 1;
+}
+
+.summaryCardIconWrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 14px;
+}
+
+.summaryCardTitle {
+  margin: 0;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.summaryCardDiv2 {
+  width: 100%;
+}
+
+.summaryCardDiv2:empty {
+  display: none;
+}
+
+.summaryCardMessage {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.summaryCardDiv3 {
+  width: 100%;
+}
+
+.summaryCardNumber {
+  margin: 0;
+  font-weight: 800;
+  line-height: 1.1;
+  color: #0f172a;
+}
+
+.summaryCardGrid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.summaryCardGridCompact {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.uploadCardGrid {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: start;
+  gap: 16px;
+}
+
+.uploadCard {
+  margin: 0;
+  width: 100%;
+  min-height: 148px;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.uploadCardDiv1 {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 14px;
+}
+
+.uploadCardDiv11 {
+  display: flex;
+  flex-shrink: 0;
+}
+
+.uploadCardDiv12 {
+  min-width: 0;
+  flex: 1;
+}
+
+.uploadCardIconWrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 18px;
+}
+
+.uploadCardTitle {
+  margin: 0;
+  font-weight: 800;
+  line-height: 1.18;
+  text-align: left;
+}
+
+.uploadCardDiv2 {
+  display: grid;
+  width: 100%;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+
+.uploadCardDiv21,
+.uploadCardDiv22 {
+  min-width: 0;
+  width: 100%;
+}
+
+.uploadBox,
+.uploadBtn {
+  width: 100%;
+  min-width: 0;
+  min-height: 34px;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.uploadBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+  border: 1.5px dashed rgba(176, 32, 32, 0.38);
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.uploadBox:hover {
+  border-color: rgba(139, 0, 0, 0.55);
+  transform: translateY(-1px);
+}
+
+.uploadBoxText {
+  display: block;
+  min-width: 0;
+  line-height: 1.2;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.uploadBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+  border: none;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 12px 24px rgba(122, 0, 0, 0.18);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.uploadBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 28px rgba(122, 0, 0, 0.22);
+}
+
+.uploadBoxDisabled,
+.uploadBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+
+.roomUploadGrid .uploadCard {
+  min-height: 124px;
+}
+
+.trainingUploadGrid .uploadCard,
+.trainingQuickGrid .uploadCard {
+  min-height: 122px;
+}
+
+@media (max-width: 1360px) {
+  .uploadCardGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1280px) {
+  .summaryCardGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .summaryCardGridCompact {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .uploadCardGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .summaryCardGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .summaryCardGridCompact {
+    grid-template-columns: 1fr;
+  }
+
+  .uploadCardGrid {
+    grid-template-columns: 1fr;
+  }
+}

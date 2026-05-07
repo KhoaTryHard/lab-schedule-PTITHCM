@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-import { CardCreateUpload } from "../../../components/accounts/cardUI.jsx";
+import { CardUI, UploadCard } from "../../../components/common/cardUI.jsx";
 import DataTable from "../../../components/common/DataTable.jsx";
 
 // Mảng dữ liệu mock cho danh sách phòng máy, bám gần các field chính trong DB.
@@ -378,18 +378,6 @@ function buildStatusBadge(status) {
  * Hàm xử lý: dựng card thống kê ở đầu trang theo phong cách đồng bộ với admin/accounts.
  * Hàm trả về: JSX của một card thống kê.
  */
-function RoomStatCard({ iconName, title, value }) {
-  return (
-    <article className="accountSummaryCard roomStatCard">
-      <div className="roomStatIconWrap">
-        {renderRoomIcon(iconName, "roomStatIcon", 24)}
-      </div>
-      <p className="roomStatTitle">{title}</p>
-      <h3 className="roomStatValue">{value}</h3>
-    </article>
-  );
-}
-
 /**
  * Hàm nhận vào: không nhận props.
  * Hàm xử lý: dựng giao diện quản lý phòng máy và thiết bị cho quản trị viên bằng mock data, hỗ trợ tab, tìm kiếm, lọc trạng thái và khối khai báo bên phải.
@@ -634,13 +622,13 @@ export default function RoomsPage() {
 
   return (
     <div>
-      <section className="card roomsStatGrid">
+      <section className="card summaryCardGrid">
         {roomStats.map((statItem) => (
-          <RoomStatCard
+          <CardUI
             key={statItem.title}
-            iconName={statItem.iconName}
+            icon={renderRoomIcon(statItem.iconName, "summaryCardIcon", 24)}
             title={statItem.title}
-            value={statItem.value}
+            number={statItem.value}
           />
         ))}
       </section>
@@ -742,14 +730,12 @@ export default function RoomsPage() {
 
             <div className="roomUploadGrid">
               {roomUploadItems.map((uploadItem) => (
-                <CardCreateUpload
+                <UploadCard
                   key={uploadItem.key}
-                  iconNode={renderRoomIcon(
-                    uploadItem.iconName,
-                    "uploadCardIconSvg",
-                    22,
-                  )}
-                  NameCard={uploadItem.title}
+                  icon={renderRoomIcon(uploadItem.iconName, "uploadCardIconSvg", 22)}
+                  title={uploadItem.title}
+                  fileLabel="Excel"
+                  buttonLabel="Tải"
                 />
               ))}
             </div>
