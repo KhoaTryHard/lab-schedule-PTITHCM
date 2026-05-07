@@ -32,195 +32,8 @@
   flex: 7;
 }
 
-.accountSummaryCard {
-  min-height: 110px;
-  min-width: 100px;
-  padding: 10px 16px;
-  border: 1px solid #d9dee7;
-  border-radius: 18px;
-  background: #ffffff;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  gap: 2px;
-}
-
-.accountSummaryCard p,
-.accountSummaryCard h3 {
-  margin: 0;
-}
-
-.accountSummaryCard h3 {
-  margin-top: 2px;
-}
-
-.card1 {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(160px, 1fr));
-  gap: 16px;
-}
-
 .card2 {
   flex: 3;
-}
-
-.headerUpload {
-  display: flex;
-  align-items: center;
-}
-
-.uploadCardGrid {
-  display: grid;
-  width: 100%;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  align-items: start;
-  gap: 16px;
-}
-
-.uploadCard {
-  list-style: none;
-  margin: 0;
-  width: 100%;
-  min-height: 132px;
-  align-self: start;
-  padding: 12px 14px 14px;
-  border: 1px solid rgba(139, 0, 0, 0.12);
-  border-radius: 18px;
-  background: linear-gradient(180deg, #ffffff 0%, #fff7f7 100%);
-  box-shadow: 0 10px 24px rgba(97, 0, 0, 0.06);
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: flex-start;
-  gap: 10px;
-}
-
-.uploadCardHeader {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-}
-
-.uploadCardIcon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 14px;
-  background: rgba(139, 0, 0, 0.08);
-  color: #8b0000;
-  flex-shrink: 0;
-}
-
-.uploadCardTitle {
-  margin: 0;
-  color: #0f172a;
-  font-size: 15px;
-  font-weight: 800;
-  line-height: 1.2;
-  text-align: left;
-}
-
-.uploadBox {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 36px;
-  padding: 0 14px;
-  border: 1px dashed rgba(139, 0, 0, 0.35);
-  border-radius: 12px;
-  background: rgba(139, 0, 0, 0.04);
-  color: #8b0000;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition:
-    background 0.2s ease,
-    border-color 0.2s ease;
-}
-
-.uploadBox:hover {
-  background: rgba(139, 0, 0, 0.08);
-  border-color: rgba(139, 0, 0, 0.55);
-}
-
-.uploadBoxText {
-  line-height: 1;
-  font-size: 10px;
-  font-weight: 600;
-}
-
-.uploadBtn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 40px;
-  padding: 0 18px;
-  border: none;
-  border-radius: 12px;
-  background: linear-gradient(180deg, #8b0000 0%, #610000 100%);
-  color: #ffffff;
-  font-size: 10px;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 10px 20px rgba(97, 0, 0, 0.18);
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.uploadBtn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 14px 24px rgba(97, 0, 0, 0.22);
-}
-
-.uploadBox,
-.uploadBtn {
-  margin: 0;
-}
-
-.roomsStatGrid {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 16px;
-}
-
-.roomStatCard {
-  min-width: 0;
-  padding: 10px;
-  align-items: flex-start;
-}
-
-.roomStatIconWrap {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
-  background: rgba(139, 0, 0, 0.08);
-  color: #8b0000;
-  margin-bottom: 6px;
-}
-
-.roomStatTitle {
-  font-size: 14px;
-  font-weight: 700;
-  color: #475569;
-}
-
-.roomStatValue {
-  font-size: 28px;
-  font-weight: 800;
-  color: #0f172a;
-}
-
-.roomStatHint {
-  color: #64748b;
-  font-size: 12px;
-  line-height: 1.5;
 }
 
 .roomsManagement {
@@ -433,10 +246,6 @@
   gap: 12px;
 }
 
-.roomUploadGrid .uploadCard {
-  min-height: 124px;
-}
-
 .trainingStatusMuted {
   background: #f1f5f9;
   color: #475569;
@@ -507,18 +316,10 @@
   gap: 16px;
 }
 
-.trainingUploadGrid .uploadCard {
-  min-height: 122px;
-}
-
 .trainingQuickGrid {
   display: flex;
   flex-direction: column;
   gap: 12px;
-}
-
-.trainingQuickGrid .uploadCard {
-  min-height: 122px;
 }
 
 .trainingQuickForm {
@@ -731,12 +532,6 @@
 
 .reportSummaryText {
   max-width: 920px;
-}
-
-.reportStatGrid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
 }
 
 .reportManagement {
@@ -1314,10 +1109,6 @@
 }
 
 @media (max-width: 1280px) {
-  .roomsStatGrid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
   .roomsManagement {
     flex-direction: column;
   }
@@ -1374,10 +1165,6 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .reportStatGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .reportChartGrid,
   .reportMetricGrid {
     grid-template-columns: 1fr;
@@ -1431,21 +1218,9 @@
 }
 
 @media (max-width: 640px) {
-  .roomsStatGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .roomTabList {
     flex-direction: column;
   }
-}
-
-.uploadClick{
-  display: flex;
-  width: 100%;
-  gap: 8px;
-  justify-content: center;
-  margin-top: auto;
 }
 
 .accountUploadSection {
@@ -1468,23 +1243,7 @@
   width: 100%;
 }
 
-@media (max-width: 1360px) {
-  .uploadCardGrid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 900px) {
-  .uploadCardGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
 @media (max-width: 640px) {
-  .uploadCardGrid {
-    grid-template-columns: 1fr;
-  }
-
   .trainingIntroCard {
     flex-direction: column;
   }
@@ -1497,7 +1256,6 @@
     grid-template-columns: 1fr;
   }
 
-  .reportStatGrid,
   .reportFilterGrid {
     grid-template-columns: 1fr;
   }
