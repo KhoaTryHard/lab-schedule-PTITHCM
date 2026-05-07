@@ -16,14 +16,14 @@ router.get('/', requireAuth, listSchedules);
 router.post(
   '/check-constraints',
   requireAuth,
-  requireRoles([ROLES.ACADEMIC_OFFICER, ROLES.ADMIN]),
+  requireRoles(ROLES.ACADEMIC_OFFICER, ROLES.ADMIN),
   checkConstraints
 );
 
 router.post(
   '/auto-arrange',
   requireAuth,
-  requireRoles([ROLES.ACADEMIC_OFFICER, ROLES.ADMIN]),
+  requireRoles(ROLES.ACADEMIC_OFFICER, ROLES.ADMIN),
   autoArrange
 );
 
