@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Inter } from "next/font/google";
 
+import { renderLineIcon } from "../components/icons/systemIcon.jsx";
 import campusBackground from "../pictures/HocVienCoSoHomePage.png";
 import logoPtitTrang from "../pictures/PtitLogo.svg";
 
@@ -133,130 +134,6 @@ const footerLinks = [
   { label: "Hỗ trợ", href: "#quyTrinh" },
   { label: "Liên hệ", href: "#lienHe" },
 ];
-
-/**
- * Hàm nhận vào: iconName là tên icon cần hiển thị.
- * Hàm xử lý: chọn biểu tượng SVG phù hợp cho từng khu vực của landing page.
- * Hàm trả về: JSX chứa icon tương ứng, nếu không khớp sẽ trả về icon mặc định.
- */
-const renderLineIcon = (iconName) => {
-  switch (iconName) {
-    case "menu":
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M4 7h16M4 12h16M4 17h16" />
-        </svg>
-      );
-    case "shield":
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 3l7 3v5c0 4.5-2.8 8.4-7 10-4.2-1.6-7-5.5-7-10V6l7-3z" />
-        </svg>
-      );
-    case "clipboard":
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M9 4h6l1 2h3v14H5V6h3l1-2zM9 10h6M9 14h6" />
-        </svg>
-      );
-    case "teacher":
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M4 6h16v8H4zM8 18h8M12 14v4M8 10h8" />
-        </svg>
-      );
-    case "monitor":
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M4 5h16v10H4zM9 19h6M12 15v4" />
-        </svg>
-      );
-    case "student":
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M3 9l9-4 9 4-9 4-9-4zM7 11v4c0 1.8 2.2 3 5 3s5-1.2 5-3v-4" />
-        </svg>
-      );
-    case "calendar":
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M7 3v3M17 3v3M4 8h16M5 5h14v15H5zM8 12h3M13 12h3M8 16h3" />
-        </svg>
-      );
-    case "warning":
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 4l8 14H4L12 4zM12 10v4M12 17h.01" />
-        </svg>
-      );
-    case "laptop":
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M5 6h14v9H5zM3 18h18" />
-        </svg>
-      );
-    case "settings":
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 8.5A3.5 3.5 0 1 1 8.5 12 3.5 3.5 0 0 1 12 8.5zM19 12l2-1-1-3-2 .2-.9-1.6 1.2-1.7-2.2-2.2-1.7 1.2L13 3l-1-2h-3l-1 2-1.6.9-1.7-1.2L2.5 5l1.2 1.7L2.8 8.3 1 8l-1 3 2 1v2l-2 1 1 3 1.8-.3 1 1.6-1.2 1.7L5 23.5l1.7-1.2 1.6.9 1 1.8h3l1-1.8 1.6-.9 1.7 1.2 2.2-2.2-1.2-1.7.9-1.6 2 .3 1-3-2-1z" />
-        </svg>
-      );
-    case "approve":
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 21a9 9 0 1 0-9-9 9 9 0 0 0 9 9zM8 12l2.5 2.5L16 9" />
-        </svg>
-      );
-    case "bell":
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M6 16h12l-1.5-2v-3a4.5 4.5 0 0 0-9 0v3L6 16zM10 18a2 2 0 0 0 4 0" />
-        </svg>
-      );
-    case "alert":
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 3l9 16H3L12 3zM12 9v4M12 16h.01" />
-        </svg>
-      );
-    case "search":
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4" />
-        </svg>
-      );
-    case "spark":
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z" />
-        </svg>
-      );
-    case "layers":
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 4l8 4-8 4-8-4 8-4zM4 12l8 4 8-4M4 16l8 4 8-4" />
-        </svg>
-      );
-    case "clock":
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 21a9 9 0 1 0-9-9 9 9 0 0 0 9 9zM12 7v5l3 2" />
-        </svg>
-      );
-    case "arrowRight":
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M5 12h14M13 6l6 6-6 6" />
-        </svg>
-      );
-    default:
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 5v14M5 12h14" />
-        </svg>
-      );
-  }
-};
 
 /**
  * Hàm nhận vào: không nhận props.

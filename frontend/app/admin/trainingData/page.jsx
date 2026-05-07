@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { CardUI, UploadCard } from "../../../components/common/cardUI.jsx";
 import DataTable from "../../../components/common/DataTable.jsx";
 import SectionLayout from "../../../components/common/SectionLayout.jsx";
+import { renderTrainingIcon } from "../../../components/icons/systemIcon.jsx";
 
 // Mảng dữ liệu mock cho học kỳ, giữ field gần bảng semesters để nối API sau thuận tiện hơn.
 const semesterMockItems = [
@@ -549,110 +550,6 @@ function formatDateLabel(dateValue) {
   }
 
   return `${day}/${month}/${year}`;
-}
-
-/**
- * Hàm nhận vào: iconName là mã icon, className là class CSS bổ sung và size là kích thước SVG.
- * Hàm xử lý: dựng icon SVG phù hợp cho card thống kê, quick action và phần mô tả của module đào tạo.
- * Hàm trả về: JSX của icon tương ứng.
- */
-function renderTrainingIcon(iconName, className = "", size = 24) {
-  const commonProps = {
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "1.9",
-    strokeLinecap: "round",
-    strokeLinejoin: "round",
-    viewBox: "0 0 24 24",
-    width: size,
-    height: size,
-    className,
-    "aria-hidden": "true",
-  };
-
-  switch (iconName) {
-    case "overview":
-      return (
-        <svg {...commonProps}>
-          <path d="M4 19h16" />
-          <path d="M6 16V9" />
-          <path d="M12 16V5" />
-          <path d="M18 16v-3" />
-        </svg>
-      );
-    case "semester":
-      return (
-        <svg {...commonProps}>
-          <rect x="4" y="5" width="16" height="15" rx="3" />
-          <path d="M8 3v4" />
-          <path d="M16 3v4" />
-          <path d="M4 10h16" />
-        </svg>
-      );
-    case "week":
-      return (
-        <svg {...commonProps}>
-          <rect x="4" y="4" width="16" height="16" rx="3" />
-          <path d="M8 8h8" />
-          <path d="M8 12h4" />
-          <path d="M8 16h6" />
-        </svg>
-      );
-    case "slot":
-      return (
-        <svg {...commonProps}>
-          <circle cx="12" cy="12" r="8" />
-          <path d="M12 8v4l3 2" />
-        </svg>
-      );
-    case "course":
-      return (
-        <svg {...commonProps}>
-          <path d="M5 6.5A2.5 2.5 0 0 1 7.5 4H19v14H7.5A2.5 2.5 0 0 0 5 20.5Z" />
-          <path d="M5 6.5v14" />
-        </svg>
-      );
-    case "section":
-      return (
-        <svg {...commonProps}>
-          <rect x="4" y="5" width="16" height="4" rx="1.5" />
-          <rect x="4" y="10" width="16" height="4" rx="1.5" />
-          <rect x="4" y="15" width="10" height="4" rx="1.5" />
-        </svg>
-      );
-    case "cohort":
-      return (
-        <svg {...commonProps}>
-          <path d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-          <path d="M16 10a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />
-          <path d="M4 19c0-2.5 2-4 4.5-4H10c2.5 0 4.5 1.5 4.5 4" />
-          <path d="M14 19c.2-1.7 1.5-3 3.5-3H18c1 0 1.9.3 2.6.9" />
-        </svg>
-      );
-    case "lecturer":
-      return (
-        <svg {...commonProps}>
-          <rect x="4" y="4" width="16" height="12" rx="2" />
-          <path d="M8 20h8" />
-          <path d="M12 16v4" />
-          <path d="m9 9 2 2 4-4" />
-        </svg>
-      );
-    case "import":
-      return (
-        <svg {...commonProps}>
-          <path d="M12 4v10" />
-          <path d="m8.5 8.5 3.5-3.5 3.5 3.5" />
-          <path d="M5 19h14" />
-        </svg>
-      );
-    default:
-      return (
-        <svg {...commonProps}>
-          <circle cx="12" cy="12" r="8" />
-        </svg>
-      );
-  }
 }
 
 /**

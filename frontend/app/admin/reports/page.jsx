@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 
 import { CardUI } from "../../../components/common/cardUI.jsx";
 import DataTable from "../../../components/common/DataTable.jsx";
+import { renderReportIcon } from "../../../components/icons/systemIcon.jsx";
 
 // Mảng dữ liệu mock cho lịch thực hành, bám gần bảng lab_schedule_entries để nối API sau dễ hơn.
 const reportScheduleMockItems = [
@@ -855,135 +856,6 @@ function exportRowsToCsv(fileName, rows, columns) {
   downloadLink.download = fileName;
   downloadLink.click();
   URL.revokeObjectURL(downloadUrl);
-}
-
-/**
- * Hàm nhận vào: iconName là mã icon, className là class CSS bổ sung và size là kích thước SVG.
- * Hàm xử lý: chọn icon SVG phù hợp cho card thống kê, chart và khu tạo báo cáo.
- * Hàm trả về: JSX của icon SVG tương ứng.
- */
-function renderReportIcon(iconName, className = "", size = 24) {
-  const commonProps = {
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "1.9",
-    strokeLinecap: "round",
-    strokeLinejoin: "round",
-    viewBox: "0 0 24 24",
-    width: size,
-    height: size,
-    className,
-    "aria-hidden": "true",
-  };
-
-  switch (iconName) {
-    case "schedule":
-      return (
-        <svg {...commonProps}>
-          <rect x="4" y="5" width="16" height="15" rx="3" />
-          <path d="M8 3v4" />
-          <path d="M16 3v4" />
-          <path d="M4 10h16" />
-        </svg>
-      );
-    case "published":
-      return (
-        <svg {...commonProps}>
-          <path d="M12 4 3.5 8l8.5 4 8.5-4L12 4Z" />
-          <path d="m3.5 12 8.5 4 8.5-4" />
-          <path d="m3.5 16 8.5 4 8.5-4" />
-        </svg>
-      );
-    case "approved":
-      return (
-        <svg {...commonProps}>
-          <circle cx="12" cy="12" r="8" />
-          <path d="m8.5 12 2.2 2.2 4.8-4.8" />
-        </svg>
-      );
-    case "cancelled":
-      return (
-        <svg {...commonProps}>
-          <circle cx="12" cy="12" r="8" />
-          <path d="m9 9 6 6" />
-          <path d="m15 9-6 6" />
-        </svg>
-      );
-    case "usage":
-      return (
-        <svg {...commonProps}>
-          <path d="M4 19h16" />
-          <path d="M6 16V9" />
-          <path d="M12 16V5" />
-          <path d="M18 16v-3" />
-        </svg>
-      );
-    case "issue":
-      return (
-        <svg {...commonProps}>
-          <path d="M12 4 3.5 19h17L12 4Z" />
-          <path d="M12 9v4" />
-          <path d="M12 16h.01" />
-        </svg>
-      );
-    case "device":
-      return (
-        <svg {...commonProps}>
-          <path d="M14 7 17 10" />
-          <path d="M3 21 10 14" />
-          <path d="M14.5 3C16.9853 3 19 5.01472 19 7.5c0 .87873-.252 1.6986-.6875 2.39062L10 18.2031 5.79688 14l8.31252-8.3125C14.8014 5.25205 15.6213 5 16.5 5" />
-        </svg>
-      );
-    case "software":
-      return (
-        <svg {...commonProps}>
-          <rect x="4" y="4" width="16" height="16" rx="3" />
-          <path d="M8 9h8" />
-          <path d="M8 12h8" />
-          <path d="M8 15h5" />
-        </svg>
-      );
-    case "room":
-      return (
-        <svg {...commonProps}>
-          <rect x="3" y="5" width="18" height="12" rx="2" />
-          <path d="M8 21h8" />
-          <path d="M12 17v4" />
-        </svg>
-      );
-    case "change":
-      return (
-        <svg {...commonProps}>
-          <path d="M7 7h9a4 4 0 0 1 4 4v0" />
-          <path d="m13 3 3 4-3 4" />
-          <path d="M17 17H8a4 4 0 0 1-4-4v0" />
-          <path d="m11 21-3-4 3-4" />
-        </svg>
-      );
-    case "template":
-      return (
-        <svg {...commonProps}>
-          <path d="M8 4h8l4 4v12H8Z" />
-          <path d="M16 4v4h4" />
-          <path d="M11 13h6" />
-          <path d="M11 17h6" />
-        </svg>
-      );
-    case "download":
-      return (
-        <svg {...commonProps}>
-          <path d="M12 4v10" />
-          <path d="m8.5 10.5 3.5 3.5 3.5-3.5" />
-          <path d="M5 19h14" />
-        </svg>
-      );
-    default:
-      return (
-        <svg {...commonProps}>
-          <circle cx="12" cy="12" r="8" />
-        </svg>
-      );
-  }
 }
 
 /**

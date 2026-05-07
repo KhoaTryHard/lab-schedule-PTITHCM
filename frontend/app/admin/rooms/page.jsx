@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { CardUI, UploadCard } from "../../../components/common/cardUI.jsx";
 import DataTable from "../../../components/common/DataTable.jsx";
 import SectionLayout from "../../../components/common/SectionLayout.jsx";
+import { renderRoomIcon } from "../../../components/icons/systemIcon.jsx";
 import {
   getMvpRoomCodes,
   getRooms,
@@ -100,99 +101,6 @@ function getNumberValue(value) {
   }
 
   return value;
-}
-
-/**
- * Hàm nhận vào: iconName là mã icon cần hiển thị, className là class CSS bổ sung, size là kích thước icon.
- * Hàm xử lý: chọn SVG phù hợp cho card thống kê, thẻ upload và badge hỗ trợ của trang rooms.
- * Hàm trả về: JSX của icon SVG tương ứng với mã đã truyền.
- */
-function renderRoomIcon(iconName, className = "", size = 24) {
-  const commonProps = {
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "1.9",
-    strokeLinecap: "round",
-    strokeLinejoin: "round",
-    viewBox: "0 0 24 24",
-    width: size,
-    height: size,
-    className,
-    "aria-hidden": "true",
-  };
-
-  switch (iconName) {
-    case "room":
-      return (
-        <svg {...commonProps}>
-          <rect x="4" y="4" width="16" height="16" rx="2" />
-          <path d="M9 4v16" />
-          <path d="M15 10h.01" />
-        </svg>
-      );
-    case "available":
-      return (
-        <svg {...commonProps}>
-          <circle cx="12" cy="12" r="8" />
-          <path d="m8.5 12 2.2 2.2 4.8-4.8" />
-        </svg>
-      );
-    case "maintenance":
-      return (
-        <svg {...commonProps}>
-          <path d="M14.5 4.5a4 4 0 0 0 4.7 4.7L11 17.4 6.6 13l7.9-7.9Z" />
-          <path d="M4.5 19.5 6.6 17.4" />
-        </svg>
-      );
-    case "computer":
-      return (
-        <svg {...commonProps}>
-          <rect x="3" y="5" width="18" height="12" rx="2" />
-          <path d="M8 21h8" />
-          <path d="M12 17v4" />
-        </svg>
-      );
-    case "usable":
-      return (
-        <svg {...commonProps}>
-          <rect x="3" y="5" width="18" height="12" rx="2" />
-          <path d="m10 11 2 2 4-4" />
-          <path d="M8 21h8" />
-          <path d="M12 17v4" />
-        </svg>
-      );
-    case "alert":
-      return (
-        <svg {...commonProps}>
-          <path d="M12 4 3.5 19h17L12 4Z" />
-          <path d="M12 9v4" />
-          <path d="M12 16h.01" />
-        </svg>
-      );
-    case "device":
-      return (
-        <svg {...commonProps}>
-          <path d="M14 7 17 10" />
-          <path d="M3 21 10 14" />
-          <path d="M14.5 3C16.9853 3 19 5.01472 19 7.5c0 .87873-.252 1.6986-.6875 2.39062L10 18.2031 5.79688 14l8.31252-8.3125C14.8014 5.25205 15.6213 5 16.5 5" />
-        </svg>
-      );
-    case "software":
-      return (
-        <svg {...commonProps}>
-          <rect x="4" y="4" width="16" height="16" rx="3" />
-          <path d="M8 9h8" />
-          <path d="M8 12h8" />
-          <path d="M8 15h5" />
-        </svg>
-      );
-    default:
-      return (
-        <svg {...commonProps}>
-          <circle cx="12" cy="12" r="8" />
-        </svg>
-      );
-  }
 }
 
 /**
@@ -399,7 +307,11 @@ export default function RoomsPage() {
             </div>
 
             <div className="inputFind roomSearchGroup">
-              <button type="button" className="button roomSearchButton">
+              <button
+                type="button"
+                className="button roomSearchButton"
+                onClick={loadRooms}
+              >
                 Tìm kiếm
               </button>
               <input
@@ -416,6 +328,9 @@ export default function RoomsPage() {
             <div className="roomFilterSummary">
               <h3 className="roomSectionTitle">{currentTableTitle}</h3>
               <p className="roomSectionText">
+                Chỉ hiển thị 3 phòng MVP: {getMvpRoomCodes().join(", ")}.
+              </p>
+              <p className="roomSectionText">
                 Hiển thị {currentRows.length} bản ghi theo bộ lọc hiện tại.
               </p>
             </div>
@@ -427,7 +342,6 @@ export default function RoomsPage() {
                 onClick={() => {
                   setSearchKeyword("");
                   setStatusFilter("all");
-                  loadRooms();
                 }}
               >
                 Làm mới
