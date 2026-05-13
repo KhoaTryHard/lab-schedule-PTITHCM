@@ -6,6 +6,14 @@ export const ROLE_ALIASES = {
   STUDENT: "SV",
 };
 
+export const ALIASES_NAME = {
+  QTV: "Quản trị viên",
+  CBDT: "Cán bộ đào tạo",
+  GV: "Giảng viên",
+  KTV: "Kỹ thuật viên",
+  SV: "Sinh viên",
+};
+
 export const ROLE_HOME_PATH = {
   QTV: "/admin",
   CBDT: "/academic/schedule-requests",

@@ -1,17 +1,26 @@
-/**
- * Hàm nhận vào: không nhận props.
- * Hàm xử lý: hiển thị màn hình tổng quan mẫu cho vai trò quản trị viên.
- * Hàm trả về: JSX của khu vực nội dung chính trong trang /admin.
- */
+"use client";
+
+import { useProfileBase } from "../../hooks/useProfileBase";
+
 export default function AdminPage() {
+  const { profile, isLoadingUser, userError } = useProfileBase();
+
   return (
     <div className="page">
       <div className="grid grid-2">
         <section className="card">
-          <h2>Tình hình hệ thống</h2>
+          <h2>Hồ sơ cá nhân</h2>
+
+          <h5>
+            {isLoadingUser
+              ? "Đang tải vai trò..."
+              : userError
+                ? "Không tải được vai trò"
+                : profile.roleName}
+          </h5>
+
           <p>
-            Theo dõi nhanh tài khoản, phòng máy và các cấu hình quan trọng của
-            hệ thống quản lý lịch thực hành PTIT HCM.
+            Xin chào <strong>{profile.fullName || "Người dùng"}</strong>.
           </p>
         </section>
 
@@ -23,15 +32,6 @@ export default function AdminPage() {
           </p>
         </section>
       </div>
-
-      <section className="card">
-        <h2>Gợi ý sử dụng layout</h2>
-        <p>
-          Từ bây giờ các trang con trong nhánh <strong>/admin</strong> sẽ tự
-          nhận sidebar và top bar. Khi bạn tạo thêm một trang mới cho quản trị
-          viên, chỉ cần đặt file trong thư mục <strong>app/admin</strong>.
-        </p>
-      </section>
     </div>
   );
 }
