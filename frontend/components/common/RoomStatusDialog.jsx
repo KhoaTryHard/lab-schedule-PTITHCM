@@ -1,18 +1,80 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { ButtonUI } from "./buttonUI.jsx";
 
 /**
- * Map trạng thái backend sang nhãn tiếng Việt để hiển thị cho người dùng.
+ * Danh sách trạng thái phòng đúng theo enum rooms.room_status trong CSDL.
  */
-const ROOM_STATUS_LABEL_MAP = {
-  available: "Khả dụng",
-  maintenance: "Bảo trì",
-  out_of_order: "Hỏng",
-  locked: "Tạm khóa",
+const ROOM_STATUS_OPTIONS = [
+  {
+    value: "available",
+    label: "Khả dụng",
+    description: "Phòng sẵn sàng đưa vào xếp lịch thực hành.",
+  },
+  {
+    value: "maintenance",
+    label: "Bảo trì",
+    description: "Phòng đang bảo trì, không nên đưa vào xếp lịch mới.",
+  },
+  {
+    value: "out_of_order",
+    label: "Hỏng",
+    description: "Phòng gặp sự cố nghiêm trọng, cần xử lý trước khi sử dụng.",
+  },
+  {
+    value: "locked",
+    label: "Tạm khóa",
+    description: "Phòng bị khóa tạm thời theo yêu cầu quản trị.",
+  },
+];
+
+const ROOM_STATUS_LABEL_MAP = ROOM_STATUS_OPTIONS.reduce((statusMap, option) => {
+  statusMap[option.value] = option.label;
+  return statusMap;
+}, {});
+
+/**
+ * Map bổ sung để phòng trường hợp dữ liệu cũ đang là nhãn tiếng Việt.
+ */
+const ROOM_STATUS_VALUE_MAP = {
+  "Khả dụng": "available",
+  "Bảo trì": "maintenance",
+  Hỏng: "out_of_order",
+  "Tạm khóa": "locked",
 };
+
+function normalizeRoomStatus(status) {
+  return ROOM_STATUS_VALUE_MAP[status] || status || "available";
+}
+
+function getRoomStatusLabel(status) {
+  return ROOM_STATUS_LABEL_MAP[normalizeRoomStatus(status)] || status || "Không rõ";
+}
+
+function getRoomStatusDescription(status) {
+  const normalizedStatus = normalizeRoomStatus(status);
+  const matchedOption = ROOM_STATUS_OPTIONS.find(
+    (option) => option.value === normalizedStatus,
+  );
+
+  return matchedOption?.description || "";
+}
+
+function getSubmitButtonTone(status) {
+  const normalizedStatus = normalizeRoomStatus(status);
+
+  if (["locked", "out_of_order"].includes(normalizedStatus)) {
+    return "danger";
+  }
+
+  if (normalizedStatus === "maintenance") {
+    return "secondary";
+  }
+
+  return "primary";
+}
 
 /**
  * Component nhận vào:
@@ -23,13 +85,10 @@ const ROOM_STATUS_LABEL_MAP = {
  * - onSubmit: hàm xử lý gửi trạng thái mới lên backend.
  *
  * Component xử lý:
- * - Hiển thị thông tin phòng.
- * - Cho nhập ghi chú.
- * - Có nút "Gửi trạng thái khóa phòng".
- *
- * Component trả về:
- * - null nếu isOpen = false hoặc chưa có room.
- * - JSX popup nếu isOpen = true.
+ * - Hiển thị trạng thái hiện tại.
+ * - Cho chọn trạng thái mới theo enum CSDL.
+ * - Cho nhập ghi chú cập nhật.
+ * - Gửi PATCH /rooms/:id thông qua callback từ page.
  */
 export default function RoomStatusDialog({
   room,
@@ -38,24 +97,33 @@ export default function RoomStatusDialog({
   onClose,
   onSubmit,
 }) {
+  const [selectedStatus, setSelectedStatus] = useState("available");
   const [notes, setNotes] = useState("");
+
+  useEffect(() => {
+    if (isOpen && room) {
+      setSelectedStatus(normalizeRoomStatus(room.room_status));
+      setNotes("");
+    }
+  }, [isOpen, room]);
 
   if (!isOpen || !room) {
     return null;
   }
 
-  const currentStatusLabel =
-    ROOM_STATUS_LABEL_MAP[room.room_status] || room.room_status || "Không rõ";
+  const currentStatusLabel = getRoomStatusLabel(room.room_status);
+  const selectedStatusLabel = getRoomStatusLabel(selectedStatus);
+  const selectedStatusDescription = getRoomStatusDescription(selectedStatus);
 
   /**
-   * Hàm nhận vào: không nhận tham số.
-   * Hàm xử lý: gọi onSubmit với trạng thái locked và ghi chú hiện tại.
-   * Hàm trả về: không trả về dữ liệu trực tiếp.
+   * Hàm xử lý gửi trạng thái đã chọn lên parent page.
    */
-  function handleLockRoom() {
+  function handleSubmitStatus() {
     onSubmit({
-      room_status: "locked",
-      notes: notes.trim() || "Khóa phòng từ giao diện quản trị",
+      room_status: selectedStatus,
+      notes:
+        notes.trim() ||
+        `Cập nhật trạng thái phòng sang ${selectedStatusLabel}`,
     });
   }
 
@@ -84,12 +152,35 @@ export default function RoomStatusDialog({
             Trạng thái hiện tại: <strong>{currentStatusLabel}</strong>
           </p>
 
-          <label className="label">
+          <label className="label" htmlFor="room-status-select">
+            Trạng thái mới
+            <select
+              id="room-status-select"
+              className="select"
+              value={selectedStatus}
+              onChange={(event) => setSelectedStatus(event.target.value)}
+              disabled={isSubmitting}
+            >
+              {ROOM_STATUS_OPTIONS.map((statusOption) => (
+                <option key={statusOption.value} value={statusOption.value}>
+                  {statusOption.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          {selectedStatusDescription ? (
+            <p className="modalText">{selectedStatusDescription}</p>
+          ) : null}
+
+          <label className="label" htmlFor="room-status-notes">
             Ghi chú cập nhật
             <textarea
+              id="room-status-notes"
               className="textarea"
               value={notes}
-              placeholder="Ví dụ: Khóa phòng để bảo trì thiết bị..."
+              maxLength={255}
+              placeholder="Ví dụ: Bảo trì máy chiếu, mở lại sau khi kiểm tra thiết bị..."
               onChange={(event) => setNotes(event.target.value)}
               disabled={isSubmitting}
             />
@@ -97,17 +188,22 @@ export default function RoomStatusDialog({
         </div>
 
         <div className="modalActions">
-          <ButtonUI tone="secondary" shape="rounded" onClick={onClose} disabled={isSubmitting}>
+          <ButtonUI
+            tone="secondary"
+            shape="rounded"
+            onClick={onClose}
+            disabled={isSubmitting}
+          >
             Hủy
           </ButtonUI>
 
           <ButtonUI
-            tone="danger"
+            tone={getSubmitButtonTone(selectedStatus)}
             shape="rounded"
-            onClick={handleLockRoom}
+            onClick={handleSubmitStatus}
             disabled={isSubmitting}
           >
-            {isSubmitting ? "Đang gửi..." : "Gửi trạng thái khóa phòng"}
+            {isSubmitting ? "Đang gửi..." : "Gửi cập nhật trạng thái"}
           </ButtonUI>
         </div>
       </section>
