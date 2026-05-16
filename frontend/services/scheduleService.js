@@ -43,3 +43,15 @@ export function listSchedules(params = {}) {
     method: "GET",
   });
 }
+
+/**
+ * Hàm nhận vào: payload kiểm tra ràng buộc xếp lịch.
+ * Hàm xử lý: gọi POST /api/schedules/check-constraints.
+ * Hàm trả về: response backend, hiện expected shape là response.data = { passed, results }.
+ */
+export function checkScheduleConstraints(payload) {
+  return apiClient("/schedules/check-constraints", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
