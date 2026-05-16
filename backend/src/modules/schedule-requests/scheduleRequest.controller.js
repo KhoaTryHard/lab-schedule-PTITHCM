@@ -10,7 +10,7 @@ async function listScheduleRequests(req, res) {
 async function getScheduleRequest(req, res) {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return fail(res, 400, { errors: errors.array() });
+    return fail(res, 400, 'Validation failed', errors.array());
   }
 
   const request = await scheduleRequestService.getRequestById(req.params.id, req.user.role_code, req.user.id);
@@ -23,7 +23,7 @@ async function getScheduleRequest(req, res) {
 async function createScheduleRequest(req, res) {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return fail(res, 400, { errors: errors.array() });
+    return fail(res, 400, 'Validation failed', errors.array());
   }
 
   const insertId = await scheduleRequestService.createRequest(req.body, req.user.id);
@@ -35,7 +35,7 @@ async function createScheduleRequest(req, res) {
 async function submitScheduleRequest(req, res) {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return fail(res, 400, { errors: errors.array() });
+    return fail(res, 400, 'Validation failed', errors.array());
   }
 
   try {
