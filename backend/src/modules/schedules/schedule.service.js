@@ -22,6 +22,24 @@ function checkRoomScope(roomCode) {
   };
 }
 
+async function checkRoomStatus(roomCode) {
+  const [rows] = await pool.query(
+    'SELECT room_status FROM rooms WHERE room_code = ?',
+    [roomCode]
+  );
+  if (!rows[0]) {
+    return { code: 'ROOM_STATUS', passed: false, message: 'Room not found in database' };
+  }
+  const passed = rows[0].room_status === 'available';
+  return {
+    code: 'ROOM_STATUS',
+    passed,
+    message: passed
+      ? `Room ${roomCode} is available`
+      : `Room ${roomCode} is not available (status: ${rows[0].room_status})`
+  };
+}
+
 async function checkRoomBlocked(roomId, dayOfWeek, timeSlotId, startDate, endDate) {
   if (!roomId) {
     return { code: 'ROOM_BLOCKED', passed: false, message: 'Room not found in database' };
@@ -197,6 +215,7 @@ async function checkScheduleConstraints(input) {
 
   const results = await Promise.all([
     checkRoomScope(room_code),
+    checkRoomStatus(room_code),
     checkRoomBlocked(roomId, day_of_week, timeSlotId, start_date, end_date),
     checkHolidayBlocked(day_of_week, start_date, end_date),
     checkRoomConflict(roomId, day_of_week, timeSlotId, start_date, end_date),
