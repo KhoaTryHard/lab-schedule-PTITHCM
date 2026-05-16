@@ -49,6 +49,11 @@ export const ROLE_LAYOUT_CONFIG = {
         href: "/admin/trainingData",
       },
       {
+        icon: "school",
+        itemName: "Lịch thực hành",
+        href: "/admin/schedules",
+      },
+      {
         icon: "search",
         itemName: "Tra cứu toàn hệ thống",
         href: "/admin/lookups",

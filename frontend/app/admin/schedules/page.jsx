@@ -14,17 +14,8 @@ const INITIAL_FILTERS = {
   keyword: "",
 };
 
-const FIELD_STYLE = {
-  display: "grid",
-  gap: 6,
-};
-
-const LABEL_STYLE = {
-  fontSize: 13,
-  fontWeight: 700,
-  color: "#374151",
-};
-
+const FIELD_STYLE = { display: "grid", gap: 6 };
+const LABEL_STYLE = { fontSize: 13, fontWeight: 700, color: "#374151" };
 const CONTROL_STYLE = {
   width: "100%",
   minHeight: 40,
@@ -34,7 +25,6 @@ const CONTROL_STYLE = {
   background: "#ffffff",
   color: "#111827",
 };
-
 const FILTER_GRID_STYLE = {
   display: "grid",
   gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
@@ -59,19 +49,10 @@ function normalizeText(value) {
 }
 
 function formatDate(value) {
-  if (!value) {
-    return "—";
-  }
-
+  if (!value) return "—";
   const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat("vi-VN", {
-    dateStyle: "short",
-  }).format(date);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("vi-VN", { dateStyle: "short" }).format(date);
 }
 
 function formatDayOfWeek(value) {
@@ -84,69 +65,35 @@ function formatDayOfWeek(value) {
     6: "Thứ 6",
     7: "Thứ 7",
   };
-
   return dayMap[value] || value || "—";
 }
 
-function buildCourseLabel(item, index) {
+function normalizeScheduleItem(item, index) {
   const courseCode = item?.course_code || item?.courseCode || "";
   const courseName = item?.course_name || item?.courseName || item?.course || "";
-
-  if (courseCode && courseName) {
-    return `${courseCode} - ${courseName}`;
-  }
-
-  return courseName || courseCode || `Lịch thực hành #${index + 1}`;
-}
-
-function buildTeamLabel(item) {
   const sectionCode = item?.section_code || item?.course_section_code || "";
-  const groupNo = item?.group_no || item?.groupNo || "";
+  const groupNo = item?.group_no || "";
   const teamCode = item?.practice_team_code || item?.practice_team_name || "";
-
-  const parts = [];
-
-  if (sectionCode) {
-    parts.push(sectionCode);
-  }
-
-  if (groupNo) {
-    parts.push(`Nhóm ${groupNo}`);
-  }
-
-  if (teamCode) {
-    parts.push(teamCode);
-  }
-
-  return parts.join(" / ") || "—";
-}
-
-function buildTimeLabel(item) {
-  const day = formatDayOfWeek(item?.day_of_week || item?.dayOfWeek);
+  const startDate = item?.start_date || item?.startDate;
+  const endDate = item?.end_date || item?.endDate;
   const slot =
     item?.slot_label ||
     item?.time_slot_label ||
-    item?.timeSlotLabel ||
     (item?.start_period && item?.end_period
       ? `Tiết ${item.start_period}-${item.end_period}`
       : "");
-
-  if (day !== "—" && slot) {
-    return `${day}, ${slot}`;
-  }
-
-  return slot || day;
-}
-
-function normalizeScheduleItem(item, index) {
-  const startDate = item?.start_date || item?.startDate;
-  const endDate = item?.end_date || item?.endDate;
-  const entryStatus = item?.entry_status || item?.status || "unknown";
+  const day = formatDayOfWeek(item?.day_of_week || item?.dayOfWeek);
 
   return {
     id: item?.id || item?.schedule_id || index + 1,
-    courseLabel: buildCourseLabel(item, index),
-    teamLabel: buildTeamLabel(item),
+    courseLabel:
+      courseCode && courseName
+        ? `${courseCode} - ${courseName}`
+        : courseName || courseCode || `Lịch thực hành #${index + 1}`,
+    teamLabel:
+      [sectionCode, groupNo ? `Nhóm ${groupNo}` : "", teamCode]
+        .filter(Boolean)
+        .join(" / ") || "—",
     lecturerName:
       item?.lecturer_name ||
       item?.lecturer_full_name ||
@@ -156,31 +103,20 @@ function normalizeScheduleItem(item, index) {
     roomLabel: item?.room_code || item?.room_name || item?.room || item?.room_id || "—",
     roomCode: item?.room_code || item?.room || "",
     weekNo: item?.week_no || item?.week || "",
-    timeLabel: buildTimeLabel(item),
+    timeLabel: day !== "—" && slot ? `${day}, ${slot}` : slot || day,
     dateRange:
       startDate && endDate && startDate !== endDate
         ? `${formatDate(startDate)} - ${formatDate(endDate)}`
         : formatDate(startDate || endDate),
-    entryStatus,
-    raw: item,
+    entryStatus: item?.entry_status || item?.status || "unknown",
   };
 }
 
 function extractScheduleItems(response) {
   const data = response?.data;
-
-  if (Array.isArray(data)) {
-    return data;
-  }
-
-  if (Array.isArray(data?.schedules)) {
-    return data.schedules;
-  }
-
-  if (Array.isArray(data?.items)) {
-    return data.items;
-  }
-
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.schedules)) return data.schedules;
+  if (Array.isArray(data?.items)) return data.items;
   return [];
 }
 
@@ -191,18 +127,7 @@ function filterRows(rows, filters) {
   const weekNo = String(filters.week_no || "").trim();
 
   return rows.filter((row) => {
-    const searchableText = normalizeText(
-      [
-        row.courseLabel,
-        row.teamLabel,
-        row.lecturerName,
-        row.roomLabel,
-        row.timeLabel,
-        row.dateRange,
-        row.entryStatus,
-      ].join(" "),
-    );
-
+    const searchableText = normalizeText(Object.values(row).join(" "));
     const matchesKeyword = !keyword || searchableText.includes(keyword);
     const matchesStatus = status === "all" || row.entryStatus === status;
     const matchesRoom =
@@ -213,7 +138,7 @@ function filterRows(rows, filters) {
   });
 }
 
-export default function AcademicSchedulesPage() {
+export default function AdminSchedulesPage() {
   const [filters, setFilters] = useState(INITIAL_FILTERS);
   const [appliedFilters, setAppliedFilters] = useState(INITIAL_FILTERS);
   const [scheduleRows, setScheduleRows] = useState([]);
@@ -251,10 +176,7 @@ export default function AcademicSchedulesPage() {
   }, [appliedFilters]);
 
   function updateFilter(fieldName, value) {
-    setFilters((currentFilters) => ({
-      ...currentFilters,
-      [fieldName]: value,
-    }));
+    setFilters((currentFilters) => ({ ...currentFilters, [fieldName]: value }));
   }
 
   function handleSubmit(event) {
@@ -272,9 +194,9 @@ export default function AcademicSchedulesPage() {
       <section className="card">
         <div className="roomFilterBar">
           <div className="roomFilterSummary">
-            <h1 className="roomSectionTitle">Tra cứu lịch thực hành</h1>
+            <h1 className="roomSectionTitle">Tra cứu lịch thực hành toàn hệ thống</h1>
             <p className="roomSectionText">
-              Cán bộ đào tạo tra cứu lịch thực hành từ API thật GET /api/schedules.
+              Quản trị viên theo dõi toàn bộ lịch thực hành từ API thật GET /api/schedules.
             </p>
           </div>
 
@@ -343,7 +265,7 @@ export default function AcademicSchedulesPage() {
           loading={isLoading}
           error={loadError}
           emptyTitle="Chưa có lịch thực hành"
-          emptyDescription="API GET /api/schedules hiện chưa trả lịch phù hợp hoặc backend vẫn đang ở trạng thái stub."
+          emptyDescription="API GET /api/schedules hiện chưa trả lịch hoặc backend vẫn đang ở trạng thái stub."
           columns={[
             { key: "courseLabel", label: "Học phần" },
             { key: "teamLabel", label: "Lớp / tổ" },
@@ -364,12 +286,8 @@ export default function AcademicSchedulesPage() {
       <section className="card">
         <h2 className="roomSectionTitle">Ghi chú tích hợp</h2>
         <p className="roomSectionText">
-          Màn này đã bỏ mock và gọi API thật. Tuy nhiên backend branch hiện tại đang trả
-          <strong> data.schedules = []</strong>, nên chưa thể tick tiêu chí có danh sách lịch thật.
-        </p>
-        <p className="roomSectionText">
-          Query đang gửi lên backend:{" "}
-          <code>{JSON.stringify(backendFilters || appliedFilters)}</code>
+          Route này tách riêng khỏi /admin/lookups để tránh dùng màn mock làm minh chứng.
+          Query backend hiện tại: <code>{JSON.stringify(backendFilters || appliedFilters)}</code>
         </p>
       </section>
     </div>
