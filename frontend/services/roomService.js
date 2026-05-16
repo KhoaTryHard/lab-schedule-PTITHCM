@@ -11,8 +11,19 @@ export function getMvpRoomCodes() {
 }
 
 /**
- * Lấy danh sách phòng MVP từ DB thật.
- * Backend endpoint đúng: GET /api/rooms
+ * Hàm xử lý: lấy danh sách mã phòng thuộc scope MVP từ backend.
+ * Backend endpoint: GET /api/rooms/scope
+ */
+export function getRoomScope() {
+  return apiClient("/rooms/scope", {
+    method: "GET",
+  });
+}
+
+/**
+ * Hàm nhận vào: params lọc phòng.
+ * Hàm xử lý: gọi API GET /rooms để lấy danh sách phòng MVP từ DB thật.
+ * Hàm trả về: Promise chứa response từ backend, response.data là danh sách phòng.
  */
 export function getRooms(params = {}) {
   const query = new URLSearchParams();
@@ -25,7 +36,6 @@ export function getRooms(params = {}) {
     query.set("room_status", params.room_status);
   }
 
-  // Backend có hỗ trợ scope=mvp và in_scope=true.
   query.set("scope", "mvp");
   query.set("in_scope", "true");
 
@@ -39,19 +49,20 @@ export function getRooms(params = {}) {
 /**
  * Hàm nhận vào: roomId là id phòng cần lấy chi tiết.
  * Hàm xử lý: gọi API GET /rooms/:id để lấy chi tiết một phòng trong phạm vi MVP.
- * Hàm trả về: Promise chứa response từ backend, trong đó response.data là thông tin phòng.
+ * Hàm trả về: Promise chứa response từ backend, response.data là thông tin phòng.
  */
-
 export function getRoomById(roomId) {
-  return apiClient('/rooms${roomId}', {method: "GET",});
+  return apiClient(`/rooms/${roomId}`, {
+    method: "GET",
+  });
 }
 
 /**
  * Hàm nhận vào:
  * - roomId: id phòng cần cập nhật.
- * - payload: object chứa dữ liệu cần gửi lên backend, ví dụ { room_status: "locked", notes: "..." }.
+ * - payload: object chứa dữ liệu cần gửi lên backend.
  * Hàm xử lý: gọi API PATCH /rooms/:id để cập nhật trạng thái/ghi chú phòng.
- * Hàm trả về: Promise chứa response từ backend, trong đó response.data là phòng sau khi cập nhật.
+ * Hàm trả về: Promise chứa response từ backend, response.data là phòng sau khi cập nhật.
  */
 export function updateRoomById(roomId, payload) {
   return apiClient(`/rooms/${roomId}`, {
