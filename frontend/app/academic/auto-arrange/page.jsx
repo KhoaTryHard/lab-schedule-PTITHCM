@@ -3,118 +3,836 @@
 import { useMemo, useState } from "react";
 
 import DataTable from "../../../components/common/DataTable.jsx";
-import { ButtonUI } from "../../../components/common/buttonUI.jsx";
-import { autoArrangeSchedule } from "../../../services/scheduleService";
+import StatusBadge from "../../../components/common/StatusBadge.jsx";
+import {
+  ButtonUI,
+  RefreshButton,
+} from "../../../components/common/buttonUI.jsx";
+import {
+  EmptyState,
+  ErrorState,
+  LoadingState,
+} from "../../../components/common/UiState.jsx";
+import { checkScheduleConstraints } from "../../../services/scheduleService.js";
 
-const DEMO_AUTO_ARRANGE_PAYLOAD = {
-  request_id: 1,
-  course_section_id: 1,
-  practice_team_id: 1,
-  lecturer_user_id: 1,
-  student_count: 40,
-  preferred_day_of_week: 3,
-  preferred_time_slot: "7-10",
-  start_date: "2026-04-28",
-  end_date: "2026-05-28",
-  required_software_ids: [1, 2],
+const REQUIRED_RULES = [
+  {
+    code: "ROOM_SCOPE",
+    label: "Phạm vi phòng",
+    meaning: "Phòng có thuộc phạm vi cho phép của MVP không.",
+    suggestion: "Chọn phòng thuộc phạm vi 2B11, 2B21 hoặc 2B31.",
+  },
+  {
+    code: "ROOM_CONFLICT",
+    label: "Trùng phòng",
+    meaning: "Phòng có bị trùng lịch cùng thứ, ca và khoảng ngày không.",
+    suggestion: "Đổi phòng, đổi ca hoặc đổi khoảng ngày.",
+  },
+  {
+    code: "LECTURER_CONFLICT",
+    label: "Trùng giảng viên",
+    meaning: "Giảng viên có bị phân công dạy lớp khác cùng thời điểm không.",
+    suggestion: "Chọn giảng viên khác hoặc đổi ca thực hành.",
+  },
+  {
+    code: "ROOM_AVAILABLE",
+    label: "Phòng khả dụng",
+    meaning:
+      "Phòng có đang mở, không bảo trì, không hỏng, không bị khóa không.",
+    suggestion: "Chọn phòng đang ở trạng thái khả dụng.",
+  },
+  {
+    code: "CAPACITY_OK",
+    label: "Đủ sức chứa",
+    meaning: "Số máy/sức chứa phòng có đáp ứng số sinh viên thực hành không.",
+    suggestion: "Chọn phòng lớn hơn hoặc tách thêm tổ thực hành.",
+  },
+  {
+    code: "SOFTWARE_OK",
+    label: "Đủ phần mềm",
+    meaning: "Phòng có cài đủ phần mềm học phần yêu cầu không.",
+    suggestion:
+      "Chọn phòng khác hoặc yêu cầu kỹ thuật viên cài bổ sung phần mềm.",
+  },
+];
+
+const EXTRA_RULE_META = {
+  HOLIDAY_BLOCKED: {
+    label: "Ngày nghỉ",
+    meaning:
+      "Ngày học có bị chặn bởi lịch nghỉ hoặc ngày không xếp lịch không.",
+    suggestion: "Chọn ngày khác không thuộc lịch nghỉ.",
+  },
 };
 
-function normalizeRankedOption(option, index) {
+const INITIAL_FORM = {
+  request_id: "1",
+  course_section_id: "6",
+  practice_team_id: "1",
+  lecturer_user_id: "8",
+  room_id: "1",
+  room_code: "2B11",
+  day_of_week: "3",
+  time_slot_id: "2",
+  start_date: "2026-04-28",
+  end_date: "2026-04-28",
+  student_count: "40",
+  required_software_ids: "1,2,6,8",
+};
+
+const DEMO_VALID_FORM = {
+  request_id: "1",
+  course_section_id: "6",
+  practice_team_id: "1",
+  lecturer_user_id: "8",
+  room_id: "1",
+  room_code: "2B11",
+  day_of_week: "3",
+  time_slot_id: "2",
+  start_date: "2026-04-28",
+  end_date: "2026-04-28",
+  student_count: "40",
+  required_software_ids: "1,2,6,8",
+};
+
+const DEMO_INVALID_FORM = {
+  request_id: "1",
+  course_section_id: "6",
+  practice_team_id: "1",
+  lecturer_user_id: "8",
+  room_id: "99",
+  room_code: "2B99",
+  day_of_week: "6",
+  time_slot_id: "2",
+  start_date: "2026-05-01",
+  end_date: "2026-05-01",
+  student_count: "45",
+  required_software_ids: "1,2,6,8",
+};
+
+function toPositiveInteger(value, fieldLabel) {
+  const parsedValue = Number(value);
+
+  if (!Number.isInteger(parsedValue) || parsedValue <= 0) {
+    throw new Error(`${fieldLabel} phải là số nguyên dương.`);
+  }
+
+  return parsedValue;
+}
+
+function parseSoftwareIds(value) {
+  if (!value.trim()) {
+    return [];
+  }
+
+  return value
+    .split(",")
+    .map((item) => Number(item.trim()))
+    .filter((item) => Number.isInteger(item) && item > 0);
+}
+
+function buildPayload(formData) {
+  if (!formData.room_code.trim()) {
+    throw new Error("Vui lòng nhập mã phòng.");
+  }
+
+  if (!formData.start_date || !formData.end_date) {
+    throw new Error("Vui lòng chọn đủ ngày bắt đầu và ngày kết thúc.");
+  }
+
+  if (formData.end_date < formData.start_date) {
+    throw new Error("Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu.");
+  }
+
   return {
-    id: `${option?.room_code || "room"}-${index + 1}`,
-    rank: index + 1,
-    room_code: option?.room_code || "—",
-    day_of_week: option?.day_of_week || "—",
-    time_slot: option?.time_slot || "—",
-    start_date: option?.start_date || "—",
-    end_date: option?.end_date || "—",
-    score: option?.score ?? "—",
-    reasons: Array.isArray(option?.reasons) ? option.reasons.join("; ") : "—",
+    request_id: toPositiveInteger(formData.request_id, "ID yêu cầu"),
+    course_section_id: toPositiveInteger(
+      formData.course_section_id,
+      "ID lớp học phần",
+    ),
+    practice_team_id: toPositiveInteger(
+      formData.practice_team_id,
+      "ID tổ thực hành",
+    ),
+    lecturer_user_id: toPositiveInteger(
+      formData.lecturer_user_id,
+      "ID giảng viên",
+    ),
+    room_id: toPositiveInteger(formData.room_id, "ID phòng"),
+    room_code: formData.room_code.trim().toUpperCase(),
+    day_of_week: toPositiveInteger(formData.day_of_week, "Thứ trong tuần"),
+    time_slot_id: toPositiveInteger(formData.time_slot_id, "ID ca học"),
+    start_date: formData.start_date,
+    end_date: formData.end_date,
+    student_count: toPositiveInteger(formData.student_count, "Số sinh viên"),
+    required_software_ids: parseSoftwareIds(formData.required_software_ids),
   };
 }
 
-export default function AutoArrangePage() {
-  const [rankedOptions, setRankedOptions] = useState([]);
-  const [selectedOption, setSelectedOption] = useState(null);
-  const [isRunning, setIsRunning] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+function normalizeConstraintResults(apiData) {
+  const rawResults = Array.isArray(apiData?.results)
+    ? apiData.results
+    : Array.isArray(apiData?.constraints)
+      ? apiData.constraints
+      : [];
 
-  async function handleRunAutoArrange() {
-    try {
-      setIsRunning(true);
-      setErrorMessage("");
+  return rawResults.map((item, index) => ({
+    id: `${item?.code || "RULE"}-${index + 1}`,
+    code: String(item?.code || "UNKNOWN_RULE")
+      .trim()
+      .toUpperCase(),
+    passed:
+      typeof item?.passed === "boolean"
+        ? item.passed
+        : typeof item?.is_passed === "boolean"
+          ? item.is_passed
+          : null,
+    message:
+      item?.message || item?.detail || "API không trả message cho rule này.",
+    raw: item,
+  }));
+}
 
-      const response = await autoArrangeSchedule(DEMO_AUTO_ARRANGE_PAYLOAD);
-      const data = response?.data || {};
-      const options = Array.isArray(data.ranked_options)
-        ? data.ranked_options
-        : [];
-
-      setSelectedOption(data.selected_option || null);
-      setRankedOptions(options.map(normalizeRankedOption));
-    } catch (error) {
-      setSelectedOption(null);
-      setRankedOptions([]);
-      setErrorMessage(error?.message || "Không chạy được thuật toán xếp lịch.");
-    } finally {
-      setIsRunning(false);
+function getRuleMeta(code) {
+  return (
+    REQUIRED_RULES.find((rule) => rule.code === code) ||
+    EXTRA_RULE_META[code] || {
+      label: code,
+      meaning: "Rule bổ sung do backend trả về.",
+      suggestion: "Đọc message backend để xử lý.",
     }
+  );
+}
+
+function buildRuleRows(constraintResults) {
+  const resultMap = new Map(
+    constraintResults.map((result) => [result.code, result]),
+  );
+
+  const requiredRows = REQUIRED_RULES.map((rule) => {
+    const matchedResult = resultMap.get(rule.code);
+
+    if (!matchedResult) {
+      return {
+        id: rule.code,
+        code: rule.code,
+        label: rule.label,
+        meaning: rule.meaning,
+        passed: null,
+        message: "Backend chưa trả kết quả cho rule này.",
+        suggestion: rule.suggestion,
+        isRequired: true,
+      };
+    }
+
+    return {
+      id: rule.code,
+      code: rule.code,
+      label: rule.label,
+      meaning: rule.meaning,
+      passed: matchedResult.passed,
+      message: matchedResult.message,
+      suggestion: rule.suggestion,
+      isRequired: true,
+    };
+  });
+
+  const extraRows = constraintResults
+    .filter(
+      (result) => !REQUIRED_RULES.some((rule) => rule.code === result.code),
+    )
+    .map((result) => {
+      const meta = getRuleMeta(result.code);
+
+      return {
+        id: result.id,
+        code: result.code,
+        label: meta.label,
+        meaning: meta.meaning,
+        passed: result.passed,
+        message: result.message,
+        suggestion: meta.suggestion,
+        isRequired: false,
+      };
+    });
+
+  return [...requiredRows, ...extraRows];
+}
+
+function getResultVariant(passed) {
+  if (passed === true) {
+    return "success";
   }
+
+  if (passed === false) {
+    return "danger";
+  }
+
+  return "muted";
+}
+
+function getResultLabel(passed) {
+  if (passed === true) {
+    return "PASS";
+  }
+
+  if (passed === false) {
+    return "FAIL";
+  }
+
+  return "CHƯA TRẢ";
+}
+
+function getApiErrorMessage(error, fallbackMessage) {
+  if (Array.isArray(error?.details) && error.details.length > 0) {
+    return error.details.join(", ");
+  }
+
+  if (error?.details && typeof error.details === "object") {
+    return Object.values(error.details).filter(Boolean).join(", ");
+  }
+
+  return error?.message || fallbackMessage;
+}
+
+function formatDayOfWeek(value) {
+  const dayMap = {
+    1: "Chủ nhật",
+    2: "Thứ 2",
+    3: "Thứ 3",
+    4: "Thứ 4",
+    5: "Thứ 5",
+    6: "Thứ 6",
+    7: "Thứ 7",
+  };
+
+  return dayMap[value] || "—";
+}
+
+export default function AutoArrangePage() {
+  const [formData, setFormData] = useState(INITIAL_FORM);
+  const [constraintData, setConstraintData] = useState(null);
+  const [constraintRows, setConstraintRows] = useState([]);
+  const [isChecking, setIsChecking] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [localMessage, setLocalMessage] = useState("");
+
+  const failedRows = useMemo(
+    () => constraintRows.filter((row) => row.passed === false),
+    [constraintRows],
+  );
+
+  const passedRows = useMemo(
+    () => constraintRows.filter((row) => row.passed === true),
+    [constraintRows],
+  );
+
+  const missingRequiredRows = useMemo(
+    () => constraintRows.filter((row) => row.isRequired && row.passed === null),
+    [constraintRows],
+  );
+
+  const hasChecked = Boolean(constraintData);
+  const hasFailedRule = failedRows.length > 0;
+  const apiPassed = Boolean(constraintData?.passed);
+  const canCreateSchedule = hasChecked && apiPassed && !hasFailedRule;
+
+  const summaryStatus = useMemo(() => {
+    if (errorMessage) {
+      return {
+        variant: "danger",
+        label: "API lỗi",
+        title: "Không thể kiểm tra ràng buộc",
+        message: errorMessage,
+      };
+    }
+
+    if (!hasChecked) {
+      return {
+        variant: "muted",
+        label: "Chưa kiểm tra",
+        title: "Chưa có kết quả",
+        message: "Nhập thông tin lịch và bấm Kiểm tra ràng buộc để gọi API.",
+      };
+    }
+
+    if (hasFailedRule || !apiPassed) {
+      return {
+        variant: "danger",
+        label: "Không hợp lệ",
+        title: "Không thể tạo lịch",
+        message:
+          "Có ít nhất một ràng buộc chưa đạt. Nút tạo lịch đang bị khóa để tránh lưu lịch sai.",
+      };
+    }
+
+    if (missingRequiredRows.length > 0) {
+      return {
+        variant: "warning",
+        label: "Hợp lệ có cảnh báo",
+        title: "API báo pass nhưng còn rule chưa trả về",
+        message:
+          "Backend chưa trả đủ rule theo issue. Có thể chụp minh chứng pass, nhưng nên yêu cầu backend bổ sung rule còn thiếu.",
+      };
+    }
+
+    return {
+      variant: "success",
+      label: "Hợp lệ",
+      title: "Có thể tạo lịch",
+      message:
+        "Tất cả ràng buộc đã đạt. Nút tạo lịch được mở theo kết quả kiểm tra từ API.",
+    };
+  }, [
+    apiPassed,
+    errorMessage,
+    hasChecked,
+    hasFailedRule,
+    missingRequiredRows.length,
+  ]);
 
   const columns = useMemo(
     () => [
-      { key: "rank", label: "Hạng" },
-      { key: "room_code", label: "Phòng" },
-      { key: "day_of_week", label: "Thứ" },
-      { key: "time_slot", label: "Ca" },
-      { key: "start_date", label: "Bắt đầu" },
-      { key: "end_date", label: "Kết thúc" },
-      { key: "score", label: "Điểm" },
-      { key: "reasons", label: "Lý do" },
+      {
+        key: "code",
+        label: "Rule",
+        render: (value, row) => (
+          <div className="constraintRuleCodeCell">
+            <strong>{value}</strong>
+            <span>{row.label}</span>
+          </div>
+        ),
+      },
+      { key: "meaning", label: "Ý nghĩa" },
+      {
+        key: "passed",
+        label: "Kết quả",
+        render: (value) => (
+          <StatusBadge variant={getResultVariant(value)}>
+            {getResultLabel(value)}
+          </StatusBadge>
+        ),
+      },
+      { key: "message", label: "Message từ API" },
+      { key: "suggestion", label: "Gợi ý xử lý" },
     ],
     [],
   );
 
+  function updateFormData(fieldName, value) {
+    setFormData((currentData) => ({
+      ...currentData,
+      [fieldName]: value,
+    }));
+  }
+
+  function resetResultState() {
+    setConstraintData(null);
+    setConstraintRows([]);
+    setErrorMessage("");
+    setLocalMessage("");
+  }
+
+  function loadDemoForm(nextForm) {
+    setFormData(nextForm);
+    resetResultState();
+  }
+
+  async function handleCheckConstraints(event) {
+    event.preventDefault();
+
+    try {
+      setIsChecking(true);
+      setErrorMessage("");
+      setLocalMessage("");
+
+      const payload = buildPayload(formData);
+      const response = await checkScheduleConstraints(payload);
+      const apiData = response?.data || {};
+      const normalizedResults = normalizeConstraintResults(apiData);
+
+      setConstraintData(apiData);
+      setConstraintRows(buildRuleRows(normalizedResults));
+    } catch (error) {
+      setConstraintData(null);
+      setConstraintRows([]);
+      setErrorMessage(
+        getApiErrorMessage(
+          error,
+          "Không thể gọi API kiểm tra ràng buộc xếp lịch.",
+        ),
+      );
+    } finally {
+      setIsChecking(false);
+    }
+  }
+
+  function handleCreateSchedule() {
+    if (!canCreateSchedule) {
+      setLocalMessage(
+        "Không thể tạo lịch vì còn ràng buộc chưa đạt hoặc chưa có kết quả kiểm tra hợp lệ.",
+      );
+      return;
+    }
+
+    setLocalMessage(
+      "Ràng buộc đã đạt. Có thể nối tiếp API tạo lịch thật khi backend cung cấp endpoint POST /api/schedules.",
+    );
+  }
+
   return (
-    <section className="card">
-      <div className="roomFilterBar">
-        <div className="roomFilterSummary">
-          <h2 className="roomSectionTitle">Preview phương án xếp phòng tự động</h2>
-          <p className="roomSectionText">
-            Trang gọi endpoint POST /api/schedules/auto-arrange. Backend hiện vẫn là stub/demo.
+    <section className="constraintPage adminPageStack">
+      <div className="commonPageHeader">
+        <div className="commonPageHeaderBody">
+          <p className="commonEyebrow">W3-06 · Constraint Checking</p>
+          <h1 className="commonTitle">Kiểm tra ràng buộc xếp lịch</h1>
+          <p className="commonDescription">
+            Giao diện gọi trực tiếp POST /api/schedules/check-constraints, hiển
+            thị từng rule pass/fail và khóa thao tác tạo lịch nếu có ràng buộc
+            fail.
           </p>
         </div>
 
-        <ButtonUI
-          tone="primary"
-          shape="rounded"
-          onClick={handleRunAutoArrange}
-          disabled={isRunning}
+        <div className="commonHeaderActions">
+          <StatusBadge variant={summaryStatus.variant}>
+            {summaryStatus.label}
+          </StatusBadge>
+        </div>
+      </div>
+
+      <div className="constraintMainGrid">
+        <form
+          className="card constraintFormCard"
+          onSubmit={handleCheckConstraints}
         >
-          {isRunning ? "Đang chạy..." : "Chạy thuật toán"}
-        </ButtonUI>
+          <div className="constraintSectionHeader">
+            <div>
+              <p className="commonEyebrow">Thông tin lịch cần kiểm tra</p>
+              <h2 className="constraintSectionTitle">Dữ liệu gửi lên API</h2>
+            </div>
+
+            <div className="constraintButtonGroup">
+              <RefreshButton
+                onClick={() => loadDemoForm(DEMO_VALID_FORM)}
+                disabled={isChecking}
+              >
+                Nạp case hợp lệ
+              </RefreshButton>
+
+              <RefreshButton
+                onClick={() => loadDemoForm(DEMO_INVALID_FORM)}
+                disabled={isChecking}
+              >
+                Nạp case không hợp lệ
+              </RefreshButton>
+            </div>
+          </div>
+
+          <div className="constraintFormGrid">
+            <label className="label">
+              ID yêu cầu
+              <input
+                className="input"
+                type="number"
+                min="1"
+                value={formData.request_id}
+                onChange={(event) =>
+                  updateFormData("request_id", event.target.value)
+                }
+                disabled={isChecking}
+              />
+            </label>
+
+            <label className="label">
+              ID lớp học phần
+              <input
+                className="input"
+                type="number"
+                min="1"
+                value={formData.course_section_id}
+                onChange={(event) =>
+                  updateFormData("course_section_id", event.target.value)
+                }
+                disabled={isChecking}
+              />
+            </label>
+
+            <label className="label">
+              ID tổ thực hành
+              <input
+                className="input"
+                type="number"
+                min="1"
+                value={formData.practice_team_id}
+                onChange={(event) =>
+                  updateFormData("practice_team_id", event.target.value)
+                }
+                disabled={isChecking}
+              />
+            </label>
+
+            <label className="label">
+              ID giảng viên
+              <input
+                className="input"
+                type="number"
+                min="1"
+                value={formData.lecturer_user_id}
+                onChange={(event) =>
+                  updateFormData("lecturer_user_id", event.target.value)
+                }
+                disabled={isChecking}
+              />
+            </label>
+
+            <label className="label">
+              ID phòng
+              <input
+                className="input"
+                type="number"
+                min="1"
+                value={formData.room_id}
+                onChange={(event) =>
+                  updateFormData("room_id", event.target.value)
+                }
+                disabled={isChecking}
+              />
+            </label>
+
+            <label className="label">
+              Mã phòng
+              <input
+                className="input"
+                value={formData.room_code}
+                placeholder="Ví dụ: 2B11"
+                onChange={(event) =>
+                  updateFormData("room_code", event.target.value)
+                }
+                disabled={isChecking}
+              />
+            </label>
+
+            <label className="label">
+              Thứ trong tuần
+              <select
+                className="select"
+                value={formData.day_of_week}
+                onChange={(event) =>
+                  updateFormData("day_of_week", event.target.value)
+                }
+                disabled={isChecking}
+              >
+                <option value="1">Chủ nhật</option>
+                <option value="2">Thứ 2</option>
+                <option value="3">Thứ 3</option>
+                <option value="4">Thứ 4</option>
+                <option value="5">Thứ 5</option>
+                <option value="6">Thứ 6</option>
+                <option value="7">Thứ 7</option>
+              </select>
+            </label>
+
+            <label className="label">
+              ID ca học
+              <input
+                className="input"
+                type="number"
+                min="1"
+                value={formData.time_slot_id}
+                onChange={(event) =>
+                  updateFormData("time_slot_id", event.target.value)
+                }
+                disabled={isChecking}
+              />
+            </label>
+
+            <label className="label">
+              Từ ngày
+              <input
+                className="input"
+                type="date"
+                value={formData.start_date}
+                onChange={(event) =>
+                  updateFormData("start_date", event.target.value)
+                }
+                disabled={isChecking}
+              />
+            </label>
+
+            <label className="label">
+              Đến ngày
+              <input
+                className="input"
+                type="date"
+                value={formData.end_date}
+                onChange={(event) =>
+                  updateFormData("end_date", event.target.value)
+                }
+                disabled={isChecking}
+              />
+            </label>
+
+            <label className="label">
+              Số sinh viên
+              <input
+                className="input"
+                type="number"
+                min="1"
+                value={formData.student_count}
+                onChange={(event) =>
+                  updateFormData("student_count", event.target.value)
+                }
+                disabled={isChecking}
+              />
+            </label>
+
+            <label className="label">
+              ID phần mềm yêu cầu
+              <input
+                className="input"
+                value={formData.required_software_ids}
+                placeholder="Ví dụ: 1,2,6,8"
+                onChange={(event) =>
+                  updateFormData("required_software_ids", event.target.value)
+                }
+                disabled={isChecking}
+              />
+            </label>
+          </div>
+
+          <div className="constraintPayloadPreview">
+            <p>
+              <strong>Preview:</strong> Phòng {formData.room_code || "—"} ·{" "}
+              {formatDayOfWeek(formData.day_of_week)} · Ca #
+              {formData.time_slot_id || "—"} · {formData.start_date || "—"} đến{" "}
+              {formData.end_date || "—"}
+            </p>
+          </div>
+
+          <div className="constraintActions">
+            <ButtonUI
+              tone="primary"
+              shape="rounded"
+              type="submit"
+              disabled={isChecking}
+            >
+              {isChecking ? "Đang kiểm tra..." : "Kiểm tra ràng buộc"}
+            </ButtonUI>
+
+            <ButtonUI
+              tone={canCreateSchedule ? "primary" : "secondary"}
+              shape="rounded"
+              type="button"
+              onClick={handleCreateSchedule}
+              disabled={!canCreateSchedule || isChecking}
+            >
+              Tạo lịch
+            </ButtonUI>
+
+            <RefreshButton onClick={resetResultState} disabled={isChecking}>
+              Xóa kết quả
+            </RefreshButton>
+          </div>
+        </form>
+
+        <aside className="card constraintSummaryCard">
+          <p className="commonEyebrow">Kết quả tổng quan</p>
+          <h2 className="constraintSummaryTitle">{summaryStatus.title}</h2>
+          <p className="constraintSummaryText">{summaryStatus.message}</p>
+
+          <div className="constraintSummaryStats">
+            <div className="constraintStatBox">
+              <span>Tổng rule</span>
+              <strong>{constraintRows.length || REQUIRED_RULES.length}</strong>
+            </div>
+
+            <div className="constraintStatBox">
+              <span>Pass</span>
+              <strong>{passedRows.length}</strong>
+            </div>
+
+            <div className="constraintStatBox">
+              <span>Fail</span>
+              <strong>{failedRows.length}</strong>
+            </div>
+
+            <div className="constraintStatBox">
+              <span>Chưa trả</span>
+              <strong>{missingRequiredRows.length}</strong>
+            </div>
+          </div>
+
+          {localMessage ? (
+            <p
+              className={
+                canCreateSchedule
+                  ? "constraintAlert constraintAlertSuccess"
+                  : "constraintAlert constraintAlertDanger"
+              }
+            >
+              {localMessage}
+            </p>
+          ) : null}
+
+          {missingRequiredRows.length > 0 && hasChecked ? (
+            <p className="constraintAlert constraintAlertWarning">
+              Backend hiện chưa trả đủ rule bắt buộc:{" "}
+              {missingRequiredRows.map((row) => row.code).join(", ")}.
+            </p>
+          ) : null}
+
+          <div className="constraintDemoNote">
+            <h3>Ghi chú test demo</h3>
+            <p>
+              Case hợp lệ: phòng <strong>2B11</strong>, ngày{" "}
+              <strong>2026-04-28</strong>.
+            </p>
+            <p>
+              Case không hợp lệ: phòng <strong>2B99</strong>, ngày{" "}
+              <strong>2026-05-01</strong>.
+            </p>
+          </div>
+        </aside>
       </div>
 
-      {selectedOption ? (
-        <div className="card">
-          <h3 className="roomSectionTitle">Phương án đề xuất</h3>
-          <p className="roomSectionText">
-            Phòng {selectedOption.room_code} · Ca {selectedOption.time_slot} · Điểm{" "}
-            {selectedOption.score}
-          </p>
+      <section className="card constraintResultCard">
+        <div className="constraintSectionHeader">
+          <div>
+            <p className="commonEyebrow">Checklist rule</p>
+            <h2 className="constraintSectionTitle">Kết quả từng ràng buộc</h2>
+          </div>
+
+          {hasChecked ? (
+            <StatusBadge variant={canCreateSchedule ? "success" : "danger"}>
+              {canCreateSchedule ? "Được phép tạo lịch" : "Đang block tạo lịch"}
+            </StatusBadge>
+          ) : null}
         </div>
-      ) : null}
 
-      <div className="card roomTableCard">
-        <DataTable
-          columns={columns}
-          rows={rankedOptions}
-          loading={isRunning}
-          error={errorMessage}
-          emptyTitle="Chưa có phương án"
-          emptyDescription="Bấm Chạy thuật toán để gọi API auto-arrange."
-        />
-      </div>
+        {isChecking ? (
+          <LoadingState
+            title="Đang kiểm tra ràng buộc..."
+            description="Hệ thống đang gọi API check-constraints, vui lòng chờ trong giây lát."
+          />
+        ) : errorMessage ? (
+          <ErrorState
+            title="Không thể gọi API kiểm tra ràng buộc"
+            error={errorMessage}
+          />
+        ) : hasChecked ? (
+          <DataTable
+            columns={columns}
+            rows={constraintRows}
+            emptyTitle="API chưa trả rule"
+            emptyDescription="Backend chưa trả danh sách results/constraints."
+          />
+        ) : (
+          <EmptyState
+            title="Chưa có kết quả kiểm tra"
+            description="Nhập dữ liệu lịch thực hành rồi bấm Kiểm tra ràng buộc để gọi API thật."
+          />
+        )}
+      </section>
     </section>
   );
 }

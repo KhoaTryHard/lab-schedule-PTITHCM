@@ -4224,3 +4224,202 @@ html {
     grid-template-columns: 1fr;
   }
 }
+
+.constraintPage {
+  width: 100%;
+}
+
+.constraintMainGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(320px, 0.75fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.constraintFormCard,
+.constraintSummaryCard,
+.constraintResultCard {
+  box-shadow: 0 14px 28px rgba(97, 0, 0, 0.05);
+}
+
+.constraintSectionHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.constraintSectionTitle,
+.constraintSummaryTitle {
+  margin: 0;
+  color: #0f172a;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.constraintSummaryText {
+  margin: 8px 0 0;
+  color: #475569;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.constraintButtonGroup,
+.constraintActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.constraintFormGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.constraintPayloadPreview {
+  margin-top: 4px;
+  padding: 14px;
+  border: 1px solid rgba(139, 0, 0, 0.1);
+  border-radius: 16px;
+  background: #fffafa;
+}
+
+.constraintPayloadPreview p {
+  margin: 0;
+  color: #334155;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.constraintActions {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #eef2f7;
+}
+
+.constraintSummaryStats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.constraintStatBox {
+  padding: 14px;
+  border: 1px solid rgba(139, 0, 0, 0.08);
+  border-radius: 16px;
+  background: linear-gradient(180deg, #ffffff 0%, #fffafa 100%);
+}
+
+.constraintStatBox span {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.constraintStatBox strong {
+  display: block;
+  margin-top: 6px;
+  color: #0f172a;
+  font-size: 28px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.constraintAlert {
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.55;
+}
+
+.constraintAlertSuccess {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.constraintAlertWarning {
+  background: #fff7ed;
+  color: #b45309;
+}
+
+.constraintAlertDanger {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.constraintDemoNote {
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px dashed rgba(139, 0, 0, 0.18);
+  border-radius: 16px;
+  background: #fffafa;
+}
+
+.constraintDemoNote h3 {
+  margin: 0 0 8px;
+  color: #0f172a;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.constraintDemoNote p {
+  margin: 6px 0 0;
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.constraintRuleCodeCell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.constraintRuleCodeCell strong {
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.constraintRuleCodeCell span {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+@media (max-width: 1180px) {
+  .constraintMainGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .constraintFormGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .constraintSectionHeader {
+    flex-direction: column;
+  }
+
+  .constraintButtonGroup,
+  .constraintActions,
+  .constraintButtonGroup .buttonUI,
+  .constraintActions .buttonUI {
+    width: 100%;
+  }
+
+  .constraintFormGrid,
+  .constraintSummaryStats {
+    grid-template-columns: 1fr;
+  }
+}
