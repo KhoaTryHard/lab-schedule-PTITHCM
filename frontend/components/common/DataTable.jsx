@@ -1,4 +1,3 @@
-import styles from "./common.module.css";
 import { EmptyState, ErrorState, LoadingState } from "./UiState";
 
 export default function DataTable({
@@ -23,8 +22,8 @@ export default function DataTable({
   }
 
   return (
-    <div className={styles.tableWrap}>
-      <table className={styles.table}>
+    <div className="commonTableWrap">
+      <table className="commonTable">
         <thead>
           <tr>
             {columns.map((column) => (

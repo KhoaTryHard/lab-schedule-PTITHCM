@@ -1,5 +1,3 @@
-import styles from "./SectionLayout.module.css";
-
 /**
  * direction: 0 = horizontal, 1 = vertical
  */
@@ -12,12 +10,12 @@ export default function SectionLayout({
   contentClassName = "",
 }) {
   const isVertical = Number(direction) === 1;
-  const wrapperClassName = [styles.sectionLayout, className]
+  const wrapperClassName = ["sectionLayout", className]
     .filter(Boolean)
     .join(" ");
   const contentLayoutClassName = [
-    styles.content,
-    isVertical ? styles.contentColumn : styles.contentRow,
+    "sectionLayoutContent",
+    isVertical ? "sectionLayoutContentColumn" : "sectionLayoutContentRow",
     contentClassName,
   ]
     .filter(Boolean)
@@ -26,9 +24,9 @@ export default function SectionLayout({
   return (
     <section className={wrapperClassName}>
       {title || message ? (
-        <div className={styles.header}>
-          {title ? <h5 className={styles.title}>{title}</h5> : null}
-          {message ? <p className={styles.message}>{message}</p> : null}
+        <div className="sectionLayoutHeader">
+          {title ? <h5 className="sectionLayoutTitle">{title}</h5> : null}
+          {message ? <p className="sectionLayoutMessage">{message}</p> : null}
         </div>
       ) : null}
 

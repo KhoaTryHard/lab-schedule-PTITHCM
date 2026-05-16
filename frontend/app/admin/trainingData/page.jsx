@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { CardUI, UploadCard } from "../../../components/common/cardUI.jsx";
 import DataTable from "../../../components/common/DataTable.jsx";
 import SectionLayout from "../../../components/common/SectionLayout.jsx";
+import { ButtonUI } from "../../../components/common/buttonUI.jsx";
 
 // Mảng dữ liệu mock cho học kỳ, giữ field gần bảng semesters để nối API sau thuận tiện hơn.
 const semesterMockItems = [
@@ -877,9 +878,9 @@ export default function TrainingDataPage() {
           is_current: buildCurrentBadge(item.is_current),
           semester_status: buildTrainingStatusBadge(item.semester_status),
           action: (
-            <button type="button" className="roomLinkButton">
+            <ButtonUI type="button" tone="outline" shape="pill" size="sm" className="roomLinkButton">
               Xem học kỳ
-            </button>
+            </ButtonUI>
           ),
         }));
       case "weeks":
@@ -891,9 +892,9 @@ export default function TrainingDataPage() {
           end_date: formatDateLabel(item.end_date),
           notes: item.notes || "—",
           action: (
-            <button type="button" className="roomLinkButton">
+            <ButtonUI type="button" tone="outline" shape="pill" size="sm" className="roomLinkButton">
               Xem tuần
-            </button>
+            </ButtonUI>
           ),
         }));
       case "slots":
@@ -907,9 +908,9 @@ export default function TrainingDataPage() {
           end_time: item.end_time,
           slot_status: buildTrainingStatusBadge(item.slot_status),
           action: (
-            <button type="button" className="roomLinkButton">
+            <ButtonUI type="button" tone="outline" shape="pill" size="sm" className="roomLinkButton">
               Chỉnh sửa
-            </button>
+            </ButtonUI>
           ),
         }));
       case "courses":
@@ -923,9 +924,9 @@ export default function TrainingDataPage() {
           is_lab_required: item.is_lab_required ? "Có" : "Không",
           course_status: buildTrainingStatusBadge(item.course_status),
           action: (
-            <button type="button" className="roomLinkButton">
+            <ButtonUI type="button" tone="outline" shape="pill" size="sm" className="roomLinkButton">
               Xem học phần
-            </button>
+            </ButtonUI>
           ),
         }));
       case "sections":
@@ -942,9 +943,9 @@ export default function TrainingDataPage() {
           )}`,
           section_status: buildTrainingStatusBadge(item.section_status),
           action: (
-            <button type="button" className="roomLinkButton">
+            <ButtonUI type="button" tone="outline" shape="pill" size="sm" className="roomLinkButton">
               Mở lịch
-            </button>
+            </ButtonUI>
           ),
         }));
       case "cohorts":
@@ -956,9 +957,9 @@ export default function TrainingDataPage() {
           intake_year: item.intake_year,
           cohort_status: buildTrainingStatusBadge(item.cohort_status),
           action: (
-            <button type="button" className="roomLinkButton">
+            <ButtonUI type="button" tone="outline" shape="pill" size="sm" className="roomLinkButton">
               Xem lớp
-            </button>
+            </ButtonUI>
           ),
         }));
       case "lecturers":
@@ -969,9 +970,9 @@ export default function TrainingDataPage() {
           lecturer_role: item.lecturer_role,
           assigned_at: formatDateLabel(item.assigned_at),
           action: (
-            <button type="button" className="roomLinkButton">
+            <ButtonUI type="button" tone="outline" shape="pill" size="sm" className="roomLinkButton">
               Điều chỉnh
-            </button>
+            </ButtonUI>
           ),
         }));
       default:
@@ -1036,26 +1037,25 @@ export default function TrainingDataPage() {
                 const isActive = activeTab === tabItem.key;
 
                 return (
-                  <button
+                  <ButtonUI
                     key={tabItem.key}
-                    type="button"
-                    className={
-                      isActive
-                        ? "roomTabButton roomTabButtonActive"
-                        : "roomTabButton"
-                    }
+                    shape="pill"
+                    tone={isActive ? "primary" : "outline"}
+                    size="sm"
+                    active={isActive}
+                    className={isActive ? "roomTabButton roomTabButtonActive" : "roomTabButton"}
                     onClick={() => handleTabChange(tabItem.key)}
                   >
                     {tabItem.label}
-                  </button>
+                  </ButtonUI>
                 );
               })}
             </div>
 
             <div className="inputFind roomSearchGroup">
-              <button type="button" className="button roomSearchButton">
+              <ButtonUI tone="primary" shape="rounded" className="roomSearchButton">
                 Tìm kiếm
-              </button>
+              </ButtonUI>
               <input
                 type="text"
                 className="input roomSearchInput"
@@ -1075,16 +1075,17 @@ export default function TrainingDataPage() {
             </div>
 
             <div className="roomFilterControls">
-              <button
-                type="button"
-                className="button secondary roomRefreshButton"
+              <ButtonUI
+                tone="secondary"
+                shape="rounded"
+                className="roomRefreshButton"
                 onClick={() => {
                   setSearchKeyword("");
                   setStatusFilter("all");
                 }}
               >
                 Làm mới
-              </button>
+              </ButtonUI>
 
               <select
                 className="select roomStatusSelect"
@@ -1118,3 +1119,4 @@ export default function TrainingDataPage() {
     </div>
   );
 }
+

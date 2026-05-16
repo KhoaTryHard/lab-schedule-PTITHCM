@@ -2,7 +2,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { Inter } from "next/font/google";
 
-import "./login.css";
 import campusBackground from "../../pictures/HocVienCoSoHomePage.png";
 import ptitLogo from "../../pictures/PtitLogo.svg";
 

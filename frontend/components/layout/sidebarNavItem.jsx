@@ -1,7 +1,5 @@
 import Link from "next/link";
 
-import styles from "./appShell.module.css";
-
 /**
  * Hàm nhận vào: iconName là tên icon cần hiển thị.
  * Hàm xử lý: chọn icon SVG phù hợp với từng mã icon của sidebar.
@@ -98,9 +96,9 @@ export default function SidebarNavItem({
 }) {
   const iconContent = typeof icon === "string" ? renderSidebarIcon(icon) : icon;
   const itemClassName = [
-    styles.navItem,
-    isActive ? styles.navItemActive : "",
-    isCollapsed ? styles.navItemCollapsed : "",
+    "appShellNavItem",
+    isActive ? "appShellNavItemActive" : "",
+    isCollapsed ? "appShellNavItemCollapsed" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -111,8 +109,8 @@ export default function SidebarNavItem({
       className={itemClassName}
       title={isCollapsed ? itemName : undefined}
     >
-      <span className={styles.navIcon}>{iconContent}</span>
-      {!isCollapsed && <span className={styles.navLabel}>{itemName}</span>}
+      <span className="appShellNavIcon">{iconContent}</span>
+      {!isCollapsed && <span className="appShellNavLabel">{itemName}</span>}
     </Link>
   );
 }

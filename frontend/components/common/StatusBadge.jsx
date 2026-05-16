@@ -1,5 +1,3 @@
-import styles from "./common.module.css";
-
 const STATUS_VIEW = {
   active: ["Đang hoạt động", "success"],
   available: ["Khả dụng", "success"],
@@ -27,11 +25,11 @@ const STATUS_VIEW = {
 };
 
 const VARIANT_CLASS = {
-  success: styles.badgeSuccess,
-  warning: styles.badgeWarning,
-  danger: styles.badgeDanger,
-  info: styles.badgeInfo,
-  muted: styles.badgeMuted,
+  success: "commonBadgeSuccess",
+  warning: "commonBadgeWarning",
+  danger: "commonBadgeDanger",
+  info: "commonBadgeInfo",
+  muted: "commonBadgeMuted",
 };
 
 export default function StatusBadge({ value, children, variant }) {
@@ -40,7 +38,7 @@ export default function StatusBadge({ value, children, variant }) {
   const resolvedVariant = variant || mappedVariant;
 
   return (
-    <span className={`${styles.badge} ${VARIANT_CLASS[resolvedVariant] || styles.badgeMuted}`}>
+    <span className={`commonBadge ${VARIANT_CLASS[resolvedVariant] || "commonBadgeMuted"}`}>
       {children || label}
     </span>
   );

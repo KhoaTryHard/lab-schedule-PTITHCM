@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 
 import { CardUI } from "../../../components/common/cardUI.jsx";
 import DataTable from "../../../components/common/DataTable.jsx";
+import { ButtonUI } from "../../../components/common/buttonUI.jsx";
 
 // Mảng dữ liệu mock cho lịch thực hành, bám gần bảng lab_schedule_entries để nối API sau dễ hơn.
 const reportScheduleMockItems = [
@@ -2076,26 +2077,25 @@ export default function ReportsPage() {
                 const isActive = activeTab === tabItem.key;
 
                 return (
-                  <button
+                  <ButtonUI
                     key={tabItem.key}
-                    type="button"
-                    className={
-                      isActive
-                        ? "roomTabButton roomTabButtonActive"
-                        : "roomTabButton"
-                    }
+                    shape="pill"
+                    tone={isActive ? "primary" : "outline"}
+                    size="sm"
+                    active={isActive}
+                    className={isActive ? "roomTabButton roomTabButtonActive" : "roomTabButton"}
                     onClick={() => handleTabChange(tabItem.key)}
                   >
                     {tabItem.label}
-                  </button>
+                  </ButtonUI>
                 );
               })}
             </div>
 
             <div className="inputFind roomSearchGroup">
-              <button type="button" className="button roomSearchButton">
+              <ButtonUI tone="primary" shape="rounded" className="roomSearchButton">
                 Tìm kiếm
-              </button>
+              </ButtonUI>
               <input
                 type="text"
                 className="input roomSearchInput"
@@ -2212,37 +2212,41 @@ export default function ReportsPage() {
               </div>
 
               <div className="reportActionGroup">
-                <button
-                  type="button"
-                  className="button roomSearchButton"
+                <ButtonUI
+                  tone="primary"
+                  shape="rounded"
+                  className="roomSearchButton"
                   onClick={handleGenerateStatistics}
                 >
                   Tạo thống kê
-                </button>
-                <button
-                  type="button"
-                  className="button secondary roomRefreshButton"
+                </ButtonUI>
+                <ButtonUI
+                  tone="secondary"
+                  shape="rounded"
+                  className="roomRefreshButton"
                   onClick={handleResetFilters}
                 >
                   Làm mới
-                </button>
-                <button
-                  type="button"
-                  className="button roomSearchButton"
+                </ButtonUI>
+                <ButtonUI
+                  tone="primary"
+                  shape="rounded"
+                  className="roomSearchButton"
                   onClick={handleExportCurrentTab}
                 >
                   Xuất thống kê
-                </button>
-                <button
-                  type="button"
-                  className="button secondary lookupAdvancedButton"
+                </ButtonUI>
+                <ButtonUI
+                  tone="secondary"
+                  shape="rounded"
+                  className="lookupAdvancedButton"
                   onClick={handleExportTemplateReport}
                 >
                   Xuất Excel (CSV)
-                </button>
-                <button type="button" className="button secondary reportGhostButton">
+                </ButtonUI>
+                <ButtonUI tone="secondary" shape="rounded" className="reportGhostButton">
                   Bộ lọc nâng cao
-                </button>
+                </ButtonUI>
               </div>
 
               {generatedMessage ? (
@@ -2421,29 +2425,31 @@ export default function ReportsPage() {
               </div>
 
               <div className="reportTemplateActions">
-                <button
-                  type="button"
-                  className="button roomSearchButton"
+                <ButtonUI
+                  tone="primary"
+                  shape="rounded"
+                  className="roomSearchButton"
                   onClick={handleGenerateStatistics}
                 >
                   Tạo báo cáo
-                </button>
-                <button type="button" className="button secondary roomRefreshButton">
+                </ButtonUI>
+                <ButtonUI tone="secondary" shape="rounded" className="roomRefreshButton">
                   Xem trước báo cáo
-                </button>
-                <button
-                  type="button"
-                  className="button roomSearchButton"
+                </ButtonUI>
+                <ButtonUI
+                  tone="primary"
+                  shape="rounded"
+                  className="roomSearchButton"
                   onClick={handleExportTemplateReport}
                 >
                   Xuất Excel
-                </button>
-                <button type="button" className="button secondary lookupAdvancedButton">
+                </ButtonUI>
+                <ButtonUI tone="secondary" shape="rounded" className="lookupAdvancedButton">
                   Xuất PDF mock
-                </button>
-                <button type="button" className="button secondary reportGhostButton">
+                </ButtonUI>
+                <ButtonUI tone="secondary" shape="rounded" className="reportGhostButton">
                   In báo cáo mock
-                </button>
+                </ButtonUI>
               </div>
             </article>
           )}
@@ -2531,30 +2537,33 @@ export default function ReportsPage() {
               </div>
 
               <div className="reportSidebarActions">
-                <button
-                  type="button"
-                  className="button roomSearchButton"
+                <ButtonUI
+                  tone="primary"
+                  shape="rounded"
+                  className="roomSearchButton"
                   onClick={handleGenerateStatistics}
                 >
                   Tạo báo cáo
-                </button>
-                <button
-                  type="button"
-                  className="button secondary lookupAdvancedButton"
+                </ButtonUI>
+                <ButtonUI
+                  tone="secondary"
+                  shape="rounded"
+                  className="lookupAdvancedButton"
                   onClick={handleExportTemplateReport}
                 >
                   Xuất báo cáo Excel
-                </button>
-                <button type="button" className="button secondary roomRefreshButton">
+                </ButtonUI>
+                <ButtonUI tone="secondary" shape="rounded" className="roomRefreshButton">
                   Xuất báo cáo PDF mock
-                </button>
-                <button
-                  type="button"
-                  className="button secondary reportGhostButton"
+                </ButtonUI>
+                <ButtonUI
+                  tone="secondary"
+                  shape="rounded"
+                  className="reportGhostButton"
                   onClick={handleExportCurrentTab}
                 >
                   Tải mẫu báo cáo
-                </button>
+                </ButtonUI>
               </div>
             </div>
           </div>

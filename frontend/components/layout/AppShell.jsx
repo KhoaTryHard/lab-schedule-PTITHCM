@@ -1,16 +1,21 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 
-import styles from "./appShell.module.css";
 import SidebarNavItem from "./sidebarNavItem";
-import { clearAuth, getUser } from "../../lib/authStorage";
+import { getUser } from "../../lib/authStorage";
+import { LogoutButton } from "../common/buttonUI.jsx";
 
 const fallbackNavItems = [
   { icon: "dashboard", itemName: "Tổng quan", href: "/admin" },
 ];
 
+/**
+ * Hàm nhận vào: fullName là họ tên người dùng.
+ * Hàm xử lý: lấy tối đa 2 chữ cái cuối trong tên để làm avatar.
+ * Hàm trả về: chuỗi viết tắt, ví dụ "Quản trị viên hệ thống" -> "HT".
+ */
 function createAvatarText(fullName) {
   if (!fullName) return "PT";
 
@@ -22,12 +27,24 @@ function createAvatarText(fullName) {
     .join("");
 }
 
+/**
+ * Hàm nhận vào:
+ * - pathname: đường dẫn hiện tại của trình duyệt.
+ * - href: đường dẫn của một mục sidebar.
+ * Hàm xử lý: kiểm tra href có khớp route hiện tại hoặc là route cha hay không.
+ * Hàm trả về: true nếu href khớp, false nếu không khớp.
+ */
 function checkActivePath(pathname, href) {
   if (!href) return false;
   if (href === "/") return pathname === href;
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+/**
+ * Hàm nhận vào: danh sách menu và pathname hiện tại.
+ * Hàm xử lý: tìm menu khớp sâu nhất, ví dụ /admin/accounts ưu tiên hơn /admin.
+ * Hàm trả về: object menu active duy nhất để tránh 2 mục sidebar cùng sáng màu.
+ */
 function findCurrentNavItem(navItems, pathname) {
   const matchedItems = navItems
     .filter((item) => checkActivePath(pathname, item.href))
@@ -36,6 +53,17 @@ function findCurrentNavItem(navItems, pathname) {
   return matchedItems[0] || navItems[0] || null;
 }
 
+/**
+ * Component nhận vào:
+ * - children: nội dung trang con cần render ở vùng main.
+ * - navItems: danh sách menu sidebar theo vai trò.
+ * - brandTitle, brandSubtitle: tiêu đề và mô tả sidebar.
+ * - userName, userRole: thông tin mặc định khi localStorage chưa có user.
+ * - pageTitle: tiêu đề ép cứng nếu trang cần override.
+ * - topBarBadge: nhãn vai trò ở topbar.
+ * Component xử lý: render layout sidebar/topbar/main và xác định active menu duy nhất.
+ * Component trả về: JSX khung layout dùng chung cho Admin/CBDT/GV/KTV/SV.
+ */
 export default function AppShell({
   children,
   navItems = [],
@@ -47,7 +75,6 @@ export default function AppShell({
   topBarBadge = "HỆ THỐNG",
 }) {
   const pathname = usePathname();
-  const router = useRouter();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
 
@@ -66,30 +93,25 @@ export default function AppShell({
   const currentPageTitle = pageTitle || currentNavItem?.itemName || "Tổng quan";
   const avatarText = createAvatarText(resolvedUserName);
 
-  function handleLogout() {
-    clearAuth();
-    router.replace("/login");
-  }
-
   return (
     <div
       className={
         isSidebarCollapsed
-          ? `${styles.shell} ${styles.shellCollapsed}`
-          : styles.shell
+          ? "appShell appShellCollapsed"
+          : "appShell"
       }
     >
       <aside
         className={
           isSidebarCollapsed
-            ? `${styles.sidebar} ${styles.sidebarCollapsed}`
-            : styles.sidebar
+            ? "appShellSidebar appShellSidebarCollapsed"
+            : "appShellSidebar"
         }
       >
-        <div className={styles.brandBlock}>
+        <div className="appShellBrandBlock">
           <button
             type="button"
-            className={styles.brandMark}
+            className="appShellBrandMark"
             onClick={() => setIsSidebarCollapsed((prev) => !prev)}
             aria-label={isSidebarCollapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
           >
@@ -97,21 +119,21 @@ export default function AppShell({
           </button>
 
           {!isSidebarCollapsed && (
-            <div className={styles.brandContent}>
-              <p className={styles.brandTitle}>{brandTitle}</p>
-              <p className={styles.brandSubtitle}>{brandSubtitle}</p>
+            <div className="appShellBrandContent">
+              <p className="appShellBrandTitle">{brandTitle}</p>
+              <p className="appShellBrandSubtitle">{brandSubtitle}</p>
             </div>
           )}
         </div>
 
-        <nav className={styles.navList} aria-label="Điều hướng theo vai trò">
+        <nav className="appShellNavList" aria-label="Điều hướng theo vai trò">
           {sidebarItems.map((item) => (
             <SidebarNavItem
               key={item.href}
               icon={item.icon}
               itemName={item.itemName}
               href={item.href}
-              isActive={checkActivePath(pathname, item.href)}
+              isActive={currentNavItem?.href === item.href}
               isCollapsed={isSidebarCollapsed}
             />
           ))}
@@ -120,33 +142,31 @@ export default function AppShell({
         <div
           className={
             isSidebarCollapsed
-              ? `${styles.sidebarFooter} ${styles.sidebarFooterCollapsed}`
-              : styles.sidebarFooter
+              ? "appShellSidebarFooter appShellSidebarFooterCollapsed"
+              : "appShellSidebarFooter"
           }
         >
-          <div className={styles.userAvatar}>{avatarText}</div>
+          <div className="appShellUserAvatar">{avatarText}</div>
           {!isSidebarCollapsed && (
-            <div className={styles.userContent}>
-              <p className={styles.userName}>{resolvedUserName}</p>
-              <p className={styles.userRole}>{resolvedUserRole}</p>
+            <div className="appShellUserContent">
+              <p className="appShellUserName">{resolvedUserName}</p>
+              <p className="appShellUserRole">{resolvedUserRole}</p>
             </div>
           )}
         </div>
       </aside>
 
-      <div className={styles.workspace}>
-        <header className={styles.topBar}>
-          <div className={styles.topBarHeading}>
-            <span className={styles.topBarBadge}>{topBarBadge}</span>
-            <h1 className={styles.topBarTitle}>{currentPageTitle}</h1>
+      <div className="appShellWorkspace">
+        <header className="appShellTopBar">
+          <div className="appShellTopBarHeading">
+            <span className="appShellTopBarBadge">{topBarBadge}</span>
+            <h1 className="appShellTopBarTitle">{currentPageTitle}</h1>
           </div>
 
-          <button type="button" className="button secondary" onClick={handleLogout}>
-            Đăng xuất
-          </button>
+          <LogoutButton />
         </header>
 
-        <main className={styles.mainContent}>{children}</main>
+        <main className="appShellMainContent">{children}</main>
       </div>
     </div>
   );

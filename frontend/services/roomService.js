@@ -35,3 +35,27 @@ export function getRooms(params = {}) {
     method: "GET",
   });
 }
+
+/**
+ * Hàm nhận vào: roomId là id phòng cần lấy chi tiết.
+ * Hàm xử lý: gọi API GET /rooms/:id để lấy chi tiết một phòng trong phạm vi MVP.
+ * Hàm trả về: Promise chứa response từ backend, trong đó response.data là thông tin phòng.
+ */
+
+export function getRoomById(roomId) {
+  return apiClient('/rooms${roomId}', {method: "GET",});
+}
+
+/**
+ * Hàm nhận vào:
+ * - roomId: id phòng cần cập nhật.
+ * - payload: object chứa dữ liệu cần gửi lên backend, ví dụ { room_status: "locked", notes: "..." }.
+ * Hàm xử lý: gọi API PATCH /rooms/:id để cập nhật trạng thái/ghi chú phòng.
+ * Hàm trả về: Promise chứa response từ backend, trong đó response.data là phòng sau khi cập nhật.
+ */
+export function updateRoomById(roomId, payload) {
+  return apiClient(`/rooms/${roomId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}

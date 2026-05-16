@@ -13,8 +13,10 @@ import {
 } from "../../../components/icons/systemIcon.jsx";
 import DataTable from "../../../components/common/DataTable.jsx";
 import SectionLayout from "../../../components/common/SectionLayout.jsx";
+import FilterSearchToolbar from "../../../components/common/FilterSearchToolbar.jsx";
+import { RefreshButton } from "../../../components/common/buttonUI.jsx";
 
-// Mảng dữ liệu mock cho danh sách tài khoản, giữ field gần nghiệp vụ để nối API sau dễ hơn.
+// Mảng dữ liệu mock cho danh sách tài khoản, giữ field gần bảng users để nối API sau dễ hơn.
 const accountMockItems = [
   {
     id: 1,
@@ -90,7 +92,7 @@ const accountMockItems = [
   },
 ];
 
-// Mảng tab vai trò để lọc nhanh danh sách tài khoản.
+// Mảng tab vai trò để truyền vào FilterSearchToolbar, có thể thêm/xóa nút mà không sửa component.
 const accountRoleTabs = [
   { key: "all", label: "Tất cả" },
   { key: "Admin", label: "Admin" },
@@ -100,7 +102,7 @@ const accountRoleTabs = [
   { key: "Sinh viên", label: "Sinh viên" },
 ];
 
-// Mảng thống kê tổng quan của trang tài khoản, giữ quy mô demo đúng chất dashboard.
+// Mảng thống kê tổng quan của trang tài khoản.
 const accountSummaryItems = [
   { icon: UsersIcon, title: "Tổng tài khoản", value: 148 },
   { icon: AdminIcon, title: "Quản trị viên", value: 5 },
@@ -119,7 +121,7 @@ const accountUploadItems = [
   { icon: StudentIcon, title: "Sinh viên" },
 ];
 
-// Mảng trạng thái tài khoản để lọc ở thanh điều khiển.
+// Mảng trạng thái tài khoản để lọc ở thanh điều khiển phụ.
 const accountStatusOptions = [
   { value: "all", label: "Tất cả trạng thái" },
   { value: "Hoạt động", label: "Hoạt động" },
@@ -128,7 +130,7 @@ const accountStatusOptions = [
 ];
 
 /**
- * Hàm nhận vào: value là chuỗi hoặc giá trị bất kỳ cần chuẩn hóa.
+ * Hàm nhận vào: value là chuỗi cần chuẩn hóa.
  * Hàm xử lý: loại bỏ dấu tiếng Việt và đưa về chữ thường để tìm kiếm mềm.
  * Hàm trả về: chuỗi đã chuẩn hóa.
  */
@@ -140,9 +142,9 @@ function normalizeText(value) {
 }
 
 /**
- * Hàm nhận vào: status là trạng thái tài khoản hiện tại.
- * Hàm xử lý: ánh xạ trạng thái sang badge màu phù hợp để hiển thị trong bảng.
- * Hàm trả về: JSX của badge trạng thái tài khoản.
+ * Hàm nhận vào: status là trạng thái tài khoản.
+ * Hàm xử lý: ánh xạ trạng thái sang badge màu phù hợp.
+ * Hàm trả về: JSX badge trạng thái trong bảng.
  */
 function buildAccountStatusBadge(status) {
   const toneClassMap = {
@@ -157,9 +159,9 @@ function buildAccountStatusBadge(status) {
 }
 
 /**
- * Hàm nhận vào: không nhận props.
- * Hàm xử lý: dựng giao diện quản lý tài khoản theo cùng phong cách với trang rooms, gồm thống kê, khối tạo tài khoản và bảng lọc tài khoản.
- * Hàm trả về: JSX của trang /admin/accounts.
+ * Component nhận vào: không nhận props.
+ * Component xử lý: render trang quản lý tài khoản gồm thống kê, upload, toolbar lọc/tìm kiếm và bảng dữ liệu.
+ * Component trả về: JSX hoàn chỉnh cho route /admin/accounts.
  */
 export default function AccountsPage() {
   const [activeRole, setActiveRole] = useState("all");
@@ -181,12 +183,9 @@ export default function AccountsPage() {
         ].join(" "),
       );
 
-      const matchedRole =
-        activeRole === "all" || accountItem.role === activeRole;
-      const matchedStatus =
-        statusFilter === "all" || accountItem.status === statusFilter;
-      const matchedKeyword =
-        !normalizedKeyword || searchTarget.includes(normalizedKeyword);
+      const matchedRole = activeRole === "all" || accountItem.role === activeRole;
+      const matchedStatus = statusFilter === "all" || accountItem.status === statusFilter;
+      const matchedKeyword = !normalizedKeyword || searchTarget.includes(normalizedKeyword);
 
       return matchedRole && matchedStatus && matchedKeyword;
     });
@@ -217,16 +216,18 @@ export default function AccountsPage() {
   );
 
   /**
-   * Hàm nhận vào: nextRole là vai trò đang được chọn từ nhóm tab.
-   * Hàm xử lý: cập nhật vai trò lọc hiện tại cho danh sách tài khoản.
+   * Hàm nhận vào: không nhận tham số.
+   * Hàm xử lý: đưa toàn bộ bộ lọc tài khoản về trạng thái mặc định.
    * Hàm trả về: không trả về dữ liệu.
    */
-  function handleRoleChange(nextRole) {
-    setActiveRole(nextRole);
+  function handleResetFilters() {
+    setActiveRole("all");
+    setSearchKeyword("");
+    setStatusFilter("all");
   }
 
   return (
-    <div>
+    <div className="adminPageStack">
       <section className="card summaryCardGrid">
         {accountSummaryItems.map((summaryItem) => (
           <CardUI
@@ -251,49 +252,23 @@ export default function AccountsPage() {
               icon={uploadItem.icon}
               title={uploadItem.title}
               fileLabel="File excel"
-              buttonLabel={"Tải"}
+              buttonLabel="Tải"
             />
           ))}
         </SectionLayout>
 
         <div className="card accountsView accountPrimaryPanel">
-          <div className="card optionView roomToolbar">
-            <div className="buttonsView roomTabList">
-              {accountRoleTabs.map((roleItem) => {
-                const isActive = activeRole === roleItem.key;
+          <FilterSearchToolbar
+            tabs={accountRoleTabs}
+            activeKey={activeRole}
+            onTabChange={setActiveRole}
+            searchValue={searchKeyword}
+            onSearchChange={setSearchKeyword}
+            searchPlaceholder="Tìm theo mã, họ tên hoặc email..."
+            searchButtonLabel="Tìm kiếm"
+          />
 
-                return (
-                  <button
-                    key={roleItem.key}
-                    type="button"
-                    className={
-                      isActive
-                        ? "roomTabButton roomTabButtonActive"
-                        : "roomTabButton"
-                    }
-                    onClick={() => handleRoleChange(roleItem.key)}
-                  >
-                    {roleItem.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="inputFind roomSearchGroup">
-              <button type="button" className="button roomSearchButton">
-                Tìm kiếm
-              </button>
-              <input
-                type="text"
-                className="input roomSearchInput"
-                placeholder="Tìm theo mã, họ tên hoặc email..."
-                value={searchKeyword}
-                onChange={(event) => setSearchKeyword(event.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="card option roomFilterBar">
+          <div className="card option roomFilterBar accountFilterBar">
             <div className="roomFilterSummary">
               <h3 className="roomSectionTitle">Danh sách tài khoản</h3>
               <p className="roomSectionText">
@@ -302,17 +277,7 @@ export default function AccountsPage() {
             </div>
 
             <div className="roomFilterControls">
-              <button
-                type="button"
-                className="button secondary roomRefreshButton"
-                onClick={() => {
-                  setActiveRole("all");
-                  setSearchKeyword("");
-                  setStatusFilter("all");
-                }}
-              >
-                Làm mới
-              </button>
+              <RefreshButton onClick={handleResetFilters}>Làm mới</RefreshButton>
 
               <select
                 className="select roomStatusSelect"
@@ -335,8 +300,7 @@ export default function AccountsPage() {
               <div className="roomEmptyState">
                 <h4>Chưa có dữ liệu phù hợp</h4>
                 <p>
-                  Không tìm thấy tài khoản phù hợp với vai trò, trạng thái hoặc
-                  từ khóa hiện tại.
+                  Không tìm thấy tài khoản phù hợp với vai trò, trạng thái hoặc từ khóa hiện tại.
                 </p>
               </div>
             )}

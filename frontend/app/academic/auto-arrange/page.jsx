@@ -1,5 +1,6 @@
 import AppShell from '../../../components/layout/AppShell';
 import DataTable from '../../../components/common/DataTable';
+import { ButtonUI } from '../../../components/common/buttonUI.jsx';
 
 const rankedOptions = [
   {
@@ -51,9 +52,9 @@ export default function AutoArrangePage() {
         />
 
         <div style={{ marginTop: 16 }}>
-          <button className="button">Xác nhận tạo lịch draft</button>
+          <ButtonUI tone="primary" shape="rounded">Xác nhận tạo lịch draft</ButtonUI>
           {' '}
-          <button className="button secondary">Chạy lại thuật toán</button>
+          <ButtonUI tone="secondary" shape="rounded">Chạy lại thuật toán</ButtonUI>
         </div>
       </section>
     </AppShell>

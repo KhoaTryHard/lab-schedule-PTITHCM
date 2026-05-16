@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 
 import DataTable from "../../../components/common/DataTable.jsx";
+import { ButtonUI } from "../../../components/common/buttonUI.jsx";
 
 // Mảng dữ liệu mock cho tra cứu lịch thực hành toàn hệ thống, bám gần bảng lab_schedule_entries.
 const scheduleLookupMockItems = [
@@ -751,9 +752,9 @@ function buildLookupStatusBadge(status) {
  */
 function buildLookupActionButton(actionLabel) {
   return (
-    <button type="button" className="roomLinkButton">
+    <ButtonUI type="button" tone="outline" shape="pill" size="sm" className="roomLinkButton">
       {actionLabel}
-    </button>
+    </ButtonUI>
   );
 }
 
@@ -1095,26 +1096,25 @@ export default function LookupsPage() {
                 const isActive = activeTab === tabItem.key;
 
                 return (
-                  <button
+                  <ButtonUI
                     key={tabItem.key}
-                    type="button"
-                    className={
-                      isActive
-                        ? "roomTabButton roomTabButtonActive"
-                        : "roomTabButton"
-                    }
+                    shape="pill"
+                    tone={isActive ? "primary" : "outline"}
+                    size="sm"
+                    active={isActive}
+                    className={isActive ? "roomTabButton roomTabButtonActive" : "roomTabButton"}
                     onClick={() => handleTabChange(tabItem.key)}
                   >
                     {tabItem.label}
-                  </button>
+                  </ButtonUI>
                 );
               })}
             </div>
 
             <div className="inputFind roomSearchGroup">
-              <button type="button" className="button roomSearchButton">
+              <ButtonUI tone="primary" shape="rounded" className="roomSearchButton">
                 Tìm kiếm
-              </button>
+              </ButtonUI>
               <input
                 type="text"
                 className="input roomSearchInput"
@@ -1230,21 +1230,26 @@ export default function LookupsPage() {
               ) : null}
 
               <div className="lookupFilterActions">
-                <button
-                  type="button"
-                  className="button secondary roomRefreshButton"
+                <ButtonUI
+                  tone="secondary"
+                  shape="rounded"
+                  className="roomRefreshButton"
                   onClick={handleResetFilters}
                 >
                   Làm mới
-                </button>
+                </ButtonUI>
 
-                <button type="button" className="button roomSearchButton">
+                <ButtonUI tone="primary" shape="rounded" className="roomSearchButton">
                   Xuất kết quả
-                </button>
+                </ButtonUI>
 
-                <button type="button" className="button secondary lookupAdvancedButton">
+                <ButtonUI
+                  tone="secondary"
+                  shape="rounded"
+                  className="lookupAdvancedButton"
+                >
                   Bộ lọc nâng cao
-                </button>
+                </ButtonUI>
               </div>
             </div>
           </div>
