@@ -12,7 +12,7 @@ function ProfileField({ label, value }) {
   );
 }
 
-export default function AcademicOverviewPage() {
+export default function StudentOverviewPage() {
   const { profile, isLoadingUser, userError, reloadProfile } = useProfileBase();
 
   return (
@@ -20,7 +20,7 @@ export default function AcademicOverviewPage() {
       <section className="card">
         <div className="roomFilterBar">
           <div className="roomFilterSummary">
-            <h2 className="roomSectionTitle">Tổng quan cán bộ đào tạo</h2>
+            <h2 className="roomSectionTitle">Tổng quan sinh viên</h2>
             <p className="roomSectionText">
               Thông tin tài khoản được tải từ endpoint GET /api/auth/me.
             </p>
@@ -40,22 +40,10 @@ export default function AcademicOverviewPage() {
       </section>
 
       <section className="summaryCardGrid">
-        <ProfileField
-          label="Họ tên"
-          value={isLoadingUser ? "Đang tải..." : profile.fullName}
-        />
-        <ProfileField
-          label="Tên đăng nhập"
-          value={isLoadingUser ? "Đang tải..." : profile.username}
-        />
-        <ProfileField
-          label="Email"
-          value={isLoadingUser ? "Đang tải..." : profile.email}
-        />
-        <ProfileField
-          label="Vai trò"
-          value={isLoadingUser ? "Đang tải..." : `${profile.roleName} (${profile.roleCode})`}
-        />
+        <ProfileField label="Họ tên" value={isLoadingUser ? "Đang tải..." : profile.fullName} />
+        <ProfileField label="Tên đăng nhập" value={isLoadingUser ? "Đang tải..." : profile.username} />
+        <ProfileField label="Email" value={isLoadingUser ? "Đang tải..." : profile.email} />
+        <ProfileField label="Vai trò" value={isLoadingUser ? "Đang tải..." : `${profile.roleName} (${profile.roleCode})`} />
       </section>
     </div>
   );

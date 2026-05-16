@@ -1,12 +1,11 @@
-import AppShell from '../../../components/layout/AppShell';
-
 export default function StudentSchedulePage() {
   return (
-    <AppShell>
-      <section className="card">
-        <h1>Lịch thực hành của sinh viên</h1>
-        <p>SV chỉ thấy lịch đã published liên quan đến lớp/tổ của mình.</p>
-      </section>
-    </AppShell>
+    <section className="card">
+      <h2 className="roomSectionTitle">Lịch thực hành của sinh viên</h2>
+      <p className="roomSectionText">
+        Sinh viên chỉ thấy lịch đã công bố liên quan đến lớp hoặc tổ thực hành của mình.
+        Endpoint lịch hiện còn stub nên phần này sẽ tích hợp sâu sau khi backend hoàn thiện dữ liệu thật.
+      </p>
+    </section>
   );
 }
