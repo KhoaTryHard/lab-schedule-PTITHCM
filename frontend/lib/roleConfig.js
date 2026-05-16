@@ -72,6 +72,11 @@ export const ROLE_LAYOUT_CONFIG = {
     navItems: [
       { icon: "dashboard", itemName: "Tổng quan", href: "/academic" },
       {
+        icon: "school",
+        itemName: "Dữ liệu đào tạo",
+        href: "/academic/trainingData",
+      },
+      {
         icon: "person",
         itemName: "Yêu cầu xếp lịch",
         href: "/academic/schedule-requests",

@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { clearAuth } from "../../lib/authStorage";
+import { logout } from "../../services/authService";
 
 export function joinClassNames(...classNames) {
   return classNames.filter(Boolean).join(" ");
@@ -67,10 +69,23 @@ export const UiButton = ButtonUI;
 
 export function LogoutButton({ label = "Đăng xuất", className = "" }) {
   const router = useRouter();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  function handleLogout() {
-    clearAuth();
-    router.replace("/login");
+  async function handleLogout() {
+    if (isLoggingOut) {
+      return;
+    }
+
+    try {
+      setIsLoggingOut(true);
+      await logout();
+    } catch {
+      // Backend logout là stateless trong MVP.
+      // Nếu API logout lỗi, frontend vẫn phải xóa token local để thoát phiên.
+    } finally {
+      clearAuth();
+      router.replace("/login");
+    }
   }
 
   return (
@@ -79,8 +94,9 @@ export function LogoutButton({ label = "Đăng xuất", className = "" }) {
       shape="rounded"
       className={joinClassNames("uiButtonLogout", className)}
       onClick={handleLogout}
+      disabled={isLoggingOut}
     >
-      {label}
+      {isLoggingOut ? "Đang đăng xuất..." : label}
     </ButtonUI>
   );
 }
