@@ -90,7 +90,7 @@ async function getRequestById(id, userRole, userId) {
 
   const request = rows[0] || null;
 
-  if (request && userRole === ROLES.ACADEMIC_OFFICER && request.requested_by_user_id !== userId) {
+  if (request && userRole === ROLES.ACADEMIC_OFFICER && Number(request.requested_by_user_id) !== Number(userId)) {
     return null; // Don't allow viewing others' requests if CBDT
   }
 
