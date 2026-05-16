@@ -205,49 +205,80 @@
 - **Endpoint:** `GET /schedule-requests`
 - **Quyền truy cập:** `ACADEMIC_OFFICER`, `ADMIN`
 - **Headers:** `Authorization: Bearer <token>`
-- **Query Params:** `?status=pending` (Tùy chọn)
 - **Response (200 OK):**
 ```json
 {
   "success": true,
-  "message": "Success",
+  "message": "Successfully fetched schedule requests",
   "data": [
     {
       "id": 1,
-      "title": "Schedule request for CNPM",
-      "status": "pending",
+      "course_section_id": 1,
+      "requested_team_count": 2,
+      "request_status": "draft",
       "created_at": "2026-04-28T10:00:00Z"
     }
-  ],
-  "meta": {
-    "total": 1,
-    "page": 1,
-    "limit": 10
-  }
+  ]
 }
 ```
 
 ### 4.2. Tạo yêu cầu xếp lịch
-- **Mục đích:** Tạo một yêu cầu xếp lịch mới để chạy thuật toán.
+- **Mục đích:** Tạo một yêu cầu xếp lịch mới.
 - **Endpoint:** `POST /schedule-requests`
 - **Quyền truy cập:** `ACADEMIC_OFFICER`, `ADMIN`
 - **Headers:** `Authorization: Bearer <token>`
 - **Request Body:**
 ```json
 {
-  "title": "Schedule request HK2-2026",
-  "semester": "HK2-2026"
+  "course_section_id": 1,
+  "requested_team_count": 2,
+  "total_required_sessions": 3
 }
 ```
 - **Response (201 Created):**
 ```json
 {
   "success": true,
-  "message": "Request created successfully",
+  "message": "Successfully created schedule request",
   "data": {
     "id": 1,
-    "title": "Schedule request HK2-2026",
-    "status": "pending"
+    "course_section_id": 1,
+    "request_status": "draft"
+  }
+}
+```
+
+### 4.3. Xem chi tiết yêu cầu xếp lịch
+- **Mục đích:** Xem chi tiết một yêu cầu xếp lịch.
+- **Endpoint:** `GET /schedule-requests/:id`
+- **Quyền truy cập:** `ACADEMIC_OFFICER`, `ADMIN`
+- **Headers:** `Authorization: Bearer <token>`
+- **Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Successfully fetched schedule request",
+  "data": {
+    "id": 1,
+    "course_section_id": 1,
+    "request_status": "draft"
+  }
+}
+```
+
+### 4.4. Gửi yêu cầu xếp lịch
+- **Mục đích:** Gửi yêu cầu (chuyển trạng thái từ draft sang pending_review).
+- **Endpoint:** `PATCH /schedule-requests/:id/submit`
+- **Quyền truy cập:** `ACADEMIC_OFFICER`, `ADMIN`
+- **Headers:** `Authorization: Bearer <token>`
+- **Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Successfully submitted schedule request",
+  "data": {
+    "id": 1,
+    "request_status": "pending_review"
   }
 }
 ```
