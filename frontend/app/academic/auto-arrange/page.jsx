@@ -383,9 +383,9 @@ export default function AutoArrangePage() {
     if (!hasChecked) {
       return {
         variant: "muted",
-        label: "Chưa kiểm tra",
-        title: "Chưa có kết quả",
-        message: "Nhập thông tin lịch và bấm Kiểm tra ràng buộc để gọi API.",
+        label: "",
+        title: "Sẵn sàng kiểm tra",
+        message: "Nhập thông tin lịch rồi bấm Kiểm tra ràng buộc.",
       };
     }
 
@@ -446,7 +446,7 @@ export default function AutoArrangePage() {
           </StatusBadge>
         ),
       },
-      { key: "message", label: "Message từ API" },
+      { key: "message", label: "Thông báo" },
       { key: "suggestion", label: "Gợi ý xử lý" },
     ],
     [],
@@ -490,10 +490,7 @@ export default function AutoArrangePage() {
       setConstraintData(null);
       setConstraintRows([]);
       setErrorMessage(
-        getApiErrorMessage(
-          error,
-          "Không thể gọi API kiểm tra ràng buộc xếp lịch.",
-        ),
+        getApiErrorMessage(error, "Không thể kiểm tra ràng buộc xếp lịch."),
       );
     } finally {
       setIsChecking(false);
@@ -508,29 +505,23 @@ export default function AutoArrangePage() {
       return;
     }
 
-    setLocalMessage(
-      "Ràng buộc đã đạt. Có thể nối tiếp API tạo lịch thật khi backend cung cấp endpoint POST /api/schedules.",
-    );
+    setLocalMessage("Ràng buộc đã đạt. Có thể tiếp tục tạo lịch.");
   }
 
   return (
     <section className="constraintPage adminPageStack">
       <div className="commonPageHeader">
         <div className="commonPageHeaderBody">
-          <p className="commonEyebrow">W3-06 · Constraint Checking</p>
           <h1 className="commonTitle">Kiểm tra ràng buộc xếp lịch</h1>
-          <p className="commonDescription">
-            Giao diện gọi trực tiếp POST /api/schedules/check-constraints, hiển
-            thị từng rule pass/fail và khóa thao tác tạo lịch nếu có ràng buộc
-            fail.
-          </p>
         </div>
 
-        <div className="commonHeaderActions">
-          <StatusBadge variant={summaryStatus.variant}>
-            {summaryStatus.label}
-          </StatusBadge>
-        </div>
+        {summaryStatus.label ? (
+          <div className="commonHeaderActions">
+            <StatusBadge variant={summaryStatus.variant}>
+              {summaryStatus.label}
+            </StatusBadge>
+          </div>
+        ) : null}
       </div>
 
       <div className="constraintMainGrid">
@@ -541,7 +532,7 @@ export default function AutoArrangePage() {
           <div className="constraintSectionHeader">
             <div>
               <p className="commonEyebrow">Thông tin lịch cần kiểm tra</p>
-              <h2 className="constraintSectionTitle">Dữ liệu gửi lên API</h2>
+              <h2 className="constraintSectionTitle">Thông tin lịch</h2>
             </div>
 
             <div className="constraintButtonGroup">
@@ -849,11 +840,11 @@ export default function AutoArrangePage() {
         {isChecking ? (
           <LoadingState
             title="Đang kiểm tra ràng buộc..."
-            description="Hệ thống đang gọi API check-constraints, vui lòng chờ trong giây lát."
+            description="Hệ thống đang xử lý thông tin lịch."
           />
         ) : errorMessage ? (
           <ErrorState
-            title="Không thể gọi API kiểm tra ràng buộc"
+            title="Không thể kiểm tra ràng buộc"
             error={errorMessage}
           />
         ) : hasChecked ? (
@@ -866,7 +857,7 @@ export default function AutoArrangePage() {
         ) : (
           <EmptyState
             title="Chưa có kết quả kiểm tra"
-            description="Nhập dữ liệu lịch thực hành rồi bấm Kiểm tra ràng buộc để gọi API thật."
+            description="Nhập dữ liệu lịch thực hành rồi bấm Kiểm tra ràng buộc."
           />
         )}
       </section>

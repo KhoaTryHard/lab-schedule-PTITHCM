@@ -1283,6 +1283,248 @@ button:disabled {
   }
 }
 
+/* Role-based App Shell theme */
+.appShell {
+  --app-role-primary: #8b0000;
+  --app-role-primary-dark: #610000;
+  --app-role-primary-soft: rgba(139, 0, 0, 0.08);
+  --app-role-primary-hover: rgba(139, 0, 0, 0.12);
+  --app-role-primary-border: rgba(97, 0, 0, 0.14);
+  --app-role-primary-shadow: rgba(97, 0, 0, 0.18);
+}
+
+.appShellRoleQTV,
+.appShellRoleCBDT {
+  --app-role-primary: #8b0000;
+  --app-role-primary-dark: #610000;
+  --app-role-primary-soft: rgba(139, 0, 0, 0.08);
+  --app-role-primary-hover: rgba(139, 0, 0, 0.12);
+  --app-role-primary-border: rgba(97, 0, 0, 0.14);
+  --app-role-primary-shadow: rgba(97, 0, 0, 0.18);
+}
+
+.appShellRoleGV,
+.appShellRoleKTV {
+  --app-role-primary: #266dd3;
+  --app-role-primary-dark: #174ea6;
+  --app-role-primary-soft: rgba(38, 109, 211, 0.1);
+  --app-role-primary-hover: rgba(38, 109, 211, 0.14);
+  --app-role-primary-border: rgba(38, 109, 211, 0.2);
+  --app-role-primary-shadow: rgba(38, 109, 211, 0.2);
+}
+
+.appShellRoleSV {
+  --app-role-primary: #4f8fe8;
+  --app-role-primary-dark: #266dd3;
+  --app-role-primary-soft: rgba(79, 143, 232, 0.1);
+  --app-role-primary-hover: rgba(79, 143, 232, 0.14);
+  --app-role-primary-border: rgba(79, 143, 232, 0.2);
+  --app-role-primary-shadow: rgba(79, 143, 232, 0.2);
+}
+
+.appShell {
+  background:
+    radial-gradient(
+      circle at top right,
+      var(--app-role-primary-soft),
+      transparent 24%
+    ),
+    linear-gradient(180deg, #f9f7f7 0%, #f3f4f6 100%);
+}
+
+.appShellSidebar {
+  border-right-color: var(--app-role-primary-border);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.appShellBrandMark,
+.appShellUserAvatar {
+  background: linear-gradient(
+    180deg,
+    var(--app-role-primary) 0%,
+    var(--app-role-primary-dark) 100%
+  );
+  box-shadow: 0 14px 28px var(--app-role-primary-shadow);
+}
+
+.appShellNavItem {
+  min-height: 48px;
+  gap: 10px;
+  padding: 0 12px;
+  border-radius: 14px;
+}
+
+.appShellNavItem:hover {
+  color: #121c2a;
+  background: var(--app-role-primary-soft);
+}
+
+.appShellNavItemActive {
+  color: var(--app-role-primary);
+  background: var(--app-role-primary-soft);
+  box-shadow: inset 4px 0 0 var(--app-role-primary);
+}
+
+.appShellNavIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  background: var(--app-role-primary-soft);
+  color: var(--app-role-primary);
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.appShellNavIcon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.appShellNavItem:hover .appShellNavIcon {
+  background: var(--app-role-primary-hover);
+  transform: translateY(-1px);
+}
+
+.appShellNavItemActive .appShellNavIcon {
+  background: var(--app-role-primary);
+  color: #ffffff;
+}
+
+.appShellNavLabel {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.appShellTopBarBadge {
+  border-color: var(--app-role-primary-border);
+  background: var(--app-role-primary-soft);
+  color: var(--app-role-primary);
+}
+
+.appShellTopBarEyebrow {
+  color: var(--app-role-primary);
+}
+
+.appShellNavItemCollapsed {
+  justify-content: center;
+  padding: 0;
+}
+
+.appShellNavItemCollapsed .appShellNavIcon {
+  width: 38px;
+  height: 38px;
+}
+
+/* Shared compact card and role-aware buttons */
+.buttonUI--primary,
+.button,
+.uiButton--primary,
+.buttonUI--active {
+  background: linear-gradient(
+    180deg,
+    var(--app-role-primary, var(--color-primary)) 0%,
+    var(--app-role-primary-dark, var(--color-primary-dark)) 100%
+  );
+  border-color: var(--app-role-primary-border, rgba(97, 0, 0, 0.16));
+  color: #ffffff;
+  box-shadow: 0 12px 22px var(--app-role-primary-shadow, rgba(97, 0, 0, 0.16));
+}
+
+.buttonUI--outline,
+.buttonUI--ghost,
+.uiButton--ghost {
+  border-color: var(--app-role-primary-border, rgba(139, 0, 0, 0.18));
+  background: #ffffff;
+  color: var(--app-role-primary, var(--color-primary));
+  box-shadow:
+    inset 0 0 0 1px rgba(139, 0, 0, 0.04),
+    0 10px 18px rgba(15, 23, 42, 0.06);
+}
+
+.buttonUI:hover:not(:disabled),
+.button:hover:not(:disabled),
+.uiButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.buttonUI:active:not(:disabled),
+.button:active:not(:disabled),
+.uiButton:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.cardUIFrame {
+  padding: 14px;
+  border-radius: 22px;
+  gap: 12px;
+}
+
+.cardUIFrame--summary {
+  min-height: 118px;
+}
+
+.cardUIFrame--upload {
+  min-height: 136px;
+}
+
+.cardUIFrame--action {
+  min-height: 112px;
+}
+
+.cardUISummaryHeader,
+.cardUIUploadHeader,
+.cardUIActionHeader {
+  gap: 10px;
+}
+
+.cardUIIconWrap {
+  border-radius: 16px;
+}
+
+.cardUIValue {
+  font-size: 45px;
+}
+
+.cardUITitle {
+  font-size: 15px;
+}
+
+.cardUIDescription {
+  font-size: 12px;
+}
+
+.cardUIActionIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+}
+
+.cardUIActionTitle {
+  font-size: 14px;
+}
+
+.cardUIActionText {
+  font-size: 12px;
+}
+
+.cardUIUploadActions {
+  gap: 10px;
+}
+
+.roomUploadGrid .cardUIFrame--upload,
+.trainingUploadGrid .cardUIFrame--upload,
+.trainingQuickGrid .cardUIFrame--upload {
+  min-height: 116px;
+}
+
 /* Home Page */
 html {
   scroll-behavior: smooth;
@@ -4430,4 +4672,271 @@ html {
   font-weight: 600;
   line-height: 1.4;
   margin-top: 6px;
+}
+
+/* Shared filter form */
+.commonFilterGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.commonField {
+  display: grid;
+  gap: 6px;
+}
+
+.commonFieldLabel {
+  color: #374151;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.commonControl {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 0 12px;
+  background: #ffffff;
+  color: #111827;
+  outline: none;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.commonControl:focus {
+  border-color: var(--app-role-primary, var(--color-primary));
+  box-shadow: 0 0 0 4px var(--app-role-primary-soft, rgba(139, 0, 0, 0.08));
+}
+
+.commonFilterActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 8px;
+}
+/* Shared user overview */
+.profileInfoGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.profileInfoCard {
+  padding: 16px;
+  border: 1px solid rgba(139, 0, 0, 0.08);
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+}
+
+.profileInfoCardHighlight {
+  background: linear-gradient(
+    180deg,
+    #ffffff 0%,
+    var(--app-role-primary-soft, #fff8f8) 100%
+  );
+}
+
+.profileInfoLabel {
+  margin: 0 0 8px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.profileInfoValue {
+  margin: 0;
+  color: #0f172a;
+  font-size: clamp(18px, 2vw, 24px);
+  font-weight: 800;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.profileDetailHeader {
+  margin-bottom: 14px;
+}
+
+.profileDetailTitle {
+  margin: 0;
+  color: #0f172a;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.profileDetailGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.profileDetailItem {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px;
+  border: 1px solid #eef2f7;
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+.profileDetailLabel {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.profileDetailValue {
+  color: #0f172a;
+  font-size: 14px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+@media (max-width: 1180px) {
+  .profileInfoGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .profileInfoGrid,
+  .profileDetailGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Shared pagination */
+.dataTableBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.paginationBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.paginationMeta {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.paginationControls {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.paginationButton,
+.paginationEllipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.paginationButton {
+  border: 1px solid var(--app-role-primary-border, rgba(139, 0, 0, 0.18));
+  background: #ffffff;
+  color: var(--app-role-primary, var(--color-primary));
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.paginationButton:hover:not(:disabled) {
+  background: var(--app-role-primary-soft, rgba(139, 0, 0, 0.08));
+  transform: translateY(-1px);
+}
+
+.paginationButtonActive {
+  border-color: var(--app-role-primary, var(--color-primary));
+  background: var(--app-role-primary, var(--color-primary));
+  color: #ffffff;
+}
+
+.paginationButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  transform: none;
+}
+
+.paginationEllipsis {
+  color: #64748b;
+}
+
+.paginationJump {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.paginationInput {
+  width: 78px;
+  height: 34px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 0 10px;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  outline: none;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.paginationInput:focus {
+  border-color: var(--app-role-primary, var(--color-primary));
+  box-shadow: 0 0 0 4px var(--app-role-primary-soft, rgba(139, 0, 0, 0.08));
+}
+
+.paginationInputError {
+  border-color: #b91c1c;
+  box-shadow: 0 0 0 4px rgba(185, 28, 28, 0.08);
+}
+
+.paginationErrorText {
+  margin: 0;
+  color: #b91c1c;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+@media (max-width: 720px) {
+  .paginationBlock {
+    align-items: stretch;
+  }
+
+  .paginationControls,
+  .paginationJump {
+    justify-content: flex-start;
+  }
 }

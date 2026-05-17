@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from "react";
 import { CardUI } from "../../../components/common/cardUI.jsx";
 import DataTable from "../../../components/common/DataTable.jsx";
 import FilterSearchToolbar from "../../../components/common/FilterSearchToolbar.jsx";
-import SectionLayout from "../../../components/common/SectionLayout.jsx";
 import StatusBadge from "../../../components/common/StatusBadge.jsx";
 import {
   ButtonUI,
@@ -16,7 +15,7 @@ import {
   AdminIcon,
   LecturerIcon,
   UsersIcon,
-} from "../../../components/icons/systemIcon.jsx";
+} from "../../../components/systemIcon.jsx";
 import { getUser } from "../../../lib/authStorage";
 import {
   createScheduleRequest,
@@ -488,8 +487,7 @@ export default function ScheduleRequestsPage() {
 
   const requestColumns = useMemo(
     () => [
-      { key: "id", label: "ID" },
-      { key: "course_section_id", label: "ID LHP" },
+      { key: "course_section_id", label: "ID lớp học phần" },
       { key: "courseLabel", label: "Lớp học phần" },
       { key: "course_code", label: "Mã HP" },
       { key: "course_name", label: "Tên học phần" },
@@ -577,13 +575,13 @@ export default function ScheduleRequestsPage() {
         icon: AcademicIcon,
         title: "Tổng yêu cầu",
         value: requestItems.length,
-        message: "Dữ liệu thật từ GET /api/schedule-requests",
+        message: "Các yêu cầu cá nhân",
       },
       {
         icon: UsersIcon,
         title: "Nháp",
         value: draftCount,
-        message: "Trạng thái mặc định khi tạo mới",
+        message: "Nháp",
       },
       {
         icon: LecturerIcon,
@@ -715,18 +713,12 @@ export default function ScheduleRequestsPage() {
       </section>
 
       <section className="card managementAccount">
-        <SectionLayout
-          title="YÊU CẦU XẾP LỊCH"
-          message={
-            errorMessage
-              ? errorMessage
-              : successMessage ||
-                "Danh sách yêu cầu xếp lịch thực hành được tải trực tiếp từ backend."
-          }
-          direction={0}
-          className="card"
-        />
-
+        {successMessage ? (
+          <div className="commonStateBox" role="status">
+            <h3 className="commonStateTitle">Thành công</h3>
+            <p className="commonStateText">{successMessage}</p>
+          </div>
+        ) : null}
         <div className="card accountsView accountPrimaryPanel">
           <FilterSearchToolbar
             tabs={requestStatusTabs}
@@ -748,9 +740,11 @@ export default function ScheduleRequestsPage() {
             </div>
 
             <div className="roomFilterControls">
-              <StatusBadge variant={errorMessage ? "danger" : "success"}>
-                {errorMessage ? "API lỗi" : "API thật"}
-              </StatusBadge>
+              {errorMessage ? (
+                <StatusBadge variant="danger">
+                  Không thể tải dữ liệu
+                </StatusBadge>
+              ) : null}
 
               <ButtonUI
                 tone="primary"
@@ -781,7 +775,7 @@ export default function ScheduleRequestsPage() {
               loading={isLoadingRequests}
               error={errorMessage}
               emptyTitle="Chưa có yêu cầu xếp lịch"
-              emptyDescription="Backend chưa trả bản ghi nào hoặc không có dữ liệu khớp bộ lọc."
+              emptyDescription="Chưa có dữ liệu phù hợp với bộ lọc hiện tại."
             />
           </div>
         </div>

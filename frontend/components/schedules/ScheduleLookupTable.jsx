@@ -17,34 +17,6 @@ const INITIAL_FILTERS = {
   keyword: "",
 };
 
-const FIELD_STYLE = {
-  display: "grid",
-  gap: 6,
-};
-
-const LABEL_STYLE = {
-  fontSize: 13,
-  fontWeight: 700,
-  color: "#374151",
-};
-
-const CONTROL_STYLE = {
-  width: "100%",
-  minHeight: 40,
-  border: "1px solid #d1d5db",
-  borderRadius: 10,
-  padding: "0 12px",
-  background: "#ffffff",
-  color: "#111827",
-};
-
-const FILTER_GRID_STYLE = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-  gap: 12,
-  marginTop: 16,
-};
-
 const STATUS_OPTIONS = [
   { value: "all", label: "Tất cả trạng thái" },
   { value: "draft", label: "Nháp" },
@@ -391,7 +363,6 @@ export default function ScheduleLookupTable({
   const [filters, setFilters] = useState(INITIAL_FILTERS);
   const [appliedFilters, setAppliedFilters] = useState(INITIAL_FILTERS);
   const [scheduleRows, setScheduleRows] = useState([]);
-  const [backendFilters, setBackendFilters] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
 
@@ -424,10 +395,8 @@ export default function ScheduleLookupTable({
       const items = extractScheduleItems(response);
 
       setScheduleRows(items);
-      setBackendFilters(response?.data?.filters || apiFilters);
     } catch (error) {
       setScheduleRows([]);
-      setBackendFilters(apiFilters);
       setLoadError(error);
     } finally {
       setIsLoading(false);
@@ -462,7 +431,6 @@ export default function ScheduleLookupTable({
         <div className="roomFilterBar">
           <div className="roomFilterSummary">
             <h1 className="roomSectionTitle">{title}</h1>
-            <p className="roomSectionText">{description}</p>
           </div>
 
           <RefreshButton
@@ -473,12 +441,12 @@ export default function ScheduleLookupTable({
           </RefreshButton>
         </div>
 
-        <form onSubmit={handleSubmit} style={FILTER_GRID_STYLE}>
+        <form onSubmit={handleSubmit} className="commonFilterGrid">
           {showStatusFilter ? (
-            <label style={FIELD_STYLE}>
-              <span style={LABEL_STYLE}>Trạng thái</span>
+            <label className="commonField">
+              <span className="commonFieldLabel">Trạng thái</span>
               <select
-                style={CONTROL_STYLE}
+                className="commonControl"
                 value={filters.status}
                 onChange={(event) => updateFilter("status", event.target.value)}
               >
@@ -492,10 +460,10 @@ export default function ScheduleLookupTable({
           ) : null}
 
           {showWeekFilter ? (
-            <label style={FIELD_STYLE}>
-              <span style={LABEL_STYLE}>Tuần</span>
+            <label className="commonField">
+              <span className="commonFieldLabel">Tuần</span>
               <input
-                style={CONTROL_STYLE}
+                className="commonControl"
                 value={filters.week_no}
                 onChange={(event) =>
                   updateFilter("week_no", event.target.value)
@@ -506,10 +474,10 @@ export default function ScheduleLookupTable({
           ) : null}
 
           {showRoomFilter ? (
-            <label style={FIELD_STYLE}>
-              <span style={LABEL_STYLE}>Phòng</span>
+            <label className="commonField">
+              <span className="commonFieldLabel">Phòng</span>
               <input
-                style={CONTROL_STYLE}
+                className="commonControl"
                 value={filters.room_code}
                 onChange={(event) =>
                   updateFilter("room_code", event.target.value)
@@ -520,10 +488,10 @@ export default function ScheduleLookupTable({
           ) : null}
 
           {showCourseSectionFilter ? (
-            <label style={FIELD_STYLE}>
-              <span style={LABEL_STYLE}>Lớp học phần</span>
+            <label className="commonField">
+              <span className="commonFieldLabel">Lóp học phần</span>
               <input
-                style={CONTROL_STYLE}
+                className="commonControl"
                 value={filters.course_section_id}
                 onChange={(event) =>
                   updateFilter("course_section_id", event.target.value)
@@ -534,10 +502,10 @@ export default function ScheduleLookupTable({
           ) : null}
 
           {showLecturerFilter ? (
-            <label style={FIELD_STYLE}>
-              <span style={LABEL_STYLE}>Giảng viên</span>
+            <label className="commonField">
+              <span className="commonFieldLabel">Giảng viên</span>
               <input
-                style={CONTROL_STYLE}
+                className="commonControl"
                 value={filters.lecturer_user_id}
                 onChange={(event) =>
                   updateFilter("lecturer_user_id", event.target.value)
@@ -548,10 +516,10 @@ export default function ScheduleLookupTable({
           ) : null}
 
           {showKeywordFilter ? (
-            <label style={FIELD_STYLE}>
-              <span style={LABEL_STYLE}>Từ khóa</span>
+            <label className="commonField">
+              <span className="commonFieldLabel">Từ khóa</span>
               <input
-                style={CONTROL_STYLE}
+                className="commonControl"
                 value={filters.keyword}
                 onChange={(event) =>
                   updateFilter("keyword", event.target.value)
@@ -561,14 +529,7 @@ export default function ScheduleLookupTable({
             </label>
           ) : null}
 
-          <div
-            style={{
-              display: "flex",
-              alignItems: "end",
-              gap: 8,
-              flexWrap: "wrap",
-            }}
-          >
+          <div className="commonFilterActions">
             <ButtonUI type="submit">Áp dụng lọc</ButtonUI>
             <ButtonUI tone="secondary" type="button" onClick={handleReset}>
               Xóa lọc
@@ -586,19 +547,6 @@ export default function ScheduleLookupTable({
           columns={dynamicColumns}
           rows={visibleRows}
         />
-      </section>
-
-      <section className="card">
-        <h2 className="roomSectionTitle">Ghi chú tích hợp</h2>
-        <p className="roomSectionText">{integrationNote}</p>
-        <p className="roomSectionText">
-          Query đã gửi / backend echo về:{" "}
-          <code>{JSON.stringify(backendFilters || {})}</code>
-        </p>
-        <p className="roomSectionText">
-          Bộ lọc <strong>Từ khóa</strong> là client-side filter trên dữ liệu đã
-          tải, không phải filter API.
-        </p>
       </section>
     </div>
   );

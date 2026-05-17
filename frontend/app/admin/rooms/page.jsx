@@ -7,6 +7,7 @@ import DataTable from "../../../components/common/DataTable.jsx";
 import SectionLayout from "../../../components/common/SectionLayout.jsx";
 import RoomStatusDialog from "../../../components/common/RoomStatusDialog.jsx";
 import { ButtonUI } from "../../../components/common/buttonUI.jsx";
+import { renderRoomIcon as renderSystemRoomIcon } from "../../../components/systemIcon.jsx";
 import {
   getMvpRoomCodes,
   getRooms,
@@ -112,99 +113,7 @@ function getNumberValue(value) {
  * Hàm trả về: JSX icon SVG.
  */
 function renderRoomIcon(iconName, className = "", size = 24) {
-  const commonProps = {
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "1.9",
-    strokeLinecap: "round",
-    strokeLinejoin: "round",
-    viewBox: "0 0 24 24",
-    width: size,
-    height: size,
-    className,
-    "aria-hidden": "true",
-  };
-
-  switch (iconName) {
-    case "room":
-      return (
-        <svg {...commonProps}>
-          <rect x="4" y="4" width="16" height="16" rx="2" />
-          <path d="M9 4v16" />
-          <path d="M15 10h.01" />
-        </svg>
-      );
-
-    case "available":
-      return (
-        <svg {...commonProps}>
-          <circle cx="12" cy="12" r="8" />
-          <path d="m8.5 12 2.2 2.2 4.8-4.8" />
-        </svg>
-      );
-
-    case "maintenance":
-      return (
-        <svg {...commonProps}>
-          <path d="M14.5 4.5a4 4 0 0 0 4.7 4.7L11 17.4 6.6 13l7.9-7.9Z" />
-          <path d="M4.5 19.5 6.6 17.4" />
-        </svg>
-      );
-
-    case "computer":
-      return (
-        <svg {...commonProps}>
-          <rect x="3" y="5" width="18" height="12" rx="2" />
-          <path d="M8 21h8" />
-          <path d="M12 17v4" />
-        </svg>
-      );
-
-    case "usable":
-      return (
-        <svg {...commonProps}>
-          <rect x="3" y="5" width="18" height="12" rx="2" />
-          <path d="m10 11 2 2 4-4" />
-          <path d="M8 21h8" />
-          <path d="M12 17v4" />
-        </svg>
-      );
-
-    case "alert":
-      return (
-        <svg {...commonProps}>
-          <path d="M12 4 3.5 19h17L12 4Z" />
-          <path d="M12 9v4" />
-          <path d="M12 16h.01" />
-        </svg>
-      );
-
-    case "device":
-      return (
-        <svg {...commonProps}>
-          <path d="M14 7 17 10" />
-          <path d="M3 21 10 14" />
-          <path d="M14.5 3C16.9853 3 19 5.01472 19 7.5c0 .87873-.252 1.6986-.6875 2.39062L10 18.2031 5.79688 14l8.31252-8.3125C14.8014 5.25205 15.6213 5 16.5 5" />
-        </svg>
-      );
-
-    case "software":
-      return (
-        <svg {...commonProps}>
-          <rect x="4" y="4" width="16" height="16" rx="3" />
-          <path d="M8 9h8" />
-          <path d="M8 12h8" />
-          <path d="M8 15h5" />
-        </svg>
-      );
-
-    default:
-      return (
-        <svg {...commonProps}>
-          <circle cx="12" cy="12" r="8" />
-        </svg>
-      );
-  }
+  return renderSystemRoomIcon(iconName, className, size);
 }
 
 /**
@@ -514,7 +423,11 @@ export default function RoomsPage() {
                     tone={isActive ? "primary" : "outline"}
                     size="sm"
                     active={isActive}
-                    className={isActive ? "roomTabButton roomTabButtonActive" : "roomTabButton"}
+                    className={
+                      isActive
+                        ? "roomTabButton roomTabButtonActive"
+                        : "roomTabButton"
+                    }
                     onClick={() => handleTabChange(tabItem.key)}
                   >
                     {tabItem.label}
