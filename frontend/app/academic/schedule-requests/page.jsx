@@ -18,7 +18,6 @@ import {
   UsersIcon,
 } from "../../../components/icons/systemIcon.jsx";
 import { getUser } from "../../../lib/authStorage";
-import { login } from "../../../services/authService";
 import {
   createScheduleRequest,
   listScheduleRequests,
@@ -52,10 +51,24 @@ const initialCreateForm = {
   total_required_sessions: "1",
   preferred_week_start: "",
   preferred_week_end: "",
-  room_requirement: "",
-  software_equipment_requirement: "",
+  preferred_day_of_week: "",
+  preferred_time_slot_id: "",
   notes: "",
 };
+
+const ALLOWED_SCHEDULE_REQUEST_ROLES = ["QTV", "CBDT"];
+
+function normalizeRoleCode(value) {
+  return String(value || "")
+    .trim()
+    .toUpperCase();
+}
+
+function canManageScheduleRequests(user) {
+  return ALLOWED_SCHEDULE_REQUEST_ROLES.includes(
+    normalizeRoleCode(user?.role_code),
+  );
+}
 
 function normalizeText(value) {
   return String(value || "")
@@ -187,25 +200,6 @@ function normalizeScheduleRequestItem(requestItem, index) {
   };
 }
 
-function filterRequestsByCurrentUser(requestItems, currentUser) {
-  const currentRole = String(currentUser?.role_code || "")
-    .trim()
-    .toUpperCase();
-
-  if (currentRole !== "CBDT") {
-    return requestItems;
-  }
-
-  if (!currentUser?.id) {
-    return [];
-  }
-
-  return requestItems.filter(
-    (requestItem) =>
-      Number(requestItem?.requested_by_user_id) === Number(currentUser.id),
-  );
-}
-
 function sortScheduleRequests(requestItems) {
   return [...requestItems].sort(
     (firstItem, secondItem) =>
@@ -249,51 +243,110 @@ function toPositiveInteger(value) {
   return parsedValue;
 }
 
-function buildNotesPayload(formData) {
-  const noteParts = [];
-
-  if (formData.room_requirement.trim()) {
-    noteParts.push(`Yêu cầu phòng máy: ${formData.room_requirement.trim()}`);
+function getOptionalPositiveInteger(value) {
+  if (value === null || value === undefined || String(value).trim() === "") {
+    return null;
   }
 
-  if (formData.software_equipment_requirement.trim()) {
-    noteParts.push(
-      `Yêu cầu phần mềm / thiết bị: ${formData.software_equipment_requirement.trim()}`,
-    );
+  return toPositiveInteger(value);
+}
+
+function getOptionalDayOfWeek(value) {
+  if (value === null || value === undefined || String(value).trim() === "") {
+    return null;
   }
 
-  if (formData.notes.trim()) {
-    noteParts.push(`Ghi chú: ${formData.notes.trim()}`);
+  const parsedValue = Number(value);
+
+  if (!Number.isInteger(parsedValue) || parsedValue < 1 || parsedValue > 7) {
+    return null;
   }
 
-  return noteParts.join("\n");
+  return parsedValue;
+}
+
+function getValidationErrorText(errorItem) {
+  if (typeof errorItem === "string") {
+    return errorItem;
+  }
+
+  return (
+    errorItem?.msg ||
+    errorItem?.message ||
+    errorItem?.error ||
+    "Dữ liệu không hợp lệ."
+  );
+}
+
+function getValidationErrorField(errorItem) {
+  return errorItem?.path || errorItem?.param || errorItem?.field || null;
+}
+
+function getApiFieldErrors(error) {
+  if (!Array.isArray(error?.details)) {
+    return {};
+  }
+
+  return error.details.reduce((fieldErrors, errorItem) => {
+    const fieldName = getValidationErrorField(errorItem);
+
+    if (!fieldName) {
+      return fieldErrors;
+    }
+
+    return {
+      ...fieldErrors,
+      [fieldName]: getValidationErrorText(errorItem),
+    };
+  }, {});
+}
+
+function getFirstApiErrorMessage(error, fallbackMessage) {
+  if (Array.isArray(error?.details) && error.details.length > 0) {
+    return getValidationErrorText(error.details[0]);
+  }
+
+  if (error?.details && typeof error.details === "object") {
+    return Object.values(error.details).filter(Boolean).join(", ");
+  }
+
+  return error?.message || fallbackMessage;
 }
 
 function validateCreateForm(formData, currentUser) {
-  const validationErrors = [];
+  const fieldErrors = {};
 
-  if (currentUser?.role_code !== "CBDT") {
-    validationErrors.push("Chỉ tài khoản CBDT mới được tạo yêu cầu xếp lịch.");
+  // Route đã được RoleGuard bảo vệ, kiểm tra thêm tại page để tránh cache user lệch.
+  if (!canManageScheduleRequests(currentUser)) {
+    fieldErrors.form =
+      "Chỉ tài khoản QTV hoặc CBDT mới được tạo yêu cầu xếp lịch.";
   }
 
   if (!toPositiveInteger(formData.course_section_id)) {
-    validationErrors.push("Vui lòng nhập ID lớp học phần hợp lệ.");
+    fieldErrors.course_section_id = "Vui lòng nhập ID lớp học phần hợp lệ.";
   }
 
   if (!toPositiveInteger(formData.requested_team_count)) {
-    validationErrors.push("Số tổ thực hành phải là số nguyên dương.");
+    fieldErrors.requested_team_count =
+      "Số tổ thực hành phải là số nguyên dương.";
   }
 
   if (!toPositiveInteger(formData.max_students_per_team)) {
-    validationErrors.push("Số sinh viên tham dự phải là số nguyên dương.");
+    fieldErrors.max_students_per_team =
+      "Số sinh viên tham dự phải là số nguyên dương.";
   }
 
   if (!toPositiveInteger(formData.total_required_sessions)) {
-    validationErrors.push("Số buổi cần xếp phải là số nguyên dương.");
+    fieldErrors.total_required_sessions =
+      "Số buổi cần xếp phải là số nguyên dương.";
   }
 
-  if (!formData.preferred_week_start || !formData.preferred_week_end) {
-    validationErrors.push("Vui lòng chọn đủ khoảng thời gian dự kiến.");
+  if (!formData.preferred_week_start) {
+    fieldErrors.preferred_week_start = "Vui lòng chọn ngày bắt đầu dự kiến.";
+  }
+
+  if (!formData.preferred_week_end) {
+    fieldErrors.preferred_week_end = "Vui lòng chọn ngày kết thúc dự kiến.";
   }
 
   if (
@@ -301,10 +354,26 @@ function validateCreateForm(formData, currentUser) {
     formData.preferred_week_end &&
     formData.preferred_week_end < formData.preferred_week_start
   ) {
-    validationErrors.push("Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu.");
+    fieldErrors.preferred_week_end =
+      "Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu.";
   }
 
-  return validationErrors;
+  if (
+    formData.preferred_day_of_week &&
+    !getOptionalDayOfWeek(formData.preferred_day_of_week)
+  ) {
+    fieldErrors.preferred_day_of_week =
+      "Thứ ưu tiên phải nằm trong khoảng 1–7.";
+  }
+
+  if (
+    formData.preferred_time_slot_id &&
+    !getOptionalPositiveInteger(formData.preferred_time_slot_id)
+  ) {
+    fieldErrors.preferred_time_slot_id = "ID ca học phải là số nguyên dương.";
+  }
+
+  return fieldErrors;
 }
 
 function buildCreatePayload(formData) {
@@ -317,7 +386,11 @@ function buildCreatePayload(formData) {
     ),
     preferred_week_start: formData.preferred_week_start || null,
     preferred_week_end: formData.preferred_week_end || null,
-    notes: buildNotesPayload(formData) || null,
+    preferred_day_of_week: getOptionalDayOfWeek(formData.preferred_day_of_week),
+    preferred_time_slot_id: getOptionalPositiveInteger(
+      formData.preferred_time_slot_id,
+    ),
+    notes: formData.notes.trim() || null,
   };
 }
 
@@ -332,11 +405,10 @@ export default function ScheduleRequestsPage() {
   const [successMessage, setSuccessMessage] = useState("");
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [createForm, setCreateForm] = useState(initialCreateForm);
+  const [createFieldErrors, setCreateFieldErrors] = useState({});
   const [createErrorMessage, setCreateErrorMessage] = useState("");
   const [createSuccessMessage, setCreateSuccessMessage] = useState("");
-  const [reauthPassword, setReauthPassword] = useState("");
   const [isSubmittingCreate, setIsSubmittingCreate] = useState(false);
 
   useEffect(() => {
@@ -361,13 +433,12 @@ export default function ScheduleRequestsPage() {
           ? [response.data]
           : [];
 
-      const visibleRequestItems = filterRequestsByCurrentUser(
-        rawRequestItems,
-        storedCurrentUser,
-      );
-
+      // Backend đã tự filter theo role:
+      // - CBDT chỉ thấy yêu cầu do chính mình tạo.
+      // - QTV thấy toàn bộ yêu cầu.
+      // Vì vậy frontend không tự lọc theo requested_by_user_id để tránh lệch dữ liệu.
       const normalizedRequestItems = sortScheduleRequests(
-        visibleRequestItems.map(normalizeScheduleRequestItem),
+        rawRequestItems.map(normalizeScheduleRequestItem),
       );
 
       setRequestItems(normalizedRequestItems);
@@ -547,17 +618,20 @@ export default function ScheduleRequestsPage() {
 
   function resetCreateState() {
     setCreateForm(initialCreateForm);
-    setReauthPassword("");
+    setCreateFieldErrors({});
     setCreateErrorMessage("");
     setCreateSuccessMessage("");
-    setIsPasswordDialogOpen(false);
   }
 
   function handleOpenCreateModal() {
     setSuccessMessage("");
 
-    if (currentUser?.role_code !== "CBDT") {
-      setErrorMessage("Chỉ tài khoản CBDT mới được tạo yêu cầu xếp lịch.");
+    // Đồng bộ frontend với backend contract:
+    // GET/POST /api/schedule-requests cho phép QTV và CBDT.
+    if (!canManageScheduleRequests(currentUser)) {
+      setErrorMessage(
+        "Chỉ tài khoản QTV hoặc CBDT mới được tạo yêu cầu xếp lịch.",
+      );
       return;
     }
 
@@ -574,51 +648,39 @@ export default function ScheduleRequestsPage() {
     resetCreateState();
   }
 
-  function handleContinueToPasswordDialog(event) {
+  async function handleCreateRequestSubmit(event) {
     event.preventDefault();
 
-    const validationErrors = validateCreateForm(createForm, currentUser);
+    const fieldErrors = validateCreateForm(createForm, currentUser);
 
-    if (validationErrors.length > 0) {
-      setCreateErrorMessage(validationErrors.join(" "));
-      return;
-    }
-
-    setCreateErrorMessage("");
-    setIsPasswordDialogOpen(true);
-  }
-
-  async function handleConfirmCreateRequest(event) {
-    event.preventDefault();
-
-    if (!reauthPassword.trim()) {
-      setCreateErrorMessage("Vui lòng nhập lại mật khẩu để xác nhận.");
-      return;
-    }
-
-    if (!currentUser?.username) {
-      setCreateErrorMessage("Không xác định được tài khoản hiện tại.");
+    if (Object.keys(fieldErrors).length > 0) {
+      setCreateFieldErrors(fieldErrors);
+      setCreateErrorMessage(
+        fieldErrors.form || "Vui lòng kiểm tra lại các trường chưa hợp lệ.",
+      );
       return;
     }
 
     try {
       setIsSubmittingCreate(true);
+      setCreateFieldErrors({});
       setCreateErrorMessage("");
       setCreateSuccessMessage("");
 
-      await login(currentUser.username, reauthPassword);
       await createScheduleRequest(buildCreatePayload(createForm));
 
       setCreateSuccessMessage("Tạo yêu cầu xếp lịch thành công.");
       setSuccessMessage("Tạo yêu cầu xếp lịch thành công.");
-      setIsPasswordDialogOpen(false);
       setIsCreateModalOpen(false);
       resetCreateState();
 
       await loadScheduleRequests();
     } catch (error) {
+      const apiFieldErrors = getApiFieldErrors(error);
+
+      setCreateFieldErrors(apiFieldErrors);
       setCreateErrorMessage(
-        getApiErrorMessage(
+        getFirstApiErrorMessage(
           error,
           "Không thể tạo yêu cầu xếp lịch. Vui lòng kiểm tra dữ liệu.",
         ),
@@ -749,7 +811,7 @@ export default function ScheduleRequestsPage() {
               </button>
             </div>
 
-            <form onSubmit={handleContinueToPasswordDialog}>
+            <form onSubmit={handleCreateRequestSubmit}>
               <div className="modalBody scheduleRequestModalBody">
                 <div className="scheduleRequestFormGrid">
                   <label className="trainingField">
@@ -768,6 +830,11 @@ export default function ScheduleRequestsPage() {
                       }
                       disabled={isSubmittingCreate}
                     />
+                    {createFieldErrors.course_section_id ? (
+                      <span className="fieldErrorText">
+                        {createFieldErrors.course_section_id}
+                      </span>
+                    ) : null}
                   </label>
 
                   <label className="trainingField">
@@ -785,6 +852,11 @@ export default function ScheduleRequestsPage() {
                       }
                       disabled={isSubmittingCreate}
                     />
+                    {createFieldErrors.requested_team_count ? (
+                      <span className="fieldErrorText">
+                        {createFieldErrors.requested_team_count}
+                      </span>
+                    ) : null}
                   </label>
 
                   <label className="trainingField">
@@ -802,6 +874,11 @@ export default function ScheduleRequestsPage() {
                       }
                       disabled={isSubmittingCreate}
                     />
+                    {createFieldErrors.total_required_sessions ? (
+                      <span className="fieldErrorText">
+                        {createFieldErrors.total_required_sessions}
+                      </span>
+                    ) : null}
                   </label>
 
                   <label className="trainingField">
@@ -820,6 +897,11 @@ export default function ScheduleRequestsPage() {
                       }
                       disabled={isSubmittingCreate}
                     />
+                    {createFieldErrors.max_students_per_team ? (
+                      <span className="fieldErrorText">
+                        {createFieldErrors.max_students_per_team}
+                      </span>
+                    ) : null}
                   </label>
 
                   <label className="trainingField">
@@ -836,6 +918,11 @@ export default function ScheduleRequestsPage() {
                       }
                       disabled={isSubmittingCreate}
                     />
+                    {createFieldErrors.preferred_week_start ? (
+                      <span className="fieldErrorText">
+                        {createFieldErrors.preferred_week_start}
+                      </span>
+                    ) : null}
                   </label>
 
                   <label className="trainingField">
@@ -852,35 +939,63 @@ export default function ScheduleRequestsPage() {
                       }
                       disabled={isSubmittingCreate}
                     />
+                    {createFieldErrors.preferred_week_end ? (
+                      <span className="fieldErrorText">
+                        {createFieldErrors.preferred_week_end}
+                      </span>
+                    ) : null}
                   </label>
 
-                  <label className="trainingField trainingFieldFull">
-                    Yêu cầu phòng máy
-                    <input
+                  <label className="trainingField">
+                    Thứ ưu tiên
+                    <select
                       className="input"
-                      value={createForm.room_requirement}
-                      placeholder="Ví dụ: ưu tiên phòng 2B11, cần máy chiếu, mạng LAN ổn định..."
-                      onChange={(event) =>
-                        updateCreateForm("room_requirement", event.target.value)
-                      }
-                      disabled={isSubmittingCreate}
-                    />
-                  </label>
-
-                  <label className="trainingField trainingFieldFull">
-                    Yêu cầu phần mềm / thiết bị
-                    <textarea
-                      className="textarea trainingTextarea"
-                      value={createForm.software_equipment_requirement}
-                      placeholder="Ví dụ: VS Code, Node.js, MySQL Workbench, trình duyệt Chrome..."
+                      value={createForm.preferred_day_of_week}
                       onChange={(event) =>
                         updateCreateForm(
-                          "software_equipment_requirement",
+                          "preferred_day_of_week",
+                          event.target.value,
+                        )
+                      }
+                      disabled={isSubmittingCreate}
+                    >
+                      <option value="">Không chọn</option>
+                      <option value="1">Chủ nhật</option>
+                      <option value="2">Thứ 2</option>
+                      <option value="3">Thứ 3</option>
+                      <option value="4">Thứ 4</option>
+                      <option value="5">Thứ 5</option>
+                      <option value="6">Thứ 6</option>
+                      <option value="7">Thứ 7</option>
+                    </select>
+                    {createFieldErrors.preferred_day_of_week ? (
+                      <span className="fieldErrorText">
+                        {createFieldErrors.preferred_day_of_week}
+                      </span>
+                    ) : null}
+                  </label>
+
+                  <label className="trainingField">
+                    ID ca học ưu tiên
+                    <input
+                      className="input"
+                      type="number"
+                      min="1"
+                      value={createForm.preferred_time_slot_id}
+                      placeholder="Ví dụ: 1"
+                      onChange={(event) =>
+                        updateCreateForm(
+                          "preferred_time_slot_id",
                           event.target.value,
                         )
                       }
                       disabled={isSubmittingCreate}
                     />
+                    {createFieldErrors.preferred_time_slot_id ? (
+                      <span className="fieldErrorText">
+                        {createFieldErrors.preferred_time_slot_id}
+                      </span>
+                    ) : null}
                   </label>
 
                   <label className="trainingField">
@@ -910,12 +1025,17 @@ export default function ScheduleRequestsPage() {
                     <textarea
                       className="textarea trainingTextarea"
                       value={createForm.notes}
-                      placeholder="Nhập ghi chú bổ sung cho người xếp lịch..."
+                      placeholder="Nhập yêu cầu phòng, phần mềm, thiết bị hoặc ghi chú bổ sung..."
                       onChange={(event) =>
                         updateCreateForm("notes", event.target.value)
                       }
                       disabled={isSubmittingCreate}
                     />
+                    {createFieldErrors.notes ? (
+                      <span className="fieldErrorText">
+                        {createFieldErrors.notes}
+                      </span>
+                    ) : null}
                   </label>
                 </div>
 
@@ -948,79 +1068,7 @@ export default function ScheduleRequestsPage() {
                   type="submit"
                   disabled={isSubmittingCreate}
                 >
-                  Tiếp tục xác nhận
-                </ButtonUI>
-              </div>
-            </form>
-          </section>
-        </div>
-      ) : null}
-
-      {isPasswordDialogOpen ? (
-        <div className="modalOverlay" role="presentation">
-          <section className="modalPanel" role="dialog" aria-modal="true">
-            <div className="modalHeader">
-              <div>
-                <p className="modalEyebrow">Xác nhận bảo mật</p>
-                <h3 className="modalTitle">Nhập lại mật khẩu</h3>
-              </div>
-
-              <button
-                type="button"
-                className="modalCloseButton"
-                onClick={() => setIsPasswordDialogOpen(false)}
-                disabled={isSubmittingCreate}
-                aria-label="Đóng popup xác nhận mật khẩu"
-              >
-                ×
-              </button>
-            </div>
-
-            <form onSubmit={handleConfirmCreateRequest}>
-              <div className="modalBody">
-                <p className="modalText">
-                  Vui lòng nhập lại mật khẩu của tài khoản{" "}
-                  <strong>{currentUser?.username || "hiện tại"}</strong> trước
-                  khi gửi yêu cầu lên hệ thống.
-                </p>
-
-                <label className="label">
-                  Mật khẩu xác nhận
-                  <input
-                    className="input"
-                    type="password"
-                    value={reauthPassword}
-                    placeholder="••••••••"
-                    onChange={(event) => setReauthPassword(event.target.value)}
-                    disabled={isSubmittingCreate}
-                    autoComplete="current-password"
-                  />
-                </label>
-
-                {createErrorMessage ? (
-                  <p className="scheduleRequestAlert scheduleRequestAlertDanger">
-                    {createErrorMessage}
-                  </p>
-                ) : null}
-              </div>
-
-              <div className="modalActions">
-                <ButtonUI
-                  tone="secondary"
-                  shape="rounded"
-                  onClick={() => setIsPasswordDialogOpen(false)}
-                  disabled={isSubmittingCreate}
-                >
-                  Quay lại
-                </ButtonUI>
-
-                <ButtonUI
-                  tone="primary"
-                  shape="rounded"
-                  type="submit"
-                  disabled={isSubmittingCreate}
-                >
-                  {isSubmittingCreate ? "Đang gửi..." : "Xác nhận và gửi"}
+                  {isSubmittingCreate ? "Đang gửi..." : "Tạo yêu cầu"}
                 </ButtonUI>
               </div>
             </form>
