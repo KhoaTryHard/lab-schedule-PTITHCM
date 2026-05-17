@@ -23,6 +23,25 @@ const REQUIRED_RULES = [
     suggestion: "Chọn phòng thuộc phạm vi 2B11, 2B21 hoặc 2B31.",
   },
   {
+    code: "ROOM_STATUS",
+    label: "Phòng khả dụng",
+    meaning: "Phòng có đang ở trạng thái available không.",
+    suggestion: "Chọn phòng đang khả dụng hoặc báo kỹ thuật viên mở lại phòng.",
+  },
+  {
+    code: "ROOM_BLOCKED",
+    label: "Phòng bị khóa",
+    meaning: "Phòng có bị block bởi yêu cầu khóa phòng đã duyệt không.",
+    suggestion: "Chọn phòng khác hoặc đổi khoảng thời gian.",
+  },
+  {
+    code: "HOLIDAY_BLOCKED",
+    label: "Ngày nghỉ",
+    meaning:
+      "Ngày học có bị chặn bởi lịch nghỉ hoặc ngày không xếp lịch không.",
+    suggestion: "Chọn ngày khác không thuộc lịch nghỉ.",
+  },
+  {
     code: "ROOM_CONFLICT",
     label: "Trùng phòng",
     meaning: "Phòng có bị trùng lịch cùng thứ, ca và khoảng ngày không.",
@@ -35,25 +54,23 @@ const REQUIRED_RULES = [
     suggestion: "Chọn giảng viên khác hoặc đổi ca thực hành.",
   },
   {
-    code: "ROOM_AVAILABLE",
-    label: "Phòng khả dụng",
-    meaning:
-      "Phòng có đang mở, không bảo trì, không hỏng, không bị khóa không.",
-    suggestion: "Chọn phòng đang ở trạng thái khả dụng.",
-  },
-  {
     code: "CAPACITY_OK",
     label: "Đủ sức chứa",
-    meaning: "Số máy/sức chứa phòng có đáp ứng số sinh viên thực hành không.",
+    meaning: "Số máy/sức chứa phòng có đáp ứng tổ thực hành không.",
     suggestion: "Chọn phòng lớn hơn hoặc tách thêm tổ thực hành.",
   },
   {
     code: "SOFTWARE_OK",
     label: "Đủ phần mềm",
-    meaning: "Phòng có cài đủ phần mềm học phần yêu cầu không.",
+    meaning: "Phòng có cài đủ phần mềm yêu cầu không.",
     suggestion:
       "Chọn phòng khác hoặc yêu cầu kỹ thuật viên cài bổ sung phần mềm.",
   },
+];
+
+const TIME_SLOT_OPTIONS = [
+  { value: "Tiết 1-4", label: "Tiết 1-4" },
+  { value: "Tiết 7-10", label: "Tiết 7-10" },
 ];
 
 const EXTRA_RULE_META = {
@@ -72,12 +89,12 @@ const INITIAL_FORM = {
   lecturer_user_id: "8",
   room_id: "1",
   room_code: "2B11",
-  day_of_week: "3",
-  time_slot_id: "2",
-  start_date: "2026-04-28",
-  end_date: "2026-04-28",
+  day_of_week: "4",
+  time_slot: "Tiết 1-4",
+  start_date: "2026-04-29",
+  end_date: "2026-04-29",
   student_count: "40",
-  required_software_ids: "1,2,6,8",
+  required_software_ids: "",
 };
 
 const DEMO_VALID_FORM = {
@@ -87,12 +104,12 @@ const DEMO_VALID_FORM = {
   lecturer_user_id: "8",
   room_id: "1",
   room_code: "2B11",
-  day_of_week: "3",
-  time_slot_id: "2",
-  start_date: "2026-04-28",
-  end_date: "2026-04-28",
+  day_of_week: "4",
+  time_slot: "Tiết 1-4",
+  start_date: "2026-04-29",
+  end_date: "2026-04-29",
   student_count: "40",
-  required_software_ids: "1,2,6,8",
+  required_software_ids: "",
 };
 
 const DEMO_INVALID_FORM = {
@@ -103,13 +120,12 @@ const DEMO_INVALID_FORM = {
   room_id: "99",
   room_code: "2B99",
   day_of_week: "6",
-  time_slot_id: "2",
+  time_slot: "Tiết 7-10",
   start_date: "2026-05-01",
   end_date: "2026-05-01",
   student_count: "45",
   required_software_ids: "1,2,6,8",
 };
-
 function toPositiveInteger(value, fieldLabel) {
   const parsedValue = Number(value);
 
@@ -136,6 +152,10 @@ function buildPayload(formData) {
     throw new Error("Vui lòng nhập mã phòng.");
   }
 
+  if (!formData.time_slot.trim()) {
+    throw new Error("Vui lòng chọn ca học.");
+  }
+
   if (!formData.start_date || !formData.end_date) {
     throw new Error("Vui lòng chọn đủ ngày bắt đầu và ngày kết thúc.");
   }
@@ -144,27 +164,23 @@ function buildPayload(formData) {
     throw new Error("Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu.");
   }
 
+  // Payload bám đúng backend POST /api/schedules/check-constraints.
+  // Các field request_id, course_section_id, room_id, student_count chỉ dùng cho UI demo,
+  // không gửi lên API vì backend hiện không validate/không dùng.
   return {
-    request_id: toPositiveInteger(formData.request_id, "ID yêu cầu"),
-    course_section_id: toPositiveInteger(
-      formData.course_section_id,
-      "ID lớp học phần",
+    room_code: formData.room_code.trim().toUpperCase(),
+    lecturer_user_id: toPositiveInteger(
+      formData.lecturer_user_id,
+      "ID giảng viên",
     ),
     practice_team_id: toPositiveInteger(
       formData.practice_team_id,
       "ID tổ thực hành",
     ),
-    lecturer_user_id: toPositiveInteger(
-      formData.lecturer_user_id,
-      "ID giảng viên",
-    ),
-    room_id: toPositiveInteger(formData.room_id, "ID phòng"),
-    room_code: formData.room_code.trim().toUpperCase(),
     day_of_week: toPositiveInteger(formData.day_of_week, "Thứ trong tuần"),
-    time_slot_id: toPositiveInteger(formData.time_slot_id, "ID ca học"),
+    time_slot: formData.time_slot.trim(),
     start_date: formData.start_date,
     end_date: formData.end_date,
-    student_count: toPositiveInteger(formData.student_count, "Số sinh viên"),
     required_software_ids: parseSoftwareIds(formData.required_software_ids),
   };
 }
@@ -283,13 +299,30 @@ function getResultLabel(passed) {
   return "CHƯA TRẢ";
 }
 
+function getValidationDetailText(detail) {
+  if (typeof detail === "string") {
+    return detail;
+  }
+
+  return (
+    detail?.msg ||
+    detail?.message ||
+    detail?.error ||
+    detail?.detail ||
+    JSON.stringify(detail)
+  );
+}
+
 function getApiErrorMessage(error, fallbackMessage) {
   if (Array.isArray(error?.details) && error.details.length > 0) {
-    return error.details.join(", ");
+    return error.details.map(getValidationDetailText).join(", ");
   }
 
   if (error?.details && typeof error.details === "object") {
-    return Object.values(error.details).filter(Boolean).join(", ");
+    return Object.values(error.details)
+      .filter(Boolean)
+      .map(getValidationDetailText)
+      .join(", ");
   }
 
   return error?.message || fallbackMessage;
@@ -633,17 +666,21 @@ export default function AutoArrangePage() {
             </label>
 
             <label className="label">
-              ID ca học
-              <input
-                className="input"
-                type="number"
-                min="1"
-                value={formData.time_slot_id}
+              Ca học
+              <select
+                className="select"
+                value={formData.time_slot}
                 onChange={(event) =>
-                  updateFormData("time_slot_id", event.target.value)
+                  updateFormData("time_slot", event.target.value)
                 }
                 disabled={isChecking}
-              />
+              >
+                {TIME_SLOT_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </label>
 
             <label className="label">
@@ -703,8 +740,8 @@ export default function AutoArrangePage() {
           <div className="constraintPayloadPreview">
             <p>
               <strong>Preview:</strong> Phòng {formData.room_code || "—"} ·{" "}
-              {formatDayOfWeek(formData.day_of_week)} · Ca #
-              {formData.time_slot_id || "—"} · {formData.start_date || "—"} đến{" "}
+              {formatDayOfWeek(formData.day_of_week)} ·{" "}
+              {formData.time_slot || "—"} · {formData.start_date || "—"} đến{" "}
               {formData.end_date || "—"}
             </p>
           </div>
