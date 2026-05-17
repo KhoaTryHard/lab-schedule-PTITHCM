@@ -1,6 +1,7 @@
-const { ok } = require('../../utils/apiResponse');
+const { ok, fail } = require('../../utils/apiResponse');
+const { validationResult } = require('express-validator');
 const {
-  checkScheduleConstraintsStub,
+  checkScheduleConstraints,
   autoArrangeScheduleStub,
   getScheduleListStub
 } = require('./schedule.service');
@@ -9,11 +10,17 @@ function listSchedules(req, res) {
   return ok(res, getScheduleListStub(req.query));
 }
 
-function checkConstraints(req, res) {
-  return ok(res, checkScheduleConstraintsStub(req.body), 'Constraint check stub');
+async function checkConstraints(req, res) {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return fail(res, 400, 'Validation failed', errors.array());
+  }
+
+  const result = await checkScheduleConstraints(req.body);
+  return ok(res, result, 'Constraint check completed');
 }
 
-function autoArrange(req, res) {
+async function autoArrange(req, res) {
   return ok(res, autoArrangeScheduleStub(req.body), 'Auto arrange preview stub');
 }
 
