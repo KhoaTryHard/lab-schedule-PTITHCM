@@ -4423,3 +4423,11 @@ html {
     grid-template-columns: 1fr;
   }
 }
+
+.fieldErrorText {
+  color: #a30b37;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-top: 6px;
+}
