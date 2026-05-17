@@ -6,6 +6,7 @@ import { CardUI, UploadCard } from "../../../components/common/cardUI.jsx";
 import DataTable from "../../../components/common/DataTable.jsx";
 import SectionLayout from "../../../components/common/SectionLayout.jsx";
 import { ButtonUI } from "../../../components/common/buttonUI.jsx";
+import { renderTrainingIcon as renderSystemTrainingIcon } from "../../../components/systemIcon.jsx";
 
 // Mảng dữ liệu mock cho học kỳ, giữ field gần bảng semesters để nối API sau thuận tiện hơn.
 const semesterMockItems = [
@@ -136,7 +137,8 @@ const courseMockItems = [
     lab_periods: 30,
     is_lab_required: true,
     course_status: "Active",
-    description: "Khai thác môi trường web, CSDL và các kịch bản kiểm thử an toàn.",
+    description:
+      "Khai thác môi trường web, CSDL và các kịch bản kiểm thử an toàn.",
   },
   {
     id: 3,
@@ -558,102 +560,7 @@ function formatDateLabel(dateValue) {
  * Hàm trả về: JSX của icon tương ứng.
  */
 function renderTrainingIcon(iconName, className = "", size = 24) {
-  const commonProps = {
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "1.9",
-    strokeLinecap: "round",
-    strokeLinejoin: "round",
-    viewBox: "0 0 24 24",
-    width: size,
-    height: size,
-    className,
-    "aria-hidden": "true",
-  };
-
-  switch (iconName) {
-    case "overview":
-      return (
-        <svg {...commonProps}>
-          <path d="M4 19h16" />
-          <path d="M6 16V9" />
-          <path d="M12 16V5" />
-          <path d="M18 16v-3" />
-        </svg>
-      );
-    case "semester":
-      return (
-        <svg {...commonProps}>
-          <rect x="4" y="5" width="16" height="15" rx="3" />
-          <path d="M8 3v4" />
-          <path d="M16 3v4" />
-          <path d="M4 10h16" />
-        </svg>
-      );
-    case "week":
-      return (
-        <svg {...commonProps}>
-          <rect x="4" y="4" width="16" height="16" rx="3" />
-          <path d="M8 8h8" />
-          <path d="M8 12h4" />
-          <path d="M8 16h6" />
-        </svg>
-      );
-    case "slot":
-      return (
-        <svg {...commonProps}>
-          <circle cx="12" cy="12" r="8" />
-          <path d="M12 8v4l3 2" />
-        </svg>
-      );
-    case "course":
-      return (
-        <svg {...commonProps}>
-          <path d="M5 6.5A2.5 2.5 0 0 1 7.5 4H19v14H7.5A2.5 2.5 0 0 0 5 20.5Z" />
-          <path d="M5 6.5v14" />
-        </svg>
-      );
-    case "section":
-      return (
-        <svg {...commonProps}>
-          <rect x="4" y="5" width="16" height="4" rx="1.5" />
-          <rect x="4" y="10" width="16" height="4" rx="1.5" />
-          <rect x="4" y="15" width="10" height="4" rx="1.5" />
-        </svg>
-      );
-    case "cohort":
-      return (
-        <svg {...commonProps}>
-          <path d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-          <path d="M16 10a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />
-          <path d="M4 19c0-2.5 2-4 4.5-4H10c2.5 0 4.5 1.5 4.5 4" />
-          <path d="M14 19c.2-1.7 1.5-3 3.5-3H18c1 0 1.9.3 2.6.9" />
-        </svg>
-      );
-    case "lecturer":
-      return (
-        <svg {...commonProps}>
-          <rect x="4" y="4" width="16" height="12" rx="2" />
-          <path d="M8 20h8" />
-          <path d="M12 16v4" />
-          <path d="m9 9 2 2 4-4" />
-        </svg>
-      );
-    case "import":
-      return (
-        <svg {...commonProps}>
-          <path d="M12 4v10" />
-          <path d="m8.5 8.5 3.5-3.5 3.5 3.5" />
-          <path d="M5 19h14" />
-        </svg>
-      );
-    default:
-      return (
-        <svg {...commonProps}>
-          <circle cx="12" cy="12" r="8" />
-        </svg>
-      );
-  }
+  return renderSystemTrainingIcon(iconName, className, size);
 }
 
 /**
@@ -833,8 +740,16 @@ export default function TrainingDataPage() {
     ).length;
 
     return [
-      { iconName: "semester", title: "Học kỳ", value: semesterMockItems.length },
-      { iconName: "week", title: "Tuần học", value: academicWeekMockItems.length },
+      {
+        iconName: "semester",
+        title: "Học kỳ",
+        value: semesterMockItems.length,
+      },
+      {
+        iconName: "week",
+        title: "Tuần học",
+        value: academicWeekMockItems.length,
+      },
       { iconName: "slot", title: "Ca học", value: timeSlotMockItems.length },
       { iconName: "course", title: "Học phần", value: courseMockItems.length },
       {
@@ -863,7 +778,10 @@ export default function TrainingDataPage() {
     });
   }, [activeTab, searchKeyword, statusFilter]);
 
-  const currentColumns = useMemo(() => trainingColumnMap[activeTab], [activeTab]);
+  const currentColumns = useMemo(
+    () => trainingColumnMap[activeTab],
+    [activeTab],
+  );
 
   const currentRows = useMemo(() => {
     switch (activeTab) {
@@ -878,7 +796,13 @@ export default function TrainingDataPage() {
           is_current: buildCurrentBadge(item.is_current),
           semester_status: buildTrainingStatusBadge(item.semester_status),
           action: (
-            <ButtonUI type="button" tone="outline" shape="pill" size="sm" className="roomLinkButton">
+            <ButtonUI
+              type="button"
+              tone="outline"
+              shape="pill"
+              size="sm"
+              className="roomLinkButton"
+            >
               Xem học kỳ
             </ButtonUI>
           ),
@@ -892,7 +816,13 @@ export default function TrainingDataPage() {
           end_date: formatDateLabel(item.end_date),
           notes: item.notes || "—",
           action: (
-            <ButtonUI type="button" tone="outline" shape="pill" size="sm" className="roomLinkButton">
+            <ButtonUI
+              type="button"
+              tone="outline"
+              shape="pill"
+              size="sm"
+              className="roomLinkButton"
+            >
               Xem tuần
             </ButtonUI>
           ),
@@ -908,7 +838,13 @@ export default function TrainingDataPage() {
           end_time: item.end_time,
           slot_status: buildTrainingStatusBadge(item.slot_status),
           action: (
-            <ButtonUI type="button" tone="outline" shape="pill" size="sm" className="roomLinkButton">
+            <ButtonUI
+              type="button"
+              tone="outline"
+              shape="pill"
+              size="sm"
+              className="roomLinkButton"
+            >
               Chỉnh sửa
             </ButtonUI>
           ),
@@ -924,7 +860,13 @@ export default function TrainingDataPage() {
           is_lab_required: item.is_lab_required ? "Có" : "Không",
           course_status: buildTrainingStatusBadge(item.course_status),
           action: (
-            <ButtonUI type="button" tone="outline" shape="pill" size="sm" className="roomLinkButton">
+            <ButtonUI
+              type="button"
+              tone="outline"
+              shape="pill"
+              size="sm"
+              className="roomLinkButton"
+            >
               Xem học phần
             </ButtonUI>
           ),
@@ -943,7 +885,13 @@ export default function TrainingDataPage() {
           )}`,
           section_status: buildTrainingStatusBadge(item.section_status),
           action: (
-            <ButtonUI type="button" tone="outline" shape="pill" size="sm" className="roomLinkButton">
+            <ButtonUI
+              type="button"
+              tone="outline"
+              shape="pill"
+              size="sm"
+              className="roomLinkButton"
+            >
               Mở lịch
             </ButtonUI>
           ),
@@ -957,7 +905,13 @@ export default function TrainingDataPage() {
           intake_year: item.intake_year,
           cohort_status: buildTrainingStatusBadge(item.cohort_status),
           action: (
-            <ButtonUI type="button" tone="outline" shape="pill" size="sm" className="roomLinkButton">
+            <ButtonUI
+              type="button"
+              tone="outline"
+              shape="pill"
+              size="sm"
+              className="roomLinkButton"
+            >
               Xem lớp
             </ButtonUI>
           ),
@@ -970,7 +924,13 @@ export default function TrainingDataPage() {
           lecturer_role: item.lecturer_role,
           assigned_at: formatDateLabel(item.assigned_at),
           action: (
-            <ButtonUI type="button" tone="outline" shape="pill" size="sm" className="roomLinkButton">
+            <ButtonUI
+              type="button"
+              tone="outline"
+              shape="pill"
+              size="sm"
+              className="roomLinkButton"
+            >
               Điều chỉnh
             </ButtonUI>
           ),
@@ -1043,7 +1003,11 @@ export default function TrainingDataPage() {
                     tone={isActive ? "primary" : "outline"}
                     size="sm"
                     active={isActive}
-                    className={isActive ? "roomTabButton roomTabButtonActive" : "roomTabButton"}
+                    className={
+                      isActive
+                        ? "roomTabButton roomTabButtonActive"
+                        : "roomTabButton"
+                    }
                     onClick={() => handleTabChange(tabItem.key)}
                   >
                     {tabItem.label}
@@ -1053,7 +1017,11 @@ export default function TrainingDataPage() {
             </div>
 
             <div className="inputFind roomSearchGroup">
-              <ButtonUI tone="primary" shape="rounded" className="roomSearchButton">
+              <ButtonUI
+                tone="primary"
+                shape="rounded"
+                className="roomSearchButton"
+              >
                 Tìm kiếm
               </ButtonUI>
               <input
@@ -1119,4 +1087,3 @@ export default function TrainingDataPage() {
     </div>
   );
 }
-

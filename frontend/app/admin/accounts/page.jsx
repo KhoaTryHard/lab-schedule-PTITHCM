@@ -10,7 +10,7 @@ import {
   LecturerIcon,
   TechnicianIcon,
   StudentIcon,
-} from "../../../components/icons/systemIcon.jsx";
+} from "../../../components/systemIcon.jsx";
 import DataTable from "../../../components/common/DataTable.jsx";
 import SectionLayout from "../../../components/common/SectionLayout.jsx";
 import FilterSearchToolbar from "../../../components/common/FilterSearchToolbar.jsx";
@@ -183,9 +183,12 @@ export default function AccountsPage() {
         ].join(" "),
       );
 
-      const matchedRole = activeRole === "all" || accountItem.role === activeRole;
-      const matchedStatus = statusFilter === "all" || accountItem.status === statusFilter;
-      const matchedKeyword = !normalizedKeyword || searchTarget.includes(normalizedKeyword);
+      const matchedRole =
+        activeRole === "all" || accountItem.role === activeRole;
+      const matchedStatus =
+        statusFilter === "all" || accountItem.status === statusFilter;
+      const matchedKeyword =
+        !normalizedKeyword || searchTarget.includes(normalizedKeyword);
 
       return matchedRole && matchedStatus && matchedKeyword;
     });
@@ -277,7 +280,9 @@ export default function AccountsPage() {
             </div>
 
             <div className="roomFilterControls">
-              <RefreshButton onClick={handleResetFilters}>Làm mới</RefreshButton>
+              <RefreshButton onClick={handleResetFilters}>
+                Làm mới
+              </RefreshButton>
 
               <select
                 className="select roomStatusSelect"
@@ -300,7 +305,8 @@ export default function AccountsPage() {
               <div className="roomEmptyState">
                 <h4>Chưa có dữ liệu phù hợp</h4>
                 <p>
-                  Không tìm thấy tài khoản phù hợp với vai trò, trạng thái hoặc từ khóa hiện tại.
+                  Không tìm thấy tài khoản phù hợp với vai trò, trạng thái hoặc
+                  từ khóa hiện tại.
                 </p>
               </div>
             )}

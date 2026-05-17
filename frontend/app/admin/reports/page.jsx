@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { CardUI } from "../../../components/common/cardUI.jsx";
 import DataTable from "../../../components/common/DataTable.jsx";
 import { ButtonUI } from "../../../components/common/buttonUI.jsx";
+import { renderReportIcon as renderSystemReportIcon } from "../../../components/systemIcon.jsx";
 
 // Mảng dữ liệu mock cho lịch thực hành, bám gần bảng lab_schedule_entries để nối API sau dễ hơn.
 const reportScheduleMockItems = [
@@ -151,7 +152,8 @@ const reportScheduleMockItems = [
     published_at: "2026-02-28",
     cancelled_at: "",
     cancellation_reason: "",
-    notes: "Ca chiều dùng cho các buổi thực hành tấn công web và SQL injection.",
+    notes:
+      "Ca chiều dùng cho các buổi thực hành tấn công web và SQL injection.",
     semester_code: "HK2_2025_2026",
     week_no: 34,
   },
@@ -839,11 +841,11 @@ function buildCsvValue(value) {
  * Hàm trả về: không trả về dữ liệu.
  */
 function exportRowsToCsv(fileName, rows, columns) {
-  const csvHeader = columns.map((column) => buildCsvValue(column.label)).join(",");
+  const csvHeader = columns
+    .map((column) => buildCsvValue(column.label))
+    .join(",");
   const csvBody = rows.map((row) =>
-    columns
-      .map((column) => buildCsvValue(row[column.key]))
-      .join(","),
+    columns.map((column) => buildCsvValue(row[column.key])).join(","),
   );
   const csvContent = `\uFEFF${[csvHeader, ...csvBody].join("\r\n")}`;
   const csvBlob = new Blob([csvContent], {
@@ -864,127 +866,7 @@ function exportRowsToCsv(fileName, rows, columns) {
  * Hàm trả về: JSX của icon SVG tương ứng.
  */
 function renderReportIcon(iconName, className = "", size = 24) {
-  const commonProps = {
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "1.9",
-    strokeLinecap: "round",
-    strokeLinejoin: "round",
-    viewBox: "0 0 24 24",
-    width: size,
-    height: size,
-    className,
-    "aria-hidden": "true",
-  };
-
-  switch (iconName) {
-    case "schedule":
-      return (
-        <svg {...commonProps}>
-          <rect x="4" y="5" width="16" height="15" rx="3" />
-          <path d="M8 3v4" />
-          <path d="M16 3v4" />
-          <path d="M4 10h16" />
-        </svg>
-      );
-    case "published":
-      return (
-        <svg {...commonProps}>
-          <path d="M12 4 3.5 8l8.5 4 8.5-4L12 4Z" />
-          <path d="m3.5 12 8.5 4 8.5-4" />
-          <path d="m3.5 16 8.5 4 8.5-4" />
-        </svg>
-      );
-    case "approved":
-      return (
-        <svg {...commonProps}>
-          <circle cx="12" cy="12" r="8" />
-          <path d="m8.5 12 2.2 2.2 4.8-4.8" />
-        </svg>
-      );
-    case "cancelled":
-      return (
-        <svg {...commonProps}>
-          <circle cx="12" cy="12" r="8" />
-          <path d="m9 9 6 6" />
-          <path d="m15 9-6 6" />
-        </svg>
-      );
-    case "usage":
-      return (
-        <svg {...commonProps}>
-          <path d="M4 19h16" />
-          <path d="M6 16V9" />
-          <path d="M12 16V5" />
-          <path d="M18 16v-3" />
-        </svg>
-      );
-    case "issue":
-      return (
-        <svg {...commonProps}>
-          <path d="M12 4 3.5 19h17L12 4Z" />
-          <path d="M12 9v4" />
-          <path d="M12 16h.01" />
-        </svg>
-      );
-    case "device":
-      return (
-        <svg {...commonProps}>
-          <path d="M14 7 17 10" />
-          <path d="M3 21 10 14" />
-          <path d="M14.5 3C16.9853 3 19 5.01472 19 7.5c0 .87873-.252 1.6986-.6875 2.39062L10 18.2031 5.79688 14l8.31252-8.3125C14.8014 5.25205 15.6213 5 16.5 5" />
-        </svg>
-      );
-    case "software":
-      return (
-        <svg {...commonProps}>
-          <rect x="4" y="4" width="16" height="16" rx="3" />
-          <path d="M8 9h8" />
-          <path d="M8 12h8" />
-          <path d="M8 15h5" />
-        </svg>
-      );
-    case "room":
-      return (
-        <svg {...commonProps}>
-          <rect x="3" y="5" width="18" height="12" rx="2" />
-          <path d="M8 21h8" />
-          <path d="M12 17v4" />
-        </svg>
-      );
-    case "change":
-      return (
-        <svg {...commonProps}>
-          <path d="M7 7h9a4 4 0 0 1 4 4v0" />
-          <path d="m13 3 3 4-3 4" />
-          <path d="M17 17H8a4 4 0 0 1-4-4v0" />
-          <path d="m11 21-3-4 3-4" />
-        </svg>
-      );
-    case "template":
-      return (
-        <svg {...commonProps}>
-          <path d="M8 4h8l4 4v12H8Z" />
-          <path d="M16 4v4h4" />
-          <path d="M11 13h6" />
-          <path d="M11 17h6" />
-        </svg>
-      );
-    case "download":
-      return (
-        <svg {...commonProps}>
-          <path d="M12 4v10" />
-          <path d="m8.5 10.5 3.5 3.5 3.5-3.5" />
-          <path d="M5 19h14" />
-        </svg>
-      );
-    default:
-      return (
-        <svg {...commonProps}>
-          <circle cx="12" cy="12" r="8" />
-        </svg>
-      );
-  }
+  return renderSystemReportIcon(iconName, className, size);
 }
 
 /**
@@ -997,7 +879,7 @@ function buildReportStatusBadge(status) {
     Published: "roomStatusPositive",
     "Khả dụng": "roomStatusPositive",
     "Hoạt động": "roomStatusPositive",
-    "Đạt": "roomStatusPositive",
+    Đạt: "roomStatusPositive",
     Active: "roomStatusPositive",
     Open: "roomStatusPositive",
     "Đã cài đủ": "roomStatusPositive",
@@ -1012,7 +894,7 @@ function buildReportStatusBadge(status) {
     "Đang xử lý": "roomStatusWarning",
     "Đang sửa": "roomStatusWarning",
     Cancelled: "roomStatusDanger",
-    "Hỏng": "roomStatusDanger",
+    Hỏng: "roomStatusDanger",
     Locked: "roomStatusDanger",
     "Tạm ngưng": "roomStatusDanger",
     "Thiếu gói": "roomStatusDanger",
@@ -1023,7 +905,9 @@ function buildReportStatusBadge(status) {
   };
 
   return (
-    <span className={`roomStatusBadge ${toneClassMap[status] || "roomStatusNeutral"}`}>
+    <span
+      className={`roomStatusBadge ${toneClassMap[status] || "roomStatusNeutral"}`}
+    >
       {status}
     </span>
   );
@@ -1069,7 +953,9 @@ function BarChartCard({ title, description, data }) {
             <div className="reportVerticalBarTrack">
               <div
                 className="reportVerticalBarFill"
-                style={{ height: `${Math.max(calculatePercentage(item.value, maxValue), 10)}%` }}
+                style={{
+                  height: `${Math.max(calculatePercentage(item.value, maxValue), 10)}%`,
+                }}
               />
             </div>
             <span className="reportBarLabel">{item.label}</span>
@@ -1102,7 +988,9 @@ function HorizontalBarChart({ title, description, data }) {
             <div className="reportHorizontalTrack">
               <div
                 className="reportHorizontalFill"
-                style={{ width: `${Math.max(calculatePercentage(item.value, maxValue), 8)}%` }}
+                style={{
+                  width: `${Math.max(calculatePercentage(item.value, maxValue), 8)}%`,
+                }}
               />
             </div>
             <span className="reportHorizontalValue">{item.value}</span>
@@ -1192,7 +1080,9 @@ function TrendChart({ title, description, data }) {
             <div className="reportTrendTrack">
               <div
                 className="reportTrendFill"
-                style={{ height: `${Math.max(calculatePercentage(item.value, maxValue), 10)}%` }}
+                style={{
+                  height: `${Math.max(calculatePercentage(item.value, maxValue), 10)}%`,
+                }}
               />
             </div>
             <span className="reportBarLabel">{item.label}</span>
@@ -1532,7 +1422,9 @@ export default function ReportsPage() {
           toDate,
         );
 
-        return matchedSemester && matchedWeek && matchedRoom && matchedDateRange;
+        return (
+          matchedSemester && matchedWeek && matchedRoom && matchedDateRange
+        );
       }),
     [fromDate, roomFilter, semesterFilter, toDate, weekFilter],
   );
@@ -1553,7 +1445,9 @@ export default function ReportsPage() {
           toDate,
         );
 
-        return matchedSemester && matchedWeek && matchedRoom && matchedDateRange;
+        return (
+          matchedSemester && matchedWeek && matchedRoom && matchedDateRange
+        );
       }),
     [fromDate, roomFilter, semesterFilter, toDate, weekFilter],
   );
@@ -1574,7 +1468,9 @@ export default function ReportsPage() {
           toDate,
         );
 
-        return matchedSemester && matchedWeek && matchedRoom && matchedDateRange;
+        return (
+          matchedSemester && matchedWeek && matchedRoom && matchedDateRange
+        );
       }),
     [fromDate, roomFilter, semesterFilter, toDate, weekFilter],
   );
@@ -1595,7 +1491,9 @@ export default function ReportsPage() {
           toDate,
         );
 
-        return matchedSemester && matchedWeek && matchedRoom && matchedDateRange;
+        return (
+          matchedSemester && matchedWeek && matchedRoom && matchedDateRange
+        );
       }),
     [fromDate, roomFilter, semesterFilter, toDate, weekFilter],
   );
@@ -1616,7 +1514,9 @@ export default function ReportsPage() {
           toDate,
         );
 
-        return matchedSemester && matchedWeek && matchedRoom && matchedDateRange;
+        return (
+          matchedSemester && matchedWeek && matchedRoom && matchedDateRange
+        );
       }),
     [fromDate, roomFilter, semesterFilter, toDate, weekFilter],
   );
@@ -1639,7 +1539,9 @@ export default function ReportsPage() {
           toDate,
         );
 
-        return matchedSemester && matchedWeek && matchedRoom && matchedDateRange;
+        return (
+          matchedSemester && matchedWeek && matchedRoom && matchedDateRange
+        );
       }),
     [fromDate, roomFilter, semesterFilter, toDate, weekFilter],
   );
@@ -1795,7 +1697,10 @@ export default function ReportsPage() {
       issueTypeMap[item.issue_type] = (issueTypeMap[item.issue_type] || 0) + 1;
     });
 
-    return Object.entries(issueTypeMap).map(([label, value]) => ({ label, value }));
+    return Object.entries(issueTypeMap).map(([label, value]) => ({
+      label,
+      value,
+    }));
   }, [filteredIssueBaseItems]);
 
   const deviceStatusChartData = useMemo(() => {
@@ -1875,7 +1780,11 @@ export default function ReportsPage() {
       ...item,
       indicator_value: indicatorValueMap[item.indicator_key] || 0,
     }));
-  }, [filteredIssueBaseItems, filteredRoomUsageBaseItems, filteredScheduleBaseItems]);
+  }, [
+    filteredIssueBaseItems,
+    filteredRoomUsageBaseItems,
+    filteredScheduleBaseItems,
+  ]);
 
   const currentItems = useMemo(() => {
     if (activeTab === "overview") {
@@ -2043,7 +1952,11 @@ export default function ReportsPage() {
       notes: item.notes,
     }));
 
-    exportRowsToCsv("bao-cao-thong-ke-phong-may.csv", exportRows, reportColumnMap.template);
+    exportRowsToCsv(
+      "bao-cao-thong-ke-phong-may.csv",
+      exportRows,
+      reportColumnMap.template,
+    );
   }
 
   const currentSearchPlaceholder = searchPlaceholderMap[activeTab];
@@ -2053,8 +1966,8 @@ export default function ReportsPage() {
     <div>
       <section className="card">
         <p className="roomSectionText reportSummaryText">
-          Thống kê số liệu vận hành, sử dụng phòng máy, lịch thực hành, thiết bị và
-          xuất báo cáo phục vụ quản trị hệ thống.
+          Thống kê số liệu vận hành, sử dụng phòng máy, lịch thực hành, thiết bị
+          và xuất báo cáo phục vụ quản trị hệ thống.
         </p>
       </section>
 
@@ -2083,7 +1996,11 @@ export default function ReportsPage() {
                     tone={isActive ? "primary" : "outline"}
                     size="sm"
                     active={isActive}
-                    className={isActive ? "roomTabButton roomTabButtonActive" : "roomTabButton"}
+                    className={
+                      isActive
+                        ? "roomTabButton roomTabButtonActive"
+                        : "roomTabButton"
+                    }
                     onClick={() => handleTabChange(tabItem.key)}
                   >
                     {tabItem.label}
@@ -2093,7 +2010,11 @@ export default function ReportsPage() {
             </div>
 
             <div className="inputFind roomSearchGroup">
-              <ButtonUI tone="primary" shape="rounded" className="roomSearchButton">
+              <ButtonUI
+                tone="primary"
+                shape="rounded"
+                className="roomSearchButton"
+              >
                 Tìm kiếm
               </ButtonUI>
               <input
@@ -2110,8 +2031,8 @@ export default function ReportsPage() {
             <div className="roomFilterSummary">
               <h3 className="roomSectionTitle">Bộ lọc báo cáo</h3>
               <p className="roomSectionText">
-                Lọc theo ngày, học kỳ, tuần học, phòng và trạng thái để tạo thống
-                kê giữa kỳ hoặc báo cáo phục vụ quản trị.
+                Lọc theo ngày, học kỳ, tuần học, phòng và trạng thái để tạo
+                thống kê giữa kỳ hoặc báo cáo phục vụ quản trị.
               </p>
             </div>
 
@@ -2244,7 +2165,11 @@ export default function ReportsPage() {
                 >
                   Xuất Excel (CSV)
                 </ButtonUI>
-                <ButtonUI tone="secondary" shape="rounded" className="reportGhostButton">
+                <ButtonUI
+                  tone="secondary"
+                  shape="rounded"
+                  className="reportGhostButton"
+                >
                   Bộ lọc nâng cao
                 </ButtonUI>
               </div>
@@ -2278,7 +2203,9 @@ export default function ReportsPage() {
 
               <article className="card reportChartCard">
                 <div className="reportChartHeader">
-                  <h4 className="roomSectionTitle">Tóm tắt chỉ tiêu QTV_BM06</h4>
+                  <h4 className="roomSectionTitle">
+                    Tóm tắt chỉ tiêu QTV_BM06
+                  </h4>
                   <p className="roomSectionText">
                     Bộ chỉ tiêu mẫu phục vụ báo cáo giữa kỳ cho quản trị viên.
                   </p>
@@ -2287,7 +2214,10 @@ export default function ReportsPage() {
                 <div className="reportIndicatorTableWrap">
                   <DataTable
                     columns={reportColumnMap.template}
-                    rows={getActiveTabRows("template", reportTemplatePreviewItems)}
+                    rows={getActiveTabRows(
+                      "template",
+                      reportTemplatePreviewItems,
+                    )}
                   />
                 </div>
               </article>
@@ -2308,7 +2238,9 @@ export default function ReportsPage() {
                 ) : (
                   <div className="roomEmptyState">
                     <h4>Chưa có dữ liệu sử dụng phòng</h4>
-                    <p>Bộ lọc hiện tại chưa tạo ra bản ghi phù hợp cho phòng máy.</p>
+                    <p>
+                      Bộ lọc hiện tại chưa tạo ra bản ghi phù hợp cho phòng máy.
+                    </p>
                   </div>
                 )}
               </div>
@@ -2330,7 +2262,10 @@ export default function ReportsPage() {
                 ) : (
                   <div className="roomEmptyState">
                     <h4>Chưa có lịch phù hợp</h4>
-                    <p>Không tìm thấy lịch thực hành phù hợp với bộ lọc đang chọn.</p>
+                    <p>
+                      Không tìm thấy lịch thực hành phù hợp với bộ lọc đang
+                      chọn.
+                    </p>
                   </div>
                 )}
               </div>
@@ -2357,7 +2292,9 @@ export default function ReportsPage() {
                 ) : (
                   <div className="roomEmptyState">
                     <h4>Chưa có dữ liệu sự cố</h4>
-                    <p>Không có sự cố phù hợp với phạm vi và trạng thái đang lọc.</p>
+                    <p>
+                      Không có sự cố phù hợp với phạm vi và trạng thái đang lọc.
+                    </p>
                   </div>
                 )}
               </div>
@@ -2387,9 +2324,16 @@ export default function ReportsPage() {
             <>
               <div className="reportMetricGrid">
                 {changeSummaryCards.map((metricItem) => (
-                  <article key={metricItem.label} className="card reportMetricCard">
-                    <span className="reportMetricLabel">{metricItem.label}</span>
-                    <strong className="reportMetricValue">{metricItem.value}</strong>
+                  <article
+                    key={metricItem.label}
+                    className="card reportMetricCard"
+                  >
+                    <span className="reportMetricLabel">
+                      {metricItem.label}
+                    </span>
+                    <strong className="reportMetricValue">
+                      {metricItem.value}
+                    </strong>
                   </article>
                 ))}
               </div>
@@ -2401,8 +2345,8 @@ export default function ReportsPage() {
                   <div className="roomEmptyState">
                     <h4>Chưa có yêu cầu phát sinh</h4>
                     <p>
-                      Không tìm thấy yêu cầu đổi lịch, hủy lịch hay học bù phù hợp với
-                      bộ lọc.
+                      Không tìm thấy yêu cầu đổi lịch, hủy lịch hay học bù phù
+                      hợp với bộ lọc.
                     </p>
                   </div>
                 )}
@@ -2411,9 +2355,12 @@ export default function ReportsPage() {
           ) : (
             <article className="card reportTemplatePreview">
               <div className="reportTemplateHeader">
-                <h3 className="roomSectionTitle">BÁO CÁO THỐNG KÊ SỬ DỤNG PHÒNG MÁY</h3>
+                <h3 className="roomSectionTitle">
+                  BÁO CÁO THỐNG KÊ SỬ DỤNG PHÒNG MÁY
+                </h3>
                 <p className="roomSectionText">
-                  Từ ngày {formatDateLabel(fromDate)} đến ngày {formatDateLabel(toDate)}
+                  Từ ngày {formatDateLabel(fromDate)} đến ngày{" "}
+                  {formatDateLabel(toDate)}
                 </p>
                 <p className="roomSectionText">
                   Người lập: {reportCreator} | Đơn vị: {reportUnit}
@@ -2433,7 +2380,11 @@ export default function ReportsPage() {
                 >
                   Tạo báo cáo
                 </ButtonUI>
-                <ButtonUI tone="secondary" shape="rounded" className="roomRefreshButton">
+                <ButtonUI
+                  tone="secondary"
+                  shape="rounded"
+                  className="roomRefreshButton"
+                >
                   Xem trước báo cáo
                 </ButtonUI>
                 <ButtonUI
@@ -2444,10 +2395,18 @@ export default function ReportsPage() {
                 >
                   Xuất Excel
                 </ButtonUI>
-                <ButtonUI tone="secondary" shape="rounded" className="lookupAdvancedButton">
+                <ButtonUI
+                  tone="secondary"
+                  shape="rounded"
+                  className="lookupAdvancedButton"
+                >
                   Xuất PDF mock
                 </ButtonUI>
-                <ButtonUI tone="secondary" shape="rounded" className="reportGhostButton">
+                <ButtonUI
+                  tone="secondary"
+                  shape="rounded"
+                  className="reportGhostButton"
+                >
                   In báo cáo mock
                 </ButtonUI>
               </div>
@@ -2459,8 +2418,8 @@ export default function ReportsPage() {
           <div className="card reportSidebarCard">
             <h5 className="accountUploadTitle">TẠO BÁO CÁO</h5>
             <p className="roomSectionText roomUploadText">
-              Chọn mẫu, cập nhật thông tin người lập và xuất báo cáo dạng CSV để tiếp
-              tục xử lý ở giai đoạn MVP.
+              Chọn mẫu, cập nhật thông tin người lập và xuất báo cáo dạng CSV để
+              tiếp tục xử lý ở giai đoạn MVP.
             </p>
 
             <div className="reportSidebarForm">
@@ -2473,7 +2432,9 @@ export default function ReportsPage() {
                 >
                   <option value="roomUsage">Báo cáo sử dụng phòng máy</option>
                   <option value="issues">Báo cáo tình trạng thiết bị</option>
-                  <option value="schedules">Báo cáo lịch thực hành theo học kỳ</option>
+                  <option value="schedules">
+                    Báo cáo lịch thực hành theo học kỳ
+                  </option>
                   <option value="changes">Báo cáo đổi/hủy/học bù</option>
                   <option value="software">Báo cáo phần mềm theo phòng</option>
                   <option value="template">Mẫu báo cáo tổng hợp</option>
@@ -2522,7 +2483,9 @@ export default function ReportsPage() {
                   <input
                     type="checkbox"
                     checked={includeDetails}
-                    onChange={(event) => setIncludeDetails(event.target.checked)}
+                    onChange={(event) =>
+                      setIncludeDetails(event.target.checked)
+                    }
                   />
                   <span>Kèm bảng chi tiết</span>
                 </label>
@@ -2530,7 +2493,9 @@ export default function ReportsPage() {
                   <input
                     type="checkbox"
                     checked={includeWarnings}
-                    onChange={(event) => setIncludeWarnings(event.target.checked)}
+                    onChange={(event) =>
+                      setIncludeWarnings(event.target.checked)
+                    }
                   />
                   <span>Kèm cảnh báo</span>
                 </label>
@@ -2553,7 +2518,11 @@ export default function ReportsPage() {
                 >
                   Xuất báo cáo Excel
                 </ButtonUI>
-                <ButtonUI tone="secondary" shape="rounded" className="roomRefreshButton">
+                <ButtonUI
+                  tone="secondary"
+                  shape="rounded"
+                  className="roomRefreshButton"
+                >
                   Xuất báo cáo PDF mock
                 </ButtonUI>
                 <ButtonUI

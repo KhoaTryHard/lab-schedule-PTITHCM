@@ -19,6 +19,7 @@ export default function RoleLayout({ roleCode, allowedRoles, children }) {
   return (
     <RoleGuard allowedRoles={resolvedAllowedRoles}>
       <AppShell
+        roleCode={config.roleCode}
         navItems={config.navItems}
         brandTitle={config.brandTitle}
         brandSubtitle={config.brandSubtitle}

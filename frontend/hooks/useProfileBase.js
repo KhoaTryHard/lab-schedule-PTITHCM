@@ -3,14 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { getMe } from "../services/authService";
-
-const ROLE_LABEL_MAP = {
-  QTV: "Quản trị viên",
-  CBDT: "Cán bộ đào tạo",
-  GV: "Giảng viên",
-  KTV: "Kỹ thuật viên",
-  SV: "Sinh viên",
-};
+import { ALIASES_NAME, normalizeRoleCode } from "../lib/roleConfig";
 
 export function useProfileBase() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -38,13 +31,13 @@ export function useProfileBase() {
   }, []);
 
   const profile = useMemo(() => {
-    const roleCode = currentUser?.role_code || "";
-    const roleName = ROLE_LABEL_MAP[roleCode] || roleCode || "Chưa xác định";
+    const roleCode = normalizeRoleCode(currentUser?.role_code || "");
+    const roleName = ALIASES_NAME[roleCode] || roleCode || "Chưa xác định";
 
     return {
       id: currentUser?.id || null,
       username: currentUser?.username || "",
-      fullName: currentUser?.full_name || "",
+      fullName: currentUser?.full_name || currentUser?.fullName || "",
       email: currentUser?.email || "",
       roleCode,
       roleName,

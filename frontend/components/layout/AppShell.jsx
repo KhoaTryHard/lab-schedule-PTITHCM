@@ -53,6 +53,23 @@ function findCurrentNavItem(navItems, pathname) {
   return matchedItems[0] || navItems[0] || null;
 }
 
+function normalizeRoleClassValue(value) {
+  return String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9_-]/g, "");
+}
+
+function buildAppShellClassName(isCollapsed, roleCode) {
+  return [
+    "appShell",
+    roleCode ? `appShellRole${roleCode}` : "",
+    isCollapsed ? "appShellCollapsed" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
 /**
  * Component nhận vào:
  * - children: nội dung trang con cần render ở vùng main.
@@ -71,6 +88,7 @@ export default function AppShell({
   brandSubtitle = "Lab Schedule",
   userName = "Người dùng",
   userRole = "Vai trò",
+  roleCode = "",
   pageTitle,
   topBarBadge = "HỆ THỐNG",
 }) {
@@ -92,15 +110,12 @@ export default function AppShell({
   const resolvedUserRole = currentUser?.role_code || userRole;
   const currentPageTitle = pageTitle || currentNavItem?.itemName || "Tổng quan";
   const avatarText = createAvatarText(resolvedUserName);
+  const shellRoleCode = normalizeRoleClassValue(
+    currentUser?.role_code || roleCode || topBarBadge,
+  );
 
   return (
-    <div
-      className={
-        isSidebarCollapsed
-          ? "appShell appShellCollapsed"
-          : "appShell"
-      }
-    >
+    <div className={buildAppShellClassName(isSidebarCollapsed, shellRoleCode)}>
       <aside
         className={
           isSidebarCollapsed
@@ -113,7 +128,9 @@ export default function AppShell({
             type="button"
             className="appShellBrandMark"
             onClick={() => setIsSidebarCollapsed((prev) => !prev)}
-            aria-label={isSidebarCollapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
+            aria-label={
+              isSidebarCollapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"
+            }
           >
             PT
           </button>

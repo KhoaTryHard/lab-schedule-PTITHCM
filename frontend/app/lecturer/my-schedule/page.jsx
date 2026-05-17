@@ -12,7 +12,7 @@ export default function LecturerSchedulePage() {
       showCourseSectionFilter={false}
       showLecturerFilter={false}
       emptyTitle="Chưa có lịch dạy thực hành"
-      emptyDescription="API chưa trả lịch published của giảng viên hoặc backend vẫn chưa filter theo lecturer_user_id."
+      emptyDescription="Chưa có lịch dạy thực hành phù hợp với bộ lọc hiện tại."
       integrationNote="Frontend đã gửi status=published và lecturer_user_id theo tài khoản đang đăng nhập. Ngoài ra, UI có lớp lọc an toàn client-side để chỉ render lịch published nếu API trả dư dữ liệu. Backend develop hiện tại chưa implement role scope cho GV nên chưa thể xác nhận dữ liệu trả về đã đúng riêng giảng viên."
     />
   );
