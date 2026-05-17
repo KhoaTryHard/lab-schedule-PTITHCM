@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import DataTable from "../../../components/common/DataTable.jsx";
 import { ButtonUI } from "../../../components/common/buttonUI.jsx";
+import { listScheduleRequests } from "../../../services/scheduleRequestService";
 
 // Mảng dữ liệu mock cho tra cứu lịch thực hành toàn hệ thống, bám gần bảng lab_schedule_entries.
 const scheduleLookupMockItems = [
@@ -485,6 +486,7 @@ const globalLookupMockItems = [
 const lookupTabItems = [
   { key: "all", label: "Tất cả" },
   { key: "schedules", label: "Lịch thực hành" },
+  { key: "schedule-requests", label: "Yêu cầu xếp lịch" },
   { key: "rooms", label: "Phòng máy" },
   { key: "devices", label: "Thiết bị" },
   { key: "software", label: "Phần mềm" },
@@ -496,6 +498,8 @@ const lookupTabItems = [
 const searchPlaceholderMap = {
   all: "Tìm theo mã lịch, mã phòng, mã thiết bị, tên phần mềm, mã học phần...",
   schedules: "Tìm theo mã lịch, học phần, giảng viên hoặc phòng...",
+  "schedule-requests":
+    "Tìm theo mã yêu cầu, học phần, nhóm, người tạo hoặc trạng thái...",
   rooms: "Tìm theo mã phòng, trạng thái hoặc kỹ thuật viên phụ trách...",
   devices: "Tìm theo mã thiết bị, tên thiết bị hoặc loại thiết bị...",
   software: "Tìm theo tên phần mềm, phiên bản hoặc phòng cài đặt...",
@@ -594,6 +598,16 @@ const lookupStatusOptionMap = {
     { value: "Locked", label: "Locked" },
     { value: "Tạm ngưng", label: "Tạm ngưng" },
   ],
+  "schedule-requests": [
+    { value: "all", label: "Tất cả trạng thái" },
+    { value: "draft", label: "Nháp" },
+    { value: "pending_review", label: "Chờ duyệt" },
+    { value: "approved", label: "Đã duyệt" },
+    { value: "rejected", label: "Từ chối" },
+    { value: "scheduled", label: "Đã xếp lịch" },
+    { value: "published", label: "Đã công bố" },
+    { value: "cancelled", label: "Đã hủy" },
+  ],
 };
 
 // Cấu hình cột cho từng tab bảng tra cứu.
@@ -669,6 +683,18 @@ const lookupColumnMap = {
     { key: "related_summary", label: "Liên quan" },
     { key: "action", label: "Hành động" },
   ],
+  "schedule-requests": [
+    { key: "request_code", label: "Mã YC" },
+    { key: "course_label", label: "Học phần" },
+    { key: "group_no", label: "Nhóm" },
+    { key: "requested_team_count", label: "Số tổ" },
+    { key: "max_students_per_team", label: "SV / tổ" },
+    { key: "total_required_sessions", label: "Số buổi" },
+    { key: "preferred_week_range", label: "Tuần ưu tiên" },
+    { key: "request_status", label: "Trạng thái" },
+    { key: "requested_by_name", label: "Người tạo" },
+    { key: "created_at", label: "Ngày tạo" },
+  ],
 };
 
 /**
@@ -711,6 +737,81 @@ function formatDateRange(startDate, endDate) {
   return `${formatDateLabel(startDate)} - ${formatDateLabel(endDate)}`;
 }
 
+function formatDateTimeLabel(dateTimeValue) {
+  if (!dateTimeValue) {
+    return "—";
+  }
+
+  const datePart = String(dateTimeValue).split("T")[0].split(" ")[0];
+
+  return formatDateLabel(datePart);
+}
+
+function formatPreferredWeekRange(startWeek, endWeek) {
+  if (!startWeek && !endWeek) {
+    return "—";
+  }
+
+  if (startWeek && endWeek) {
+    return `Tuần ${startWeek} - ${endWeek}`;
+  }
+
+  if (startWeek) {
+    return `Từ tuần ${startWeek}`;
+  }
+
+  return `Đến tuần ${endWeek}`;
+}
+
+function getScheduleRequestStatusLabel(status) {
+  const statusLabelMap = {
+    draft: "Nháp",
+    pending_review: "Chờ duyệt",
+    approved: "Đã duyệt",
+    rejected: "Từ chối",
+    scheduled: "Đã xếp lịch",
+    published: "Đã công bố",
+    cancelled: "Đã hủy",
+  };
+
+  return statusLabelMap[status] || status || "—";
+}
+
+function getApiErrorMessage(error, fallbackMessage) {
+  return error?.message || fallbackMessage;
+}
+
+function normalizeScheduleRequestLookupItem(requestItem) {
+  const requestId = requestItem?.id ?? requestItem?.request_id;
+
+  return {
+    id: requestId,
+    request_code: requestId ? `YC-${String(requestId).padStart(3, "0")}` : "—",
+    course_code: requestItem?.course_code || "",
+    course_name: requestItem?.course_name || "",
+    course_label:
+      requestItem?.course_code || requestItem?.course_name
+        ? `${requestItem?.course_code || "—"} - ${requestItem?.course_name || "—"}`
+        : `Lớp học phần #${requestItem?.course_section_id || "—"}`,
+    group_no: requestItem?.group_no || "—",
+    requested_team_count: requestItem?.requested_team_count ?? "—",
+    max_students_per_team: requestItem?.max_students_per_team ?? "—",
+    total_required_sessions: requestItem?.total_required_sessions ?? "—",
+    preferred_week_range: formatPreferredWeekRange(
+      requestItem?.preferred_week_start,
+      requestItem?.preferred_week_end,
+    ),
+    request_status: requestItem?.request_status || "draft",
+    requested_by_name:
+      requestItem?.requested_by_name ||
+      (requestItem?.requested_by_user_id
+        ? `User #${requestItem.requested_by_user_id}`
+        : "—"),
+    created_at: requestItem?.created_at || "",
+    notes: requestItem?.notes || "",
+  };
+}
+
 /**
  * Hàm nhận vào: status là chuỗi trạng thái nghiệp vụ hiện tại.
  * Hàm xử lý: ánh xạ trạng thái sang tone màu badge phù hợp với mức cảnh báo.
@@ -721,7 +822,7 @@ function buildLookupStatusBadge(status) {
     Published: "roomStatusPositive",
     "Khả dụng": "roomStatusPositive",
     "Hoạt động": "roomStatusPositive",
-    "Đạt": "roomStatusPositive",
+    Đạt: "roomStatusPositive",
     Active: "roomStatusPositive",
     Approved: "roomStatusNeutral",
     Draft: "roomStatusNeutral",
@@ -733,11 +834,18 @@ function buildLookupStatusBadge(status) {
     "Cần cập nhật": "roomStatusWarning",
     "Chưa đạt": "roomStatusWarning",
     Cancelled: "roomStatusDanger",
-    "Hỏng": "roomStatusDanger",
+    Hỏng: "roomStatusDanger",
     Locked: "roomStatusDanger",
     "Tạm ngưng": "roomStatusDanger",
     "Thiếu gói": "roomStatusDanger",
     "Đang sửa": "roomStatusWarning",
+    Nháp: "roomStatusNeutral",
+    "Chờ duyệt": "roomStatusWarning",
+    "Đã duyệt": "roomStatusPositive",
+    "Từ chối": "roomStatusDanger",
+    "Đã xếp lịch": "roomStatusNeutral",
+    "Đã công bố": "roomStatusPositive",
+    "Đã hủy": "roomStatusDanger",
   };
 
   const toneClassName = toneClassMap[status] || "roomStatusNeutral";
@@ -752,7 +860,13 @@ function buildLookupStatusBadge(status) {
  */
 function buildLookupActionButton(actionLabel) {
   return (
-    <ButtonUI type="button" tone="outline" shape="pill" size="sm" className="roomLinkButton">
+    <ButtonUI
+      type="button"
+      tone="outline"
+      shape="pill"
+      size="sm"
+      className="roomLinkButton"
+    >
       {actionLabel}
     </ButtonUI>
   );
@@ -826,6 +940,16 @@ function buildLookupSearchTarget(activeTab, item) {
       ].join(" ");
     default:
       return "";
+    case "schedule-requests":
+      return [
+        item.request_code,
+        item.course_code,
+        item.course_name,
+        item.group_no,
+        item.request_status,
+        item.requested_by_name,
+        item.notes,
+      ].join(" ");
   }
 }
 
@@ -834,7 +958,7 @@ function buildLookupSearchTarget(activeTab, item) {
  * Hàm xử lý: trả về mảng mock data phù hợp với tab đang tra cứu.
  * Hàm trả về: mảng dữ liệu gốc tương ứng.
  */
-function getActiveTabItems(activeTab) {
+function getActiveTabItems(activeTab, scheduleRequestItems = []) {
   switch (activeTab) {
     case "all":
       return globalLookupMockItems;
@@ -850,6 +974,8 @@ function getActiveTabItems(activeTab) {
       return constraintLookupMockItems;
     case "users":
       return userLookupMockItems;
+    case "schedule-requests":
+      return scheduleRequestItems;
     default:
       return [];
   }
@@ -885,6 +1011,8 @@ function getLookupStatusValue(activeTab, item) {
       return item.check_status;
     case "users":
       return item.account_status;
+    case "schedule-requests":
+      return item.request_status;
     default:
       return "all";
   }
@@ -982,6 +1110,22 @@ function getActiveTabRows(activeTab, items) {
         related_summary: item.related_summary,
         action: buildLookupActionButton("Xem chi tiết"),
       }));
+    case "schedule-requests":
+      return items.map((item) => ({
+        id: item.id,
+        request_code: item.request_code,
+        course_label: item.course_label,
+        group_no: item.group_no,
+        requested_team_count: item.requested_team_count,
+        max_students_per_team: item.max_students_per_team,
+        total_required_sessions: item.total_required_sessions,
+        preferred_week_range: item.preferred_week_range,
+        request_status: buildLookupStatusBadge(
+          getScheduleRequestStatusLabel(item.request_status),
+        ),
+        requested_by_name: item.requested_by_name,
+        created_at: formatDateTimeLabel(item.created_at),
+      }));
     default:
       return [];
   }
@@ -1001,22 +1145,89 @@ export default function LookupsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [roleFilter, setRoleFilter] = useState("all");
   const [deviceTypeFilter, setDeviceTypeFilter] = useState("all");
+  const [scheduleRequestItems, setScheduleRequestItems] = useState([]);
+  const [isLoadingScheduleRequests, setIsLoadingScheduleRequests] =
+    useState(false);
+  const [scheduleRequestError, setScheduleRequestError] = useState("");
+  const [hasLoadedScheduleRequests, setHasLoadedScheduleRequests] =
+    useState(false);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadScheduleRequests() {
+      if (activeTab !== "schedule-requests" || hasLoadedScheduleRequests) {
+        return;
+      }
+
+      try {
+        setIsLoadingScheduleRequests(true);
+        setScheduleRequestError("");
+
+        const response = await listScheduleRequests();
+        const rawRequestItems = Array.isArray(response?.data)
+          ? response.data
+          : response?.data
+            ? [response.data]
+            : [];
+
+        const normalizedRequestItems = rawRequestItems.map(
+          normalizeScheduleRequestLookupItem,
+        );
+
+        if (isMounted) {
+          setScheduleRequestItems(normalizedRequestItems);
+          setHasLoadedScheduleRequests(true);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setScheduleRequestItems([]);
+          setScheduleRequestError(
+            getApiErrorMessage(
+              error,
+              "Không thể tải danh sách yêu cầu xếp lịch.",
+            ),
+          );
+          setHasLoadedScheduleRequests(true);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingScheduleRequests(false);
+        }
+      }
+    }
+
+    loadScheduleRequests();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeTab, hasLoadedScheduleRequests]);
   const currentItems = useMemo(() => {
     const normalizedKeyword = normalizeText(searchKeyword);
 
-    return getActiveTabItems(activeTab).filter((item) => {
+    return getActiveTabItems(activeTab, scheduleRequestItems).filter((item) => {
       const matchedKeyword =
         !normalizedKeyword ||
         normalizeText(buildLookupSearchTarget(activeTab, item)).includes(
           normalizedKeyword,
         );
+      const shouldUseCommonAcademicFilters = activeTab !== "schedule-requests";
+
       const matchedSemester =
-        semesterFilter === "all" || item.semester_code === semesterFilter;
+        !shouldUseCommonAcademicFilters ||
+        semesterFilter === "all" ||
+        item.semester_code === semesterFilter;
+
       const matchedWeek =
-        weekFilter === "all" || String(item.week_no || "") === weekFilter;
+        !shouldUseCommonAcademicFilters ||
+        weekFilter === "all" ||
+        String(item.week_no || "") === weekFilter;
+
       const matchedRoom =
-        roomFilter === "all" || item.room_code === roomFilter;
+        !shouldUseCommonAcademicFilters ||
+        roomFilter === "all" ||
+        item.room_code === roomFilter;
       const matchedStatus =
         statusFilter === "all" ||
         getLookupStatusValue(activeTab, item) === statusFilter;
@@ -1048,9 +1259,13 @@ export default function LookupsPage() {
     statusFilter,
     roleFilter,
     deviceTypeFilter,
+    scheduleRequestItems,
   ]);
 
-  const currentColumns = useMemo(() => getActiveTabColumns(activeTab), [activeTab]);
+  const currentColumns = useMemo(
+    () => getActiveTabColumns(activeTab),
+    [activeTab],
+  );
   const currentRows = useMemo(
     () => getActiveTabRows(activeTab, currentItems),
     [activeTab, currentItems],
@@ -1086,6 +1301,17 @@ export default function LookupsPage() {
     setDeviceTypeFilter("all");
   }
 
+  function handleRefreshData() {
+    if (activeTab === "schedule-requests") {
+      setScheduleRequestItems([]);
+      setScheduleRequestError("");
+      setHasLoadedScheduleRequests(false);
+      return;
+    }
+
+    handleResetFilters();
+  }
+
   return (
     <div>
       <section className="card managementAccount">
@@ -1102,7 +1328,11 @@ export default function LookupsPage() {
                     tone={isActive ? "primary" : "outline"}
                     size="sm"
                     active={isActive}
-                    className={isActive ? "roomTabButton roomTabButtonActive" : "roomTabButton"}
+                    className={
+                      isActive
+                        ? "roomTabButton roomTabButtonActive"
+                        : "roomTabButton"
+                    }
                     onClick={() => handleTabChange(tabItem.key)}
                   >
                     {tabItem.label}
@@ -1112,7 +1342,11 @@ export default function LookupsPage() {
             </div>
 
             <div className="inputFind roomSearchGroup">
-              <ButtonUI tone="primary" shape="rounded" className="roomSearchButton">
+              <ButtonUI
+                tone="primary"
+                shape="rounded"
+                className="roomSearchButton"
+              >
                 Tìm kiếm
               </ButtonUI>
               <input
@@ -1218,7 +1452,9 @@ export default function LookupsPage() {
                   <select
                     className="select"
                     value={deviceTypeFilter}
-                    onChange={(event) => setDeviceTypeFilter(event.target.value)}
+                    onChange={(event) =>
+                      setDeviceTypeFilter(event.target.value)
+                    }
                   >
                     {deviceTypeOptions.map((optionItem) => (
                       <option key={optionItem.value} value={optionItem.value}>
@@ -1235,11 +1471,16 @@ export default function LookupsPage() {
                   shape="rounded"
                   className="roomRefreshButton"
                   onClick={handleResetFilters}
+                  onClick={handleRefreshData}
                 >
                   Làm mới
                 </ButtonUI>
 
-                <ButtonUI tone="primary" shape="rounded" className="roomSearchButton">
+                <ButtonUI
+                  tone="primary"
+                  shape="rounded"
+                  className="roomSearchButton"
+                >
                   Xuất kết quả
                 </ButtonUI>
 
@@ -1255,16 +1496,27 @@ export default function LookupsPage() {
           </div>
 
           <div className="card roomTableCard">
-            {currentRows.length > 0 ? (
+            {activeTab === "schedule-requests" && isLoadingScheduleRequests ? (
+              <section className="adminCard">
+                <h4>Đang tải danh sách yêu cầu xếp lịch...</h4>
+                <p>Hệ thống đang lấy dữ liệu thật từ API.</p>
+              </section>
+            ) : activeTab === "schedule-requests" && scheduleRequestError ? (
+              <section className="adminCard">
+                <h4>Không thể tải danh sách yêu cầu xếp lịch</h4>
+                <p>{scheduleRequestError}</p>
+              </section>
+            ) : currentRows.length > 0 ? (
               <DataTable columns={currentColumns} rows={currentRows} />
             ) : (
-              <div className="roomEmptyState">
+              <section className="adminCard">
                 <h4>Chưa có kết quả phù hợp</h4>
                 <p>
-                  Không tìm thấy dữ liệu phù hợp với bộ lọc hiện tại. Bạn có thể
-                  làm mới bộ lọc hoặc chuyển sang tab tra cứu khác.
+                  {activeTab === "schedule-requests"
+                    ? "Chưa có yêu cầu xếp lịch nào từ API."
+                    : "Không tìm thấy dữ liệu phù hợp với bộ lọc hiện tại. Bạn có thể làm mới bộ lọc hoặc chuyển sang tab tra cứu khác."}
                 </p>
-              </div>
+              </section>
             )}
           </div>
         </div>

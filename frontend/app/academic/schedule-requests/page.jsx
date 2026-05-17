@@ -7,7 +7,10 @@ import DataTable from "../../../components/common/DataTable.jsx";
 import FilterSearchToolbar from "../../../components/common/FilterSearchToolbar.jsx";
 import SectionLayout from "../../../components/common/SectionLayout.jsx";
 import StatusBadge from "../../../components/common/StatusBadge.jsx";
-import { ButtonUI, RefreshButton } from "../../../components/common/buttonUI.jsx";
+import {
+  ButtonUI,
+  RefreshButton,
+} from "../../../components/common/buttonUI.jsx";
 import {
   AcademicIcon,
   AdminIcon,
@@ -62,7 +65,9 @@ function normalizeText(value) {
 }
 
 function normalizeStatus(value) {
-  return String(value || "draft").trim().toLowerCase();
+  return String(value || "draft")
+    .trim()
+    .toLowerCase();
 }
 
 function getDisplayValue(value) {
@@ -182,10 +187,30 @@ function normalizeScheduleRequestItem(requestItem, index) {
   };
 }
 
+function filterRequestsByCurrentUser(requestItems, currentUser) {
+  const currentRole = String(currentUser?.role_code || "")
+    .trim()
+    .toUpperCase();
+
+  if (currentRole !== "CBDT") {
+    return requestItems;
+  }
+
+  if (!currentUser?.id) {
+    return [];
+  }
+
+  return requestItems.filter(
+    (requestItem) =>
+      Number(requestItem?.requested_by_user_id) === Number(currentUser.id),
+  );
+}
+
 function sortScheduleRequests(requestItems) {
   return [...requestItems].sort(
     (firstItem, secondItem) =>
-      getSortableTime(secondItem.created_at) - getSortableTime(firstItem.created_at),
+      getSortableTime(secondItem.created_at) -
+      getSortableTime(firstItem.created_at),
   );
 }
 
@@ -287,7 +312,9 @@ function buildCreatePayload(formData) {
     course_section_id: toPositiveInteger(formData.course_section_id),
     requested_team_count: toPositiveInteger(formData.requested_team_count),
     max_students_per_team: toPositiveInteger(formData.max_students_per_team),
-    total_required_sessions: toPositiveInteger(formData.total_required_sessions),
+    total_required_sessions: toPositiveInteger(
+      formData.total_required_sessions,
+    ),
     preferred_week_start: formData.preferred_week_start || null,
     preferred_week_end: formData.preferred_week_end || null,
     notes: buildNotesPayload(formData) || null,
@@ -321,6 +348,12 @@ export default function ScheduleRequestsPage() {
       setIsLoadingRequests(true);
       setErrorMessage("");
 
+      const storedCurrentUser = getUser();
+
+      if (storedCurrentUser) {
+        setCurrentUser(storedCurrentUser);
+      }
+
       const response = await listScheduleRequests();
       const rawRequestItems = Array.isArray(response?.data)
         ? response.data
@@ -328,8 +361,13 @@ export default function ScheduleRequestsPage() {
           ? [response.data]
           : [];
 
+      const visibleRequestItems = filterRequestsByCurrentUser(
+        rawRequestItems,
+        storedCurrentUser,
+      );
+
       const normalizedRequestItems = sortScheduleRequests(
-        rawRequestItems.map(normalizeScheduleRequestItem),
+        visibleRequestItems.map(normalizeScheduleRequestItem),
       );
 
       setRequestItems(normalizedRequestItems);
@@ -416,14 +454,20 @@ export default function ScheduleRequestsPage() {
         course_name: getDisplayValue(requestItem.course_name),
         group_no: getDisplayValue(requestItem.group_no),
         requested_team_count: getDisplayValue(requestItem.requested_team_count),
-        max_students_per_team: getDisplayValue(requestItem.max_students_per_team),
+        max_students_per_team: getDisplayValue(
+          requestItem.max_students_per_team,
+        ),
         total_required_sessions: getDisplayValue(
           requestItem.total_required_sessions,
         ),
         preferred_week_start: formatDate(requestItem.preferred_week_start),
         preferred_week_end: formatDate(requestItem.preferred_week_end),
-        preferred_day_of_week: formatDayOfWeek(requestItem.preferred_day_of_week),
-        preferred_time_slot_id: getDisplayValue(requestItem.preferred_time_slot_id),
+        preferred_day_of_week: formatDayOfWeek(
+          requestItem.preferred_day_of_week,
+        ),
+        preferred_time_slot_id: getDisplayValue(
+          requestItem.preferred_time_slot_id,
+        ),
         request_status: buildRequestStatusBadge(requestItem.request_status),
         requested_by_name: getDisplayValue(requestItem.requested_by_name),
         requested_by_user_id: getDisplayValue(requestItem.requested_by_user_id),
@@ -440,8 +484,9 @@ export default function ScheduleRequestsPage() {
 
   const draftCount = useMemo(
     () =>
-      requestItems.filter((requestItem) => requestItem.request_status === "draft")
-        .length,
+      requestItems.filter(
+        (requestItem) => requestItem.request_status === "draft",
+      ).length,
     [requestItems],
   );
 
@@ -635,7 +680,8 @@ export default function ScheduleRequestsPage() {
             <div className="roomFilterSummary">
               <h3 className="roomSectionTitle">Danh sách yêu cầu xếp lịch</h3>
               <p className="roomSectionText">
-                Hiển thị {requestRows.length} bản ghi phù hợp với bộ lọc hiện tại.
+                Hiển thị {requestRows.length} bản ghi phù hợp với bộ lọc hiện
+                tại.
               </p>
             </div>
 
@@ -715,7 +761,10 @@ export default function ScheduleRequestsPage() {
                       value={createForm.course_section_id}
                       placeholder="Nhập ID lớp học phần, ví dụ: 1"
                       onChange={(event) =>
-                        updateCreateForm("course_section_id", event.target.value)
+                        updateCreateForm(
+                          "course_section_id",
+                          event.target.value,
+                        )
                       }
                       disabled={isSubmittingCreate}
                     />
@@ -796,7 +845,10 @@ export default function ScheduleRequestsPage() {
                       type="date"
                       value={createForm.preferred_week_end}
                       onChange={(event) =>
-                        updateCreateForm("preferred_week_end", event.target.value)
+                        updateCreateForm(
+                          "preferred_week_end",
+                          event.target.value,
+                        )
                       }
                       disabled={isSubmittingCreate}
                     />
@@ -928,8 +980,8 @@ export default function ScheduleRequestsPage() {
               <div className="modalBody">
                 <p className="modalText">
                   Vui lòng nhập lại mật khẩu của tài khoản{" "}
-                  <strong>{currentUser?.username || "hiện tại"}</strong> trước khi
-                  gửi yêu cầu lên hệ thống.
+                  <strong>{currentUser?.username || "hiện tại"}</strong> trước
+                  khi gửi yêu cầu lên hệ thống.
                 </p>
 
                 <label className="label">
