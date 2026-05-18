@@ -52,6 +52,171 @@ async function getScheduleById(id) {
   return rows[0] || null;
 }
 
+const SCHEDULE_LIST_SELECT = `
+  entry.id,
+  entry.lab_schedule_request_id,
+  entry.practice_team_id,
+  entry.room_id,
+  entry.lecturer_user_id,
+  entry.day_of_week,
+  entry.time_slot_id,
+  entry.start_date,
+  entry.end_date,
+  entry.entry_status,
+  entry.approved_by_user_id,
+  entry.published_by_user_id,
+  entry.approved_at,
+  entry.published_at,
+  entry.notes,
+  entry.created_at,
+  entry.updated_at,
+  r.room_code,
+  ts.slot_label as time_slot,
+  u.full_name as lecturer_name,
+  pt.team_no,
+  pt.planned_size,
+  cs.group_no,
+  c.course_code,
+  c.course_name
+`;
+
+function formatScheduleResponse(row) {
+  if (!row) {
+    return null;
+  }
+
+  return {
+    id: row.id,
+    lab_schedule_request_id: row.lab_schedule_request_id,
+    practice_team_id: row.practice_team_id,
+    room_code: row.room_code,
+    lecturer_user_id: row.lecturer_user_id,
+    lecturer_name: row.lecturer_name,
+    day_of_week: row.day_of_week,
+    time_slot: row.time_slot,
+    start_date: row.start_date,
+    end_date: row.end_date,
+    entry_status: row.entry_status,
+    status: row.entry_status,
+    team_no: row.team_no,
+    planned_size: row.planned_size,
+    group_no: row.group_no,
+    course_code: row.course_code,
+    course_name: row.course_name,
+    approved_by_user_id: row.approved_by_user_id,
+    published_by_user_id: row.published_by_user_id,
+    approved_at: row.approved_at,
+    published_at: row.published_at,
+    notes: row.notes,
+    created_at: row.created_at,
+    updated_at: row.updated_at
+  };
+}
+
+async function approveSchedule(id, userId) {
+  const schedule = await getScheduleById(id);
+  if (!schedule) {
+    return { ok: false, statusCode: 404, message: 'Schedule not found' };
+  }
+
+  if (schedule.entry_status !== 'draft') {
+    return {
+      ok: false,
+      statusCode: 409,
+      message: 'Chỉ có thể duyệt lịch ở trạng thái draft',
+      current_status: schedule.entry_status
+    };
+  }
+
+  await pool.query(
+    `UPDATE lab_schedule_entries
+     SET entry_status = 'approved',
+         approved_by_user_id = ?,
+         approved_at = CURRENT_TIMESTAMP,
+         updated_at = CURRENT_TIMESTAMP
+     WHERE id = ?`,
+    [userId, id]
+  );
+
+  const updated = await getScheduleById(id);
+  return { ok: true, schedule: formatScheduleResponse(updated) };
+}
+
+async function publishSchedule(id, userId) {
+  const schedule = await getScheduleById(id);
+  if (!schedule) {
+    return { ok: false, statusCode: 404, message: 'Schedule not found' };
+  }
+
+  if (schedule.entry_status === 'draft') {
+    return {
+      ok: false,
+      statusCode: 409,
+      message: 'Không thể công bố lịch chưa được duyệt',
+      current_status: schedule.entry_status
+    };
+  }
+
+  if (schedule.entry_status !== 'approved') {
+    return {
+      ok: false,
+      statusCode: 409,
+      message: 'Chỉ có thể công bố lịch ở trạng thái approved',
+      current_status: schedule.entry_status
+    };
+  }
+
+  await pool.query(
+    `UPDATE lab_schedule_entries
+     SET entry_status = 'published',
+         published_by_user_id = ?,
+         published_at = CURRENT_TIMESTAMP,
+         updated_at = CURRENT_TIMESTAMP
+     WHERE id = ?`,
+    [userId, id]
+  );
+
+  const updated = await getScheduleById(id);
+  return { ok: true, schedule: formatScheduleResponse(updated) };
+}
+
+async function getPublishedSchedules(filters = {}) {
+  const { schedule_request_id, room_code, lecturer_user_id } = filters;
+  const conditions = ["entry.entry_status = 'published'"];
+  const params = [];
+
+  if (schedule_request_id) {
+    conditions.push('entry.lab_schedule_request_id = ?');
+    params.push(schedule_request_id);
+  }
+
+  if (room_code) {
+    conditions.push('r.room_code = ?');
+    params.push(room_code);
+  }
+
+  if (lecturer_user_id) {
+    conditions.push('entry.lecturer_user_id = ?');
+    params.push(lecturer_user_id);
+  }
+
+  const [rows] = await pool.query(
+    `SELECT ${SCHEDULE_LIST_SELECT}
+     FROM lab_schedule_entries entry
+     JOIN rooms r ON entry.room_id = r.id
+     JOIN time_slots ts ON entry.time_slot_id = ts.id
+     JOIN users u ON entry.lecturer_user_id = u.id
+     JOIN practice_teams pt ON entry.practice_team_id = pt.id
+     JOIN course_sections cs ON pt.course_section_id = cs.id
+     JOIN courses c ON cs.course_id = c.id
+     WHERE ${conditions.join(' AND ')}
+     ORDER BY entry.start_date ASC, entry.day_of_week ASC, ts.start_period ASC`,
+    params
+  );
+
+  return rows.map(formatScheduleResponse);
+}
+
 function checkRoomScope(roomCode) {
   const passed = isInScopeRoom(roomCode);
   return {
@@ -375,6 +540,9 @@ module.exports = {
   checkScheduleConstraints,
   createDraftSchedule,
   getScheduleById,
+  approveSchedule,
+  publishSchedule,
+  getPublishedSchedules,
   getScheduleListStub,
   autoArrangeScheduleStub
 };
