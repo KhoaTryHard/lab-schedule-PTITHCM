@@ -788,29 +788,21 @@
     {
       "name": "12. Approve schedule",
       "request": {
-        "method": "POST",
+        "method": "PATCH",
         "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          },
           {
             "key": "Authorization",
             "value": "Bearer {{auth_token}}"
           }
         ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"schedule_id\": 1\n}"
-        },
         "url": {
-          "raw": "{{base_url}}/schedules/1/approve",
+          "raw": "{{base_url}}/schedules/{{schedule_id}}/approve",
           "host": [
             "{{base_url}}"
           ],
           "path": [
             "schedules",
-            "1",
+            "{{schedule_id}}",
             "approve"
           ]
         }
@@ -826,6 +818,7 @@
               "pm.test(\"Schedule status is approved\", function () {",
               "    var jsonData = pm.response.json();",
               "    pm.expect(jsonData.data.status).to.equal(\"approved\");",
+              "    pm.expect(jsonData.data.entry_status).to.equal(\"approved\");",
               "});"
             ],
             "type": "text/javascript"
@@ -836,29 +829,21 @@
     {
       "name": "13. Publish schedule",
       "request": {
-        "method": "POST",
+        "method": "PATCH",
         "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          },
           {
             "key": "Authorization",
             "value": "Bearer {{auth_token}}"
           }
         ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"schedule_id\": 1\n}"
-        },
         "url": {
-          "raw": "{{base_url}}/schedules/1/publish",
+          "raw": "{{base_url}}/schedules/{{schedule_id}}/publish",
           "host": [
             "{{base_url}}"
           ],
           "path": [
             "schedules",
-            "1",
+            "{{schedule_id}}",
             "publish"
           ]
         }
@@ -874,6 +859,7 @@
               "pm.test(\"Schedule status is published\", function () {",
               "    var jsonData = pm.response.json();",
               "    pm.expect(jsonData.data.status).to.equal(\"published\");",
+              "    pm.expect(jsonData.data.entry_status).to.equal(\"published\");",
               "});"
             ],
             "type": "text/javascript"

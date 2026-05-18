@@ -4,7 +4,10 @@ const {
   checkScheduleConstraints,
   createDraftSchedule,
   autoArrangeScheduleStub,
-  getScheduleListStub
+  getScheduleListStub,
+  approveSchedule,
+  publishSchedule,
+  getPublishedSchedules
 } = require('./schedule.service');
 
 function listSchedules(req, res) {
@@ -47,9 +50,46 @@ async function autoArrange(req, res) {
   return ok(res, autoArrangeScheduleStub(req.body), 'Auto arrange preview stub');
 }
 
+async function approveScheduleEntry(req, res) {
+  const result = await approveSchedule(req.params.id, req.user.id);
+
+  if (!result.ok) {
+    return fail(res, result.statusCode, result.message, {
+      current_status: result.current_status
+    });
+  }
+
+  return ok(res, result.schedule, 'Successfully approved schedule');
+}
+
+async function publishScheduleEntry(req, res) {
+  const result = await publishSchedule(req.params.id, req.user.id);
+
+  if (!result.ok) {
+    return fail(res, result.statusCode, result.message, {
+      current_status: result.current_status
+    });
+  }
+
+  return ok(res, result.schedule, 'Successfully published schedule');
+}
+
+async function listPublishedSchedules(req, res) {
+  const schedules = await getPublishedSchedules({
+    schedule_request_id: req.query.schedule_request_id,
+    room_code: req.query.room_code,
+    lecturer_user_id: req.query.lecturer_user_id
+  });
+
+  return ok(res, schedules, 'Successfully fetched published schedules');
+}
+
 module.exports = {
   listSchedules,
   checkConstraints,
   createSchedule,
-  autoArrange
+  autoArrange,
+  approveScheduleEntry,
+  publishScheduleEntry,
+  listPublishedSchedules
 };
