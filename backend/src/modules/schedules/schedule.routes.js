@@ -47,7 +47,14 @@ const checkConstraintsValidator = [
   body('day_of_week').isInt({ min: 1, max: 7 }).withMessage('day_of_week phải từ 1 đến 7'),
   body('time_slot').notEmpty().withMessage('time_slot là bắt buộc'),
   body('start_date').isDate().withMessage('start_date phải là ngày hợp lệ (YYYY-MM-DD)'),
-  body('end_date').isDate().withMessage('end_date phải là ngày hợp lệ (YYYY-MM-DD)'),
+  body('end_date')
+    .isDate().withMessage('end_date phải là ngày hợp lệ (YYYY-MM-DD)')
+    .custom((endDate, { req }) => {
+      if (req.body.start_date && new Date(endDate) < new Date(req.body.start_date)) {
+        throw new Error('end_date phải lớn hơn hoặc bằng start_date');
+      }
+      return true;
+    }),
   body('required_software_ids').optional().isArray().withMessage('required_software_ids phải là mảng'),
   body('required_software_ids.*').optional().isInt({ min: 1 }).withMessage('Mỗi software_id phải là số nguyên dương'),
 ];
