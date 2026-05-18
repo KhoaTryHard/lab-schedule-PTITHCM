@@ -23,7 +23,7 @@ const REQUIRED_RULES = [
     suggestion: "Chọn phòng thuộc phạm vi 2B11, 2B21 hoặc 2B31.",
   },
   {
-    code: "ROOM_STATUS",
+    code: "ROOM_AVAILABLE",
     label: "Phòng khả dụng",
     meaning: "Phòng có đang ở trạng thái available không.",
     suggestion: "Chọn phòng đang khả dụng hoặc báo kỹ thuật viên mở lại phòng.",
@@ -126,6 +126,19 @@ const DEMO_INVALID_FORM = {
   student_count: "45",
   required_software_ids: "1,2,6,8",
 };
+
+const RULE_CODE_ALIASES = {
+  ROOM_STATUS: "ROOM_AVAILABLE",
+};
+
+function normalizeRuleCode(code) {
+  const normalizedCode = String(code || "UNKNOWN_RULE")
+    .trim()
+    .toUpperCase();
+
+  return RULE_CODE_ALIASES[normalizedCode] || normalizedCode;
+}
+
 function toPositiveInteger(value, fieldLabel) {
   const parsedValue = Number(value);
 
@@ -194,9 +207,7 @@ function normalizeConstraintResults(apiData) {
 
   return rawResults.map((item, index) => ({
     id: `${item?.code || "RULE"}-${index + 1}`,
-    code: String(item?.code || "UNKNOWN_RULE")
-      .trim()
-      .toUpperCase(),
+    code: normalizeRuleCode(item?.code),
     passed:
       typeof item?.passed === "boolean"
         ? item.passed
