@@ -1,11 +1,17 @@
+import ScheduleLookupTable from "../../../components/schedules/ScheduleLookupTable.jsx";
+
 export default function TechnicianRoomSchedulePage() {
   return (
-    <section className="card">
-      <h2 className="roomSectionTitle">Lịch sử dụng phòng cho kỹ thuật viên</h2>
-      <p className="roomSectionText">
-        Kỹ thuật viên theo dõi lịch sử dụng 3 phòng 2B11, 2B21, 2B31.
-        Endpoint lịch hiện còn stub nên phần này sẽ tích hợp sâu sau khi backend hoàn thiện dữ liệu thật.
-      </p>
-    </section>
+    <ScheduleLookupTable
+      title="Lịch sử dụng phòng máy"
+      description="Kỹ thuật viên theo dõi lịch sử dụng 3 phòng 2B11, 2B21, 2B31. Frontend gọi GET /api/schedules — hiển thị toàn bộ trạng thái để KTV nắm tình trạng phòng."
+      fixedParams={{}}
+      showStatusFilter={true}
+      showRoomFilter={true}
+      showLecturerFilter={false}
+      emptyTitle="Chưa có lịch phòng máy"
+      emptyDescription="Chưa có lịch thực hành nào trong hệ thống."
+      integrationNote="Frontend gọi API thật GET /api/schedules. Backend develop hiện tại trả schedules rỗng nên chưa thể xác nhận dữ liệu lịch thật — sẽ hiển thị đầy đủ khi backend issue #14 (W3-04) hoàn thiện."
+    />
   );
 }
