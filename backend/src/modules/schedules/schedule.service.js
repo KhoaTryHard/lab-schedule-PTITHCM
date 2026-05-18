@@ -3,12 +3,53 @@ const { ROOM_SCOPE, isInScopeRoom } = require('../../config/roomScope');
 
 async function getTimeSlotId(slotLabel) {
   const [rows] = await pool.query('SELECT id FROM time_slots WHERE slot_label = ?', [slotLabel]);
-  return rows[0] ? rows[0].id : null;
+  if (rows[0]) {
+    return rows[0].id;
+  }
+
+  const periodRange = String(slotLabel || '').match(/(\d+)\s*-\s*(\d+)/);
+  if (!periodRange) {
+    return null;
+  }
+
+  const [, startPeriod, endPeriod] = periodRange;
+  const [periodRows] = await pool.query(
+    'SELECT id FROM time_slots WHERE start_period = ? AND end_period = ?',
+    [startPeriod, endPeriod]
+  );
+
+  return periodRows[0] ? periodRows[0].id : null;
 }
 
 async function getRoomId(roomCode) {
   const [rows] = await pool.query('SELECT id FROM rooms WHERE room_code = ?', [roomCode]);
   return rows[0] ? rows[0].id : null;
+}
+
+async function getScheduleById(id) {
+  const [rows] = await pool.query(
+    `SELECT
+       entry.*,
+       r.room_code,
+       ts.slot_label as time_slot,
+       u.full_name as lecturer_name,
+       pt.team_no,
+       pt.planned_size,
+       cs.group_no,
+       c.course_code,
+       c.course_name
+     FROM lab_schedule_entries entry
+     JOIN rooms r ON entry.room_id = r.id
+     JOIN time_slots ts ON entry.time_slot_id = ts.id
+     JOIN users u ON entry.lecturer_user_id = u.id
+     JOIN practice_teams pt ON entry.practice_team_id = pt.id
+     JOIN course_sections cs ON pt.course_section_id = cs.id
+     JOIN courses c ON cs.course_id = c.id
+     WHERE entry.id = ?`,
+    [id]
+  );
+
+  return rows[0] || null;
 }
 
 function checkRoomScope(roomCode) {
@@ -99,7 +140,7 @@ async function checkRoomConflict(roomId, dayOfWeek, timeSlotId, startDate, endDa
      WHERE room_id = ?
        AND day_of_week = ?
        AND time_slot_id = ?
-       AND entry_status IN ('approved', 'published')
+       AND entry_status IN ('draft', 'approved', 'published')
        AND start_date <= ? AND end_date >= ?`,
     [roomId, dayOfWeek, timeSlotId, endDate, startDate]
   );
@@ -124,7 +165,7 @@ async function checkLecturerConflict(lecturerUserId, dayOfWeek, timeSlotId, star
      WHERE lecturer_user_id = ?
        AND day_of_week = ?
        AND time_slot_id = ?
-       AND entry_status IN ('approved', 'published')
+       AND entry_status IN ('draft', 'approved', 'published')
        AND start_date <= ? AND end_date >= ?`,
     [lecturerUserId, dayOfWeek, timeSlotId, endDate, startDate]
   );
@@ -230,6 +271,70 @@ async function checkScheduleConstraints(input) {
   };
 }
 
+async function createDraftSchedule(input, createdByUserId) {
+  const constraintResult = await checkScheduleConstraints(input);
+
+  if (!constraintResult.passed) {
+    return {
+      created: false,
+      constraintResult
+    };
+  }
+
+  const {
+    lab_schedule_request_id = null,
+    available_slot_id = null,
+    practice_team_id,
+    room_code,
+    lecturer_user_id,
+    day_of_week,
+    time_slot,
+    start_date,
+    end_date,
+    notes = null
+  } = input;
+
+  const [roomId, timeSlotId] = await Promise.all([getRoomId(room_code), getTimeSlotId(time_slot)]);
+
+  const [result] = await pool.query(
+    `INSERT INTO lab_schedule_entries (
+       lab_schedule_request_id,
+       available_slot_id,
+       practice_team_id,
+       room_id,
+       lecturer_user_id,
+       day_of_week,
+       time_slot_id,
+       start_date,
+       end_date,
+       entry_status,
+       created_by_user_id,
+       notes
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?)`,
+    [
+      lab_schedule_request_id,
+      available_slot_id,
+      practice_team_id,
+      roomId,
+      lecturer_user_id,
+      day_of_week,
+      timeSlotId,
+      start_date,
+      end_date,
+      createdByUserId,
+      notes
+    ]
+  );
+
+  const schedule = await getScheduleById(result.insertId);
+
+  return {
+    created: true,
+    schedule,
+    constraintResult
+  };
+}
+
 function getScheduleListStub(query) {
   return {
     filters: query,
@@ -268,6 +373,8 @@ function autoArrangeScheduleStub(input) {
 
 module.exports = {
   checkScheduleConstraints,
+  createDraftSchedule,
+  getScheduleById,
   getScheduleListStub,
   autoArrangeScheduleStub
 };

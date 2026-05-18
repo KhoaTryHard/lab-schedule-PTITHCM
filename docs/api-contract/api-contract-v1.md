@@ -287,7 +287,81 @@
 
 ## 5. Schedules (Lịch thực hành)
 
-### 5.1. Kiểm tra ràng buộc (Check Constraints)
+### 5.1. Create draft schedule
+- **Purpose:** Tạo một lịch thực hành nháp trong bảng `lab_schedule_entries`.
+- **Endpoint:** `POST /schedules`
+- **Access:** `ACADEMIC_OFFICER` (CBDT), `ADMIN` (QTV)
+- **Headers:** `Authorization: Bearer <token>`
+- **Minimal Request Body:**
+```json
+{
+  "lab_schedule_request_id": 1,
+  "practice_team_id": 1,
+  "room_code": "2B11",
+  "lecturer_user_id": 3,
+  "day_of_week": 3,
+  "time_slot": "7-10",
+  "start_date": "2026-06-02",
+  "end_date": "2026-06-02"
+}
+```
+- **Optional fields:** `available_slot_id`, `required_software_ids`, `notes`.
+- **Note:** `time_slot` accepts either the exact database label such as `Tiết 7-10` or the short period range `7-10`.
+- **Validation before insert:** API gọi schedule constraint service trước khi lưu. API không insert nếu có hard constraint fail, bao gồm `ROOM_CONFLICT`, `LECTURER_CONFLICT`, room scope/status/block, holiday block, capacity hoặc software requirement.
+- **Response (201 Created):**
+```json
+{
+  "success": true,
+  "message": "Successfully created draft schedule",
+  "data": {
+    "schedule": {
+      "id": 9,
+      "practice_team_id": 1,
+      "room_code": "2B11",
+      "lecturer_user_id": 3,
+      "day_of_week": 3,
+      "time_slot": "7-10",
+      "start_date": "2026-06-02",
+      "end_date": "2026-06-02",
+      "entry_status": "draft"
+    },
+    "constraints": {
+      "passed": true,
+      "results": [
+        {
+          "code": "ROOM_CONFLICT",
+          "passed": true,
+          "message": "No room conflict detected"
+        }
+      ]
+    }
+  }
+}
+```
+- **Response (409 Conflict):**
+```json
+{
+  "success": false,
+  "message": "Schedule constraints failed",
+  "details": {
+    "passed": false,
+    "results": [
+      {
+        "code": "ROOM_CONFLICT",
+        "passed": false,
+        "message": "Room is already booked for 1 session(s) overlapping this period"
+      },
+      {
+        "code": "LECTURER_CONFLICT",
+        "passed": false,
+        "message": "Lecturer has 1 conflicting session(s) in this period"
+      }
+    ]
+  }
+}
+```
+
+### 5.2. Kiểm tra ràng buộc (Check Constraints)
 - **Mục đích:** Kiểm tra tính hợp lệ của một phương án xếp lịch (so với các ràng buộc cứng).
 - **Endpoint:** `POST /schedules/check-constraints`
 - **Quyền truy cập:** `ACADEMIC_OFFICER`, `ADMIN`
@@ -347,7 +421,7 @@
 }
 ```
 
-### 5.2. Chạy thuật toán tự động xếp lịch (Auto Arrange)
+### 5.3. Chạy thuật toán tự động xếp lịch (Auto Arrange)
 - **Mục đích:** Chạy thuật toán để tự động tìm phương án xếp lịch (phòng/ca) tốt nhất.
 - **Endpoint:** `POST /schedules/auto-arrange`
 - **Quyền truy cập:** `ACADEMIC_OFFICER`, `ADMIN`
