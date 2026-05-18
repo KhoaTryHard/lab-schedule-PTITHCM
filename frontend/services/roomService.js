@@ -1,5 +1,7 @@
 import { apiClient } from "../lib/apiClient";
 
+const MVP_ROOM_CODES = ["2B11", "2B21", "2B31"];
+
 function hasValue(value) {
   return value !== undefined && value !== null && String(value).trim() !== "";
 }
@@ -22,6 +24,18 @@ function buildRoomQueryString(params = {}) {
   return queryString ? `?${queryString}` : "";
 }
 
+export function getMvpRoomCodes() {
+  return [...MVP_ROOM_CODES];
+}
+
+export function isMvpRoom(roomCode) {
+  return MVP_ROOM_CODES.includes(
+    String(roomCode || "")
+      .trim()
+      .toUpperCase(),
+  );
+}
+
 /**
  * Hàm nhận vào: params lọc phòng máy.
  * Hàm xử lý: gọi GET /api/rooms.
@@ -30,6 +44,17 @@ function buildRoomQueryString(params = {}) {
 export function listRooms(params = {}) {
   return apiClient(`/rooms${buildRoomQueryString(params)}`, {
     method: "GET",
+  });
+}
+
+/**
+ * Backward-compatible alias cho /admin/rooms/page.jsx.
+ * Giữ tên cũ để không làm vỡ trang quản lý phòng.
+ */
+export function getRooms(params = {}) {
+  return listRooms({
+    scope: "mvp",
+    ...params,
   });
 }
 
@@ -54,6 +79,13 @@ export function updateRoom(roomId, payload) {
     method: "PATCH",
     body: JSON.stringify(payload),
   });
+}
+
+/**
+ * Backward-compatible alias cho /admin/rooms/page.jsx.
+ */
+export function updateRoomById(roomId, payload) {
+  return updateRoom(roomId, payload);
 }
 
 /**
