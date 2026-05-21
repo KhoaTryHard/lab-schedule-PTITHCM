@@ -13,6 +13,8 @@ LabSchedulePTIT.local.postman_environment.json
 3. Create schedule request.
 4. Auto arrange success.
 5. Auto arrange no valid option.
+5.1. Create draft schedule valid.
+5.2. Create draft schedule conflict.
 6. Room conflict.
 7. Lecturer conflict.
 8. Insufficient computers.
@@ -108,6 +110,18 @@ Authorization: Bearer {{auth_token}}
 ```
 
 - Nếu chưa login được nhưng đã có JWT hợp lệ, có thể nhập token thủ công vào biến môi trường `auth_token`.
+- `POST /schedules` tạo lịch draft thật trong MySQL và assert constraint thật. Chạy `5.1 Create draft schedule valid` trước, sau đó chạy `5.2 Create draft schedule conflict` để dùng lại cùng phòng/giảng viên/thứ/ca/ngày và kỳ vọng `409`.
+- Sau `5.1`, biến `schedule_id` được ghi vào environment; chạy tiếp `12. Approve schedule` (`PATCH /schedules/:id/approve`) rồi `13. Publish schedule` (`PATCH /schedules/:id/publish`), sau đó `14. Student/GV lookup published schedule` (`GET /schedules/published`).
+- Sau khi `5.1` đã tạo draft, có thể chạy tiếp:
+  - `6. Room conflict`: gọi `/schedules/check-constraints` với cùng slot của `5.1`, kỳ vọng `200` nhưng `data.passed = false` và có `ROOM_CONFLICT`.
+  - `7. Lecturer conflict`: gọi `/schedules/check-constraints` với cùng slot của `5.1`, kỳ vọng `200` nhưng `data.passed = false` và có `LECTURER_CONFLICT`.
+  - Khác biệt quan trọng: `5.2` là API tạo lịch nên fail bằng HTTP `409`; còn `6/7` chỉ là API kiểm tra ràng buộc nên vẫn trả HTTP `200`, nhưng kết quả nghiệp vụ nằm ở `data.passed = false`.
+- Các biến demo dùng cho request tạo lịch:
+  - `demo_practice_team_id`: ID có thật trong `practice_teams`, nên có `planned_size` nhỏ hơn số máy khả dụng của phòng.
+  - `demo_lecturer_user_id`: ID user giảng viên có thật trong `users`.
+  - `demo_room_code`: phòng in-scope, mặc định `2B11`.
+  - `demo_day_of_week`, `demo_time_slot`, `demo_start_date`, `demo_end_date`: slot test còn trống cho request thành công.
+- Dữ liệu demo mặc định trong environment đang giả định có `rooms.room_code = '2B11'` ở trạng thái `available`, time slot khớp `7-10` hoặc `Tiết 7-10`, `practice_teams.id = 1`, `users.id = 3`, và ngày `2026-06-02` chưa bị trùng lịch/block/holiday trước khi chạy `5.1`. Nếu database local khác seed, cập nhật lại các biến demo trước khi chạy collection.
 - Các API arrange/check-constraints hiện vẫn là stub/demo, chỉ nên assert status code cơ bản. Không đánh dấu pass nghiệp vụ nếu backend chưa xử lý dữ liệu thật.
 
 ## Ghi chú kết quả test
@@ -119,4 +133,3 @@ docs/postman/test_results.md
 ```
 
 Nếu API chưa implement thật, ghi rõ là stub hoặc chưa pass thay vì đánh dấu pass.
-

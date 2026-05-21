@@ -3,12 +3,218 @@ const { ROOM_SCOPE, isInScopeRoom } = require('../../config/roomScope');
 
 async function getTimeSlotId(slotLabel) {
   const [rows] = await pool.query('SELECT id FROM time_slots WHERE slot_label = ?', [slotLabel]);
-  return rows[0] ? rows[0].id : null;
+  if (rows[0]) {
+    return rows[0].id;
+  }
+
+  const periodRange = String(slotLabel || '').match(/(\d+)\s*-\s*(\d+)/);
+  if (!periodRange) {
+    return null;
+  }
+
+  const [, startPeriod, endPeriod] = periodRange;
+  const [periodRows] = await pool.query(
+    'SELECT id FROM time_slots WHERE start_period = ? AND end_period = ?',
+    [startPeriod, endPeriod]
+  );
+
+  return periodRows[0] ? periodRows[0].id : null;
 }
 
 async function getRoomId(roomCode) {
   const [rows] = await pool.query('SELECT id FROM rooms WHERE room_code = ?', [roomCode]);
   return rows[0] ? rows[0].id : null;
+}
+
+async function getScheduleById(id) {
+  const [rows] = await pool.query(
+    `SELECT
+       entry.*,
+       r.room_code,
+       ts.slot_label as time_slot,
+       u.full_name as lecturer_name,
+       pt.team_no,
+       pt.planned_size,
+       cs.group_no,
+       c.course_code,
+       c.course_name
+     FROM lab_schedule_entries entry
+     JOIN rooms r ON entry.room_id = r.id
+     JOIN time_slots ts ON entry.time_slot_id = ts.id
+     JOIN users u ON entry.lecturer_user_id = u.id
+     JOIN practice_teams pt ON entry.practice_team_id = pt.id
+     JOIN course_sections cs ON pt.course_section_id = cs.id
+     JOIN courses c ON cs.course_id = c.id
+     WHERE entry.id = ?`,
+    [id]
+  );
+
+  return rows[0] || null;
+}
+
+const SCHEDULE_LIST_SELECT = `
+  entry.id,
+  entry.lab_schedule_request_id,
+  entry.practice_team_id,
+  entry.room_id,
+  entry.lecturer_user_id,
+  entry.day_of_week,
+  entry.time_slot_id,
+  entry.start_date,
+  entry.end_date,
+  entry.entry_status,
+  entry.approved_by_user_id,
+  entry.published_by_user_id,
+  entry.approved_at,
+  entry.published_at,
+  entry.notes,
+  entry.created_at,
+  entry.updated_at,
+  r.room_code,
+  ts.slot_label as time_slot,
+  u.full_name as lecturer_name,
+  pt.team_no,
+  pt.planned_size,
+  cs.group_no,
+  c.course_code,
+  c.course_name
+`;
+
+function formatScheduleResponse(row) {
+  if (!row) {
+    return null;
+  }
+
+  return {
+    id: row.id,
+    lab_schedule_request_id: row.lab_schedule_request_id,
+    practice_team_id: row.practice_team_id,
+    room_code: row.room_code,
+    lecturer_user_id: row.lecturer_user_id,
+    lecturer_name: row.lecturer_name,
+    day_of_week: row.day_of_week,
+    time_slot: row.time_slot,
+    start_date: row.start_date,
+    end_date: row.end_date,
+    entry_status: row.entry_status,
+    status: row.entry_status,
+    team_no: row.team_no,
+    planned_size: row.planned_size,
+    group_no: row.group_no,
+    course_code: row.course_code,
+    course_name: row.course_name,
+    approved_by_user_id: row.approved_by_user_id,
+    published_by_user_id: row.published_by_user_id,
+    approved_at: row.approved_at,
+    published_at: row.published_at,
+    notes: row.notes,
+    created_at: row.created_at,
+    updated_at: row.updated_at
+  };
+}
+
+async function approveSchedule(id, userId) {
+  const schedule = await getScheduleById(id);
+  if (!schedule) {
+    return { ok: false, statusCode: 404, message: 'Schedule not found' };
+  }
+
+  if (schedule.entry_status !== 'draft') {
+    return {
+      ok: false,
+      statusCode: 409,
+      message: 'Chỉ có thể duyệt lịch ở trạng thái draft',
+      current_status: schedule.entry_status
+    };
+  }
+
+  await pool.query(
+    `UPDATE lab_schedule_entries
+     SET entry_status = 'approved',
+         approved_by_user_id = ?,
+         approved_at = CURRENT_TIMESTAMP,
+         updated_at = CURRENT_TIMESTAMP
+     WHERE id = ?`,
+    [userId, id]
+  );
+
+  const updated = await getScheduleById(id);
+  return { ok: true, schedule: formatScheduleResponse(updated) };
+}
+
+async function publishSchedule(id, userId) {
+  const schedule = await getScheduleById(id);
+  if (!schedule) {
+    return { ok: false, statusCode: 404, message: 'Schedule not found' };
+  }
+
+  if (schedule.entry_status === 'draft') {
+    return {
+      ok: false,
+      statusCode: 409,
+      message: 'Không thể công bố lịch chưa được duyệt',
+      current_status: schedule.entry_status
+    };
+  }
+
+  if (schedule.entry_status !== 'approved') {
+    return {
+      ok: false,
+      statusCode: 409,
+      message: 'Chỉ có thể công bố lịch ở trạng thái approved',
+      current_status: schedule.entry_status
+    };
+  }
+
+  await pool.query(
+    `UPDATE lab_schedule_entries
+     SET entry_status = 'published',
+         published_by_user_id = ?,
+         published_at = CURRENT_TIMESTAMP,
+         updated_at = CURRENT_TIMESTAMP
+     WHERE id = ?`,
+    [userId, id]
+  );
+
+  const updated = await getScheduleById(id);
+  return { ok: true, schedule: formatScheduleResponse(updated) };
+}
+
+async function getPublishedSchedules(filters = {}) {
+  const { schedule_request_id, room_code, lecturer_user_id } = filters;
+  const conditions = ["entry.entry_status = 'published'"];
+  const params = [];
+
+  if (schedule_request_id) {
+    conditions.push('entry.lab_schedule_request_id = ?');
+    params.push(schedule_request_id);
+  }
+
+  if (room_code) {
+    conditions.push('r.room_code = ?');
+    params.push(room_code);
+  }
+
+  if (lecturer_user_id) {
+    conditions.push('entry.lecturer_user_id = ?');
+    params.push(lecturer_user_id);
+  }
+
+  const [rows] = await pool.query(
+    `SELECT ${SCHEDULE_LIST_SELECT}
+     FROM lab_schedule_entries entry
+     JOIN rooms r ON entry.room_id = r.id
+     JOIN time_slots ts ON entry.time_slot_id = ts.id
+     JOIN users u ON entry.lecturer_user_id = u.id
+     JOIN practice_teams pt ON entry.practice_team_id = pt.id
+     JOIN course_sections cs ON pt.course_section_id = cs.id
+     JOIN courses c ON cs.course_id = c.id
+     WHERE ${conditions.join(' AND ')}
+     ORDER BY entry.start_date ASC, entry.day_of_week ASC, ts.start_period ASC`,
+    params
+  );
+
+  return rows.map(formatScheduleResponse);
 }
 
 function checkRoomScope(roomCode) {
@@ -99,7 +305,7 @@ async function checkRoomConflict(roomId, dayOfWeek, timeSlotId, startDate, endDa
      WHERE room_id = ?
        AND day_of_week = ?
        AND time_slot_id = ?
-       AND entry_status IN ('approved', 'published')
+       AND entry_status IN ('draft', 'approved', 'published')
        AND start_date <= ? AND end_date >= ?`,
     [roomId, dayOfWeek, timeSlotId, endDate, startDate]
   );
@@ -124,7 +330,7 @@ async function checkLecturerConflict(lecturerUserId, dayOfWeek, timeSlotId, star
      WHERE lecturer_user_id = ?
        AND day_of_week = ?
        AND time_slot_id = ?
-       AND entry_status IN ('approved', 'published')
+       AND entry_status IN ('draft', 'approved', 'published')
        AND start_date <= ? AND end_date >= ?`,
     [lecturerUserId, dayOfWeek, timeSlotId, endDate, startDate]
   );
@@ -230,11 +436,109 @@ async function checkScheduleConstraints(input) {
   };
 }
 
-function getScheduleListStub(query) {
+async function createDraftSchedule(input, createdByUserId) {
+  const constraintResult = await checkScheduleConstraints(input);
+
+  if (!constraintResult.passed) {
+    return {
+      created: false,
+      constraintResult
+    };
+  }
+
+  const {
+    lab_schedule_request_id = null,
+    available_slot_id = null,
+    practice_team_id,
+    room_code,
+    lecturer_user_id,
+    day_of_week,
+    time_slot,
+    start_date,
+    end_date,
+    notes = null
+  } = input;
+
+  const [roomId, timeSlotId] = await Promise.all([getRoomId(room_code), getTimeSlotId(time_slot)]);
+
+  const [result] = await pool.query(
+    `INSERT INTO lab_schedule_entries (
+       lab_schedule_request_id,
+       available_slot_id,
+       practice_team_id,
+       room_id,
+       lecturer_user_id,
+       day_of_week,
+       time_slot_id,
+       start_date,
+       end_date,
+       entry_status,
+       created_by_user_id,
+       notes
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?)`,
+    [
+      lab_schedule_request_id,
+      available_slot_id,
+      practice_team_id,
+      roomId,
+      lecturer_user_id,
+      day_of_week,
+      timeSlotId,
+      start_date,
+      end_date,
+      createdByUserId,
+      notes
+    ]
+  );
+
+  const schedule = await getScheduleById(result.insertId);
+
   return {
-    filters: query,
-    schedules: []
+    created: true,
+    schedule,
+    constraintResult
   };
+}
+
+async function getScheduleList(filters = {}) {
+  const { status, room_code, lecturer_user_id, schedule_request_id } = filters;
+  const conditions = [];
+  const params = [];
+
+  if (status) {
+    conditions.push('entry.entry_status = ?');
+    params.push(status);
+  }
+  if (schedule_request_id) {
+    conditions.push('entry.lab_schedule_request_id = ?');
+    params.push(parseInt(schedule_request_id, 10));
+  }
+  if (room_code) {
+    conditions.push('r.room_code = ?');
+    params.push(room_code);
+  }
+  if (lecturer_user_id) {
+    conditions.push('entry.lecturer_user_id = ?');
+    params.push(parseInt(lecturer_user_id, 10));
+  }
+
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+  const [rows] = await pool.query(
+    `SELECT ${SCHEDULE_LIST_SELECT}
+     FROM lab_schedule_entries entry
+     JOIN rooms r ON entry.room_id = r.id
+     JOIN time_slots ts ON entry.time_slot_id = ts.id
+     JOIN users u ON entry.lecturer_user_id = u.id
+     JOIN practice_teams pt ON entry.practice_team_id = pt.id
+     JOIN course_sections cs ON pt.course_section_id = cs.id
+     JOIN courses c ON cs.course_id = c.id
+     ${whereClause}
+     ORDER BY entry.start_date ASC, entry.day_of_week ASC, ts.start_period ASC`,
+    params
+  );
+
+  return rows.map(formatScheduleResponse);
 }
 
 function autoArrangeScheduleStub(input) {
@@ -268,6 +572,11 @@ function autoArrangeScheduleStub(input) {
 
 module.exports = {
   checkScheduleConstraints,
-  getScheduleListStub,
+  createDraftSchedule,
+  getScheduleById,
+  approveSchedule,
+  publishSchedule,
+  getPublishedSchedules,
+  getScheduleList,
   autoArrangeScheduleStub
 };

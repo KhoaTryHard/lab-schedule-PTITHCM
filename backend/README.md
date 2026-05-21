@@ -86,6 +86,7 @@ curl.exe -i -X PATCH http://localhost:4000/api/rooms/999999 -H "Authorization: B
 | GET | `/api/rooms/:id` | MVP room detail from MySQL |
 | PATCH | `/api/rooms/:id` | Update MVP room status/notes |
 | POST | `/api/schedule-requests` | Stub tạo yêu cầu xếp lịch |
+| POST | `/api/schedules` | Tạo lịch thực hành draft sau khi pass constraint |
 | POST | `/api/schedules/check-constraints` | Stub kiểm tra ràng buộc |
 | POST | `/api/schedules/auto-arrange` | Stub preview thuật toán auto arrange |
 
