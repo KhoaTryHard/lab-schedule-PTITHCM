@@ -1,3 +1,5 @@
+import { ButtonUI } from "../../../components/common/buttonUI.jsx";
+
 const guideBadgeItems = [
   "QTV",
   "MVP",
@@ -105,15 +107,15 @@ export default function SettingsPage() {
     <div className="guidePage">
       <section className="card guideHero">
         <div className="guideActionBar">
-          <button type="button" className="button roomSearchButton">
+          <ButtonUI tone="primary" shape="rounded" className="roomSearchButton">
             Tải hướng dẫn
-          </button>
-          <button type="button" className="button secondary roomRefreshButton">
+          </ButtonUI>
+          <ButtonUI tone="secondary" shape="rounded" className="roomRefreshButton">
             In hướng dẫn
-          </button>
-          <button type="button" className="button secondary guideCopyButton">
+          </ButtonUI>
+          <ButtonUI tone="secondary" shape="rounded" className="guideCopyButton">
             Sao chép checklist
-          </button>
+          </ButtonUI>
         </div>
 
         <h1 className="guideHeroTitle">Hướng dẫn sử dụng hệ Admin</h1>

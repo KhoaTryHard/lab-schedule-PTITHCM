@@ -1,5 +1,4 @@
 import Link from "next/link";
-import "./unauthoried.css";
 
 export default function UnauthorizedPage() {
   return (

@@ -1,0 +1,1729 @@
+{
+  "info": {
+    "name": "LabSchedulePTIT",
+    "description": "API Tests cho Lab Schedule PTIT",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "0. Health Check",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/health",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "health"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "1.1 Login Success",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"admin1\",\n  \"password\": \"123456\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/auth/login",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"Has token\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.data.token).to.be.a(\"string\");",
+              "    pm.environment.set(\"auth_token\", jsonData.data.token);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "1.2 Login Failed",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"wronguser\",\n  \"password\": \"wrongpass\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/auth/login",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 401\", function () {",
+              "    pm.response.to.have.status(401);",
+              "});",
+              "pm.test(\"Error message exists\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.success).to.be.false;",
+              "    pm.expect(jsonData.message).to.exist;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "1.3 GET Current User (Auth Me)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/auth/me",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "auth",
+            "me"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "1.4 Logout",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/auth/logout",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "auth",
+            "logout"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. GET room scope",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/rooms/scope",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "rooms",
+            "scope"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3.1 GET schedule requests",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/schedule-requests",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "schedule-requests"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Create schedule request",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"course_section_id\": 1,\n  \"requested_team_count\": 2,\n  \"total_required_sessions\": 3\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/schedule-requests",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "schedule-requests"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 201\", function () { pm.response.to.have.status(201); });",
+              "pm.test(\"Response has request id\", function () { var jsonData = pm.response.json(); pm.expect(jsonData.data).to.have.property(\"id\"); pm.environment.set(\"schedule_request_id\", jsonData.data.id); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Auto arrange success",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"request_id\": 1,\n  \"student_count\": 40,\n  \"preferred_day_of_week\": 3,\n  \"preferred_time_slot\": \"7-10\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/schedules/auto-arrange",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "schedules",
+            "auto-arrange"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "// TODO: assert schedule_id exists khi backend thß║¡t sß║╡n s├áng",
+              "// pm.test(\"Response has schedule id\", function () {",
+              "//     var jsonData = pm.response.json();",
+              "//     pm.expect(jsonData.data).to.have.property(\"schedule_id\");",
+              "//     pm.environment.set(\"schedule_id\", jsonData.data.schedule_id);",
+              "// });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "5.1 Create draft schedule valid",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"lab_schedule_request_id\": \"{{schedule_request_id}}\",\n  \"practice_team_id\": \"{{demo_practice_team_id}}\",\n  \"room_code\": \"{{demo_room_code}}\",\n  \"lecturer_user_id\": \"{{demo_lecturer_user_id}}\",\n  \"day_of_week\": \"{{demo_day_of_week}}\",\n  \"time_slot\": \"{{demo_time_slot}}\",\n  \"start_date\": \"{{demo_start_date}}\",\n  \"end_date\": \"{{demo_end_date}}\",\n  \"required_software_ids\": [],\n  \"notes\": \"Postman valid draft schedule test\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/schedules",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "schedules"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 201\", function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "pm.test(\"Draft schedule is created\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.success).to.equal(true);",
+              "    pm.expect(jsonData.data.schedule.entry_status).to.equal(\"draft\");",
+              "    pm.expect(jsonData.data.constraints.passed).to.equal(true);",
+              "    pm.environment.set(\"schedule_id\", jsonData.data.schedule.id);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "5.2 Create draft schedule conflict",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"lab_schedule_request_id\": \"{{schedule_request_id}}\",\n  \"practice_team_id\": \"{{demo_practice_team_id}}\",\n  \"room_code\": \"{{demo_room_code}}\",\n  \"lecturer_user_id\": \"{{demo_lecturer_user_id}}\",\n  \"day_of_week\": \"{{demo_day_of_week}}\",\n  \"time_slot\": \"{{demo_time_slot}}\",\n  \"start_date\": \"{{demo_start_date}}\",\n  \"end_date\": \"{{demo_end_date}}\",\n  \"required_software_ids\": [],\n  \"notes\": \"Postman conflict draft schedule test\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/schedules",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "schedules"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 409\", function () {",
+              "    pm.response.to.have.status(409);",
+              "});",
+              "pm.test(\"Room and lecturer conflicts are detected\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    var failedCodes = jsonData.details.results.filter(function (item) { return item.passed === false; }).map(function (item) { return item.code; });",
+              "    pm.expect(failedCodes).to.include(\"ROOM_CONFLICT\");",
+              "    pm.expect(failedCodes).to.include(\"LECTURER_CONFLICT\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Auto arrange no valid option",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"request_id\": 2,\n  \"student_count\": 100,\n  \"preferred_day_of_week\": 3,\n  \"preferred_time_slot\": \"7-10\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/schedules/auto-arrange",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "schedules",
+            "auto-arrange"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "// TODO: assert no_valid_option flag khi backend thß║¡t sß║╡n s├áng",
+              "// pm.test(\"No valid option returned\", function () {",
+              "//     var jsonData = pm.response.json();",
+              "//     pm.expect(jsonData.data.result).to.equal(\"no_valid_option\");",
+              "// });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Room conflict",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"lab_schedule_request_id\": \"{{schedule_request_id}}\",\n  \"practice_team_id\": \"{{demo_practice_team_id}}\",\n  \"room_code\": \"{{demo_room_code}}\",\n  \"lecturer_user_id\": \"{{demo_lecturer_user_id}}\",\n  \"day_of_week\": \"{{demo_day_of_week}}\",\n  \"time_slot\": \"{{demo_time_slot}}\",\n  \"start_date\": \"{{demo_start_date}}\",\n  \"end_date\": \"{{demo_end_date}}\",\n  \"required_software_ids\": []\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/schedules/check-constraints",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "schedules",
+            "check-constraints"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"ROOM_CONFLICT is detected\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    var failedCodes = jsonData.data.results.filter(function (item) { return item.passed === false; }).map(function (item) { return item.code; });",
+              "    pm.expect(jsonData.data.passed).to.equal(false);",
+              "    pm.expect(failedCodes).to.include(\"ROOM_CONFLICT\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Lecturer conflict",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"lab_schedule_request_id\": \"{{schedule_request_id}}\",\n  \"practice_team_id\": \"{{demo_practice_team_id}}\",\n  \"room_code\": \"{{demo_room_code}}\",\n  \"lecturer_user_id\": \"{{demo_lecturer_user_id}}\",\n  \"day_of_week\": \"{{demo_day_of_week}}\",\n  \"time_slot\": \"{{demo_time_slot}}\",\n  \"start_date\": \"{{demo_start_date}}\",\n  \"end_date\": \"{{demo_end_date}}\",\n  \"required_software_ids\": []\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/schedules/check-constraints",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "schedules",
+            "check-constraints"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"LECTURER_CONFLICT is detected\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    var failedCodes = jsonData.data.results.filter(function (item) { return item.passed === false; }).map(function (item) { return item.code; });",
+              "    pm.expect(jsonData.data.passed).to.equal(false);",
+              "    pm.expect(failedCodes).to.include(\"LECTURER_CONFLICT\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Insufficient computers",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"room_code\": \"2B11\",\n  \"lecturer_user_id\": 10,\n  \"practice_team_id\": 1,\n  \"day_of_week\": 3,\n  \"time_slot\": \"7-10\",\n  \"start_date\": \"2026-04-28\",\n  \"end_date\": \"2026-05-28\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/schedules/check-constraints",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "schedules",
+            "check-constraints"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "// TODO: assert conflict details khi backend thß║¡t sß║╡n s├áng",
+              "// pm.test(\"Insufficient computers detected\", function () {",
+              "//     var jsonData = pm.response.json();",
+              "//     pm.expect(jsonData.data.conflicts).to.include(\"insufficient_computers\");",
+              "// });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. Missing software",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"room_code\": \"2B11\",\n  \"lecturer_user_id\": 10,\n  \"practice_team_id\": 1,\n  \"day_of_week\": 3,\n  \"time_slot\": \"7-10\",\n  \"start_date\": \"2026-04-28\",\n  \"end_date\": \"2026-05-28\",\n  \"required_software_ids\": [999]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/schedules/check-constraints",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "schedules",
+            "check-constraints"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "// TODO: assert conflict details khi backend thß║¡t sß║╡n s├áng",
+              "// pm.test(\"Missing software detected\", function () {",
+              "//     var jsonData = pm.response.json();",
+              "//     pm.expect(jsonData.data.conflicts).to.include(\"missing_software\");",
+              "// });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "10. Holiday blocked",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"room_code\": \"2B11\",\n  \"lecturer_user_id\": 10,\n  \"practice_team_id\": 1,\n  \"day_of_week\": 5,\n  \"time_slot\": \"7-10\",\n  \"start_date\": \"2026-04-27\",\n  \"end_date\": \"2026-05-15\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/schedules/check-constraints",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "schedules",
+            "check-constraints"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "// TODO: assert conflict details khi backend thß║¡t sß║╡n s├áng",
+              "// pm.test(\"Holiday block detected\", function () {",
+              "//     var jsonData = pm.response.json();",
+              "//     pm.expect(jsonData.data.conflicts).to.include(\"holiday_blocked\");",
+              "// });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "11. Room blocked",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"room_code\": \"2B31\",\n  \"lecturer_user_id\": 10,\n  \"practice_team_id\": 1,\n  \"day_of_week\": 3,\n  \"time_slot\": \"7-10\",\n  \"start_date\": \"2026-04-28\",\n  \"end_date\": \"2026-05-28\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/schedules/check-constraints",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "schedules",
+            "check-constraints"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "// TODO: assert conflict details khi backend thß║¡t sß║╡n s├áng",
+              "// pm.test(\"Room block detected\", function () {",
+              "//     var jsonData = pm.response.json();",
+              "//     pm.expect(jsonData.data.conflicts).to.include(\"room_blocked\");",
+              "// });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "12. Approve schedule",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/schedules/{{schedule_id}}/approve",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "schedules",
+            "{{schedule_id}}",
+            "approve"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"Schedule status is approved\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.data.status).to.equal(\"approved\");",
+              "    pm.expect(jsonData.data.entry_status).to.equal(\"approved\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "13. Publish schedule",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/schedules/{{schedule_id}}/publish",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "schedules",
+            "{{schedule_id}}",
+            "publish"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"Schedule status is published\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.data.status).to.equal(\"published\");",
+              "    pm.expect(jsonData.data.entry_status).to.equal(\"published\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "14. Student/GV lookup published schedule",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/schedules/published?schedule_request_id=1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "schedules",
+            "published"
+          ],
+          "query": [
+            {
+              "key": "schedule_request_id",
+              "value": "1"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"Published schedule returned\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.data).to.be.an(\"array\");",
+              "    pm.expect(jsonData.data.length).to.be.above(0);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "15. List all schedules",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/schedules",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "schedules"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"Schedules array returned\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.data.schedules).to.be.an(\"array\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Schedule Constraints",
+      "item": [
+        {
+          "name": "CC-01 Check Constraints - Valid (All Pass)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"room_code\": \"2B11\",\n  \"lecturer_user_id\": 10,\n  \"practice_team_id\": 1,\n  \"day_of_week\": 4,\n  \"time_slot\": \"7-10\",\n  \"start_date\": \"2026-09-01\",\n  \"end_date\": \"2026-09-30\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/schedules/check-constraints",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "schedules",
+                "check-constraints"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Response success is true\", function () { var j = pm.response.json(); pm.expect(j.success).to.be.true; });",
+                  "pm.test(\"Message is Constraint check completed\", function () { var j = pm.response.json(); pm.expect(j.message).to.include(\"Constraint check completed\"); });",
+                  "pm.test(\"Data has passed and results fields\", function () { var j = pm.response.json(); pm.expect(j.data).to.have.property(\"passed\"); pm.expect(j.data).to.have.property(\"results\"); pm.expect(j.data.results).to.be.an(\"array\"); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "CC-02 Check Constraints - Room Out of Scope",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"room_code\": \"1A01\",\n  \"lecturer_user_id\": 10,\n  \"practice_team_id\": 1,\n  \"day_of_week\": 3,\n  \"time_slot\": \"7-10\",\n  \"start_date\": \"2026-09-01\",\n  \"end_date\": \"2026-09-30\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/schedules/check-constraints",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "schedules",
+                "check-constraints"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Overall passed is false\", function () { var j = pm.response.json(); pm.expect(j.data.passed).to.be.false; });",
+                  "pm.test(\"ROOM_SCOPE constraint failed\", function () { var j = pm.response.json(); var roomScope = j.data.results.find(function(r) { return r.code === 'ROOM_SCOPE'; }); pm.expect(roomScope).to.exist; pm.expect(roomScope.passed).to.be.false; });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "CC-03 Check Constraints - Holiday Blocked",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"room_code\": \"2B11\",\n  \"lecturer_user_id\": 10,\n  \"practice_team_id\": 1,\n  \"day_of_week\": 5,\n  \"time_slot\": \"7-10\",\n  \"start_date\": \"2026-04-27\",\n  \"end_date\": \"2026-05-15\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/schedules/check-constraints",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "schedules",
+                "check-constraints"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Response success is true\", function () { var j = pm.response.json(); pm.expect(j.success).to.be.true; });",
+                  "pm.test(\"HOLIDAY_BLOCKED constraint exists in results\", function () { var j = pm.response.json(); var holiday = j.data.results.find(function(r) { return r.code === 'HOLIDAY_BLOCKED'; }); pm.expect(holiday).to.exist; pm.expect(holiday).to.have.property(\"passed\"); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "CC-04 Check Constraints - Validation Error (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lecturer_user_id\": 10,\n  \"practice_team_id\": 1,\n  \"day_of_week\": 3,\n  \"time_slot\": \"7-10\",\n  \"start_date\": \"2026-06-01\",\n  \"end_date\": \"2026-06-30\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/schedules/check-constraints",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "schedules",
+                "check-constraints"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () { pm.response.to.have.status(400); });",
+                  "pm.test(\"Response success is false\", function () { var j = pm.response.json(); pm.expect(j.success).to.be.false; });",
+                  "pm.test(\"Message is Validation failed\", function () { var j = pm.response.json(); pm.expect(j.message).to.include(\"Validation failed\"); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "CC-05 Check Constraints - No Token (401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"room_code\": \"2B11\",\n  \"lecturer_user_id\": 10,\n  \"practice_team_id\": 1,\n  \"day_of_week\": 3,\n  \"time_slot\": \"7-10\",\n  \"start_date\": \"2026-06-01\",\n  \"end_date\": \"2026-06-30\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/schedules/check-constraints",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "schedules",
+                "check-constraints"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401\", function () { pm.response.to.have.status(401); });",
+                  "pm.test(\"Response success is false\", function () { var j = pm.response.json(); pm.expect(j.success).to.be.false; });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "CC-06 Check Constraints - Wrong Role GV (403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"room_code\": \"2B11\",\n  \"lecturer_user_id\": 10,\n  \"practice_team_id\": 1,\n  \"day_of_week\": 3,\n  \"time_slot\": \"7-10\",\n  \"start_date\": \"2026-06-01\",\n  \"end_date\": \"2026-06-30\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/schedules/check-constraints",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "schedules",
+                "check-constraints"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 403\", function () { pm.response.to.have.status(403); });",
+                  "pm.test(\"Forbidden for non-AO/Admin\", function () { var j = pm.response.json(); pm.expect(j.message).to.include(\"Forbidden\"); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "CC-07 Check Constraints - Room Conflict",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"room_code\": \"{{demo_room_code}}\",\n  \"lecturer_user_id\": \"{{demo_lecturer_user_id}}\",\n  \"practice_team_id\": \"{{demo_practice_team_id}}\",\n  \"day_of_week\": \"{{demo_day_of_week}}\",\n  \"time_slot\": \"{{demo_time_slot}}\",\n  \"start_date\": \"{{demo_start_date}}\",\n  \"end_date\": \"{{demo_end_date}}\",\n  \"required_software_ids\": []\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/schedules/check-constraints",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "schedules",
+                "check-constraints"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function(){ pm.response.to.have.status(200); });",
+                  "pm.test('ROOM_CONFLICT detected', function(){ var j=pm.response.json(); var r=j.data.results.find(function(x){return x.code==='ROOM_CONFLICT';}); pm.expect(r.passed).to.be.false; });",
+                  "pm.test('Overall passed is false', function(){ var j=pm.response.json(); pm.expect(j.data.passed).to.be.false; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CC-08 Check Constraints - Lecturer Conflict",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"room_code\": \"2B21\",\n  \"lecturer_user_id\": \"{{demo_lecturer_user_id}}\",\n  \"practice_team_id\": \"{{demo_practice_team_id}}\",\n  \"day_of_week\": \"{{demo_day_of_week}}\",\n  \"time_slot\": \"{{demo_time_slot}}\",\n  \"start_date\": \"{{demo_start_date}}\",\n  \"end_date\": \"{{demo_end_date}}\",\n  \"required_software_ids\": []\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/schedules/check-constraints",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "schedules",
+                "check-constraints"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function(){ pm.response.to.have.status(200); });",
+                  "pm.test('LECTURER_CONFLICT detected', function(){ var j=pm.response.json(); var r=j.data.results.find(function(x){return x.code==='LECTURER_CONFLICT';}); pm.expect(r.passed).to.be.false; });",
+                  "pm.test('Overall passed is false', function(){ var j=pm.response.json(); pm.expect(j.data.passed).to.be.false; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CC-09 Check Constraints - Capacity Fail (not enough computers)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"room_code\":\"2B11\",\"lecturer_user_id\":3,\"practice_team_id\":1,\"day_of_week\":3,\"time_slot\":\"7-10\",\"start_date\":\"2026-06-01\",\"end_date\":\"2026-06-30\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/schedules/check-constraints",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "schedules",
+                "check-constraints"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function(){ pm.response.to.have.status(200); });",
+                  "pm.test('CAPACITY_OK failed', function(){ var j=pm.response.json(); var r=j.data.results.find(function(x){return x.code==='CAPACITY_OK';}); pm.expect(r.passed).to.be.false; pm.expect(r.message).to.include('usable computers'); });",
+                  "pm.test('Overall passed is false', function(){ var j=pm.response.json(); pm.expect(j.data.passed).to.be.false; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CC-10 Check Constraints - Software Missing",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"room_code\":\"2B21\",\"lecturer_user_id\":3,\"practice_team_id\":1,\"day_of_week\":3,\"time_slot\":\"7-10\",\"start_date\":\"2026-06-01\",\"end_date\":\"2026-06-30\",\"required_software_ids\":[999]}"
+            },
+            "url": {
+              "raw": "{{base_url}}/schedules/check-constraints",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "schedules",
+                "check-constraints"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function(){ pm.response.to.have.status(200); });",
+                  "pm.test('SOFTWARE_OK failed', function(){ var j=pm.response.json(); var r=j.data.results.find(function(x){return x.code==='SOFTWARE_OK';}); pm.expect(r.passed).to.be.false; pm.expect(r.message).to.include('Missing software'); });",
+                  "pm.test('Overall passed is false', function(){ var j=pm.response.json(); pm.expect(j.data.passed).to.be.false; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CC-11 Check Constraints - Room Not Available (maintenance)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"room_code\":\"2B31\",\"lecturer_user_id\":3,\"practice_team_id\":1,\"day_of_week\":3,\"time_slot\":\"7-10\",\"start_date\":\"2026-08-01\",\"end_date\":\"2026-08-31\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/schedules/check-constraints",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "schedules",
+                "check-constraints"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var baseUrl = pm.variables.get('base_url') || 'http://localhost:4000/api';",
+                  "var token = pm.variables.get('auth_token');",
+                  "pm.sendRequest({ url: baseUrl + '/rooms/3', method: 'PATCH', header: [{ key: 'Content-Type', value: 'application/json' }, { key: 'Authorization', value: 'Bearer ' + token }], body: { mode: 'raw', raw: JSON.stringify({ room_status: 'maintenance' }) } }, function(err, res) { console.log('Set 2B31 to maintenance, status:', res.code); });"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function(){ pm.response.to.have.status(200); });",
+                  "pm.test('ROOM_STATUS failed (room not available)', function(){ var j=pm.response.json(); var r=j.data.results.find(function(x){return x.code==='ROOM_STATUS';}); pm.expect(r.passed).to.be.false; pm.expect(r.message).to.include('not available'); });",
+                  "pm.test('Overall passed is false', function(){ var j=pm.response.json(); pm.expect(j.data.passed).to.be.false; });",
+                  "// Restore room status after test",
+                  "var baseUrl = pm.variables.get('base_url') || 'http://localhost:4000/api';",
+                  "var token = pm.variables.get('auth_token');",
+                  "pm.sendRequest({ url: baseUrl + '/rooms/3', method: 'PATCH', header: [{ key: 'Content-Type', value: 'application/json' }, { key: 'Authorization', value: 'Bearer ' + token }], body: { mode: 'raw', raw: JSON.stringify({ room_status: 'available' }) } }, function(err, res) { console.log('Restored 2B31 to available, status:', res.code); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Schedule Requests",
+      "item": [
+        {
+          "name": "Create Valid Schedule Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"course_section_id\": 1,\n  \"requested_team_count\": 2,\n  \"total_required_sessions\": 3\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/schedule-requests",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "schedule-requests"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () { pm.response.to.have.status(201); });",
+                  "pm.test(\"Response has request id\", function () { var jsonData = pm.response.json(); pm.expect(jsonData.data).to.have.property(\"id\"); pm.environment.set(\"schedule_request_id\", jsonData.data.id); });",
+                  "pm.test(\"Not returning stub data\", function () { var jsonData = pm.response.json(); pm.expect(jsonData.message).to.not.include(\"stub\"); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Schedule Request Missing Data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requested_team_count\": 2\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/schedule-requests",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "schedule-requests"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () { pm.response.to.have.status(400); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Schedule Requests",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/schedule-requests",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "schedule-requests"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Returns array\", function () { var jsonData = pm.response.json(); pm.expect(jsonData.data).to.be.an(\"array\"); pm.expect(jsonData.message).to.not.include(\"stub\"); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Schedule Request by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/schedule-requests/{{schedule_request_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "schedule-requests",
+                "{{schedule_request_id}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Returns correct schedule request\", function () { var jsonData = pm.response.json(); pm.expect(jsonData.success).to.be.true; pm.expect(jsonData.data).to.have.property(\"id\"); pm.expect(jsonData.data.id).to.equal(Number(pm.environment.get(\"schedule_request_id\"))); pm.expect(jsonData.data).to.have.property(\"course_section_id\"); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Submit Schedule Request",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/schedule-requests/{{schedule_request_id}}/submit",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "schedule-requests",
+                "{{schedule_request_id}}",
+                "submit"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Request status is now pending_review\", function () { var jsonData = pm.response.json(); pm.expect(jsonData.data.request_status).to.equal(\"pending_review\"); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Submit Schedule Request - Already Submitted (400)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/schedule-requests/{{schedule_request_id}}/submit",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "schedule-requests",
+                "{{schedule_request_id}}",
+                "submit"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () { pm.response.to.have.status(400); });",
+                  "pm.test(\"Error message about draft status\", function () { var jsonData = pm.response.json(); pm.expect(jsonData.message).to.include(\"draft\"); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Schedule Request - No Token (401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/schedule-requests/{{schedule_request_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "schedule-requests",
+                "{{schedule_request_id}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401\", function () { pm.response.to.have.status(401); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Schedule Request - Wrong Role (GV) (403)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/schedule-requests/{{schedule_request_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "schedule-requests",
+                "{{schedule_request_id}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 403\", function () { pm.response.to.have.status(403); });",
+                  "pm.test(\"Forbidden for non-AO/Admin\", function () { var jsonData = pm.response.json(); pm.expect(jsonData.message).to.include(\"Forbidden\"); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
