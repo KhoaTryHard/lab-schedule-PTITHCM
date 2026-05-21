@@ -507,3 +507,109 @@
   }
 }
 ```
+
+### 5.4. Approve schedule
+- **Purpose:** Duyệt lịch thực hành từ `draft` sang `approved`.
+- **Endpoint:** `PATCH /schedules/:id/approve`
+- **Access:** `ACADEMIC_OFFICER` (CBDT), `ADMIN` (QTV)
+- **Headers:** `Authorization: Bearer <token>`
+- **Path Params:** `id` — `lab_schedule_entries.id`
+- **Preconditions:** `entry_status` phải là `draft`
+- **Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Successfully approved schedule",
+  "data": {
+    "id": 9,
+    "entry_status": "approved",
+    "status": "approved",
+    "room_code": "2B11",
+    "approved_by_user_id": 1,
+    "approved_at": "2026-05-18T10:00:00.000Z"
+  }
+}
+```
+- **Response (403 Forbidden):** User không thuộc QTV/CBDT.
+- **Response (404 Not Found):** Không tìm thấy lịch.
+- **Response (409 Conflict):** Lịch không ở trạng thái `draft`.
+
+### 5.5. Publish schedule
+- **Purpose:** Công bố lịch đã duyệt từ `approved` sang `published`.
+- **Endpoint:** `PATCH /schedules/:id/publish`
+- **Access:** `ACADEMIC_OFFICER` (CBDT), `ADMIN` (QTV)
+- **Headers:** `Authorization: Bearer <token>`
+- **Path Params:** `id` — `lab_schedule_entries.id`
+- **Preconditions:** `entry_status` phải là `approved` (không cho publish từ `draft`)
+- **Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Successfully published schedule",
+  "data": {
+    "id": 9,
+    "entry_status": "published",
+    "status": "published",
+    "room_code": "2B11",
+    "published_by_user_id": 1,
+    "published_at": "2026-05-18T10:05:00.000Z"
+  }
+}
+```
+- **Response (403 Forbidden):** User không thuộc QTV/CBDT.
+- **Response (404 Not Found):** Không tìm thấy lịch.
+- **Response (409 Conflict):** Lịch chưa `approved` hoặc đã `published`.
+
+### 5.6. Lookup published schedules
+- **Purpose:** Tra cứu lịch đã công bố cho GV/SV/KTV và các vai trò đã đăng nhập.
+- **Endpoint:** `GET /schedules/published`
+- **Access:** Đã đăng nhập (Any Role)
+- **Headers:** `Authorization: Bearer <token>`
+- **Query Params (optional):** `schedule_request_id`, `room_code`, `lecturer_user_id`
+- **Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Successfully fetched published schedules",
+  "data": [
+    {
+      "id": 9,
+      "entry_status": "published",
+      "status": "published",
+      "room_code": "2B11",
+      "course_code": "INT1434-3",
+      "lecturer_name": "Tran Hoang Nam"
+    }
+  ]
+}
+```
+
+### 5.7. List all schedules (General)
+- **Purpose:** Lấy danh sách lịch thực hành với filter tùy chọn. Admin/CBDT thấy mọi trạng thái; frontend scope bằng query params.
+- **Endpoint:** `GET /schedules`
+- **Access:** Đã đăng nhập (Any Role)
+- **Headers:** `Authorization: Bearer <token>`
+- **Query Params (all optional):**
+  - `status`: `draft` | `approved` | `published`
+  - `room_code`: e.g. `2B11`
+  - `lecturer_user_id`: integer
+  - `schedule_request_id`: integer
+- **Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Successfully fetched schedules",
+  "data": {
+    "schedules": [
+      {
+        "id": 9,
+        "entry_status": "published",
+        "status": "published",
+        "room_code": "2B11",
+        "course_code": "INT1434-3",
+        "lecturer_name": "Tran Hoang Nam"
+      }
+    ]
+  }
+}
+```
