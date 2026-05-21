@@ -4,14 +4,20 @@ const {
   checkScheduleConstraints,
   createDraftSchedule,
   autoArrangeScheduleStub,
-  getScheduleListStub,
+  getScheduleList,
   approveSchedule,
   publishSchedule,
   getPublishedSchedules
 } = require('./schedule.service');
 
-function listSchedules(req, res) {
-  return ok(res, getScheduleListStub(req.query));
+async function listSchedules(req, res) {
+  const schedules = await getScheduleList({
+    status: req.query.status,
+    room_code: req.query.room_code,
+    lecturer_user_id: req.query.lecturer_user_id,
+    schedule_request_id: req.query.schedule_request_id
+  });
+  return ok(res, { schedules }, 'Successfully fetched schedules');
 }
 
 async function checkConstraints(req, res) {

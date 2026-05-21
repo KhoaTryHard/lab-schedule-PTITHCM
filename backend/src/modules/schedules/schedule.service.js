@@ -500,11 +500,45 @@ async function createDraftSchedule(input, createdByUserId) {
   };
 }
 
-function getScheduleListStub(query) {
-  return {
-    filters: query,
-    schedules: []
-  };
+async function getScheduleList(filters = {}) {
+  const { status, room_code, lecturer_user_id, schedule_request_id } = filters;
+  const conditions = [];
+  const params = [];
+
+  if (status) {
+    conditions.push('entry.entry_status = ?');
+    params.push(status);
+  }
+  if (schedule_request_id) {
+    conditions.push('entry.lab_schedule_request_id = ?');
+    params.push(parseInt(schedule_request_id, 10));
+  }
+  if (room_code) {
+    conditions.push('r.room_code = ?');
+    params.push(room_code);
+  }
+  if (lecturer_user_id) {
+    conditions.push('entry.lecturer_user_id = ?');
+    params.push(parseInt(lecturer_user_id, 10));
+  }
+
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+  const [rows] = await pool.query(
+    `SELECT ${SCHEDULE_LIST_SELECT}
+     FROM lab_schedule_entries entry
+     JOIN rooms r ON entry.room_id = r.id
+     JOIN time_slots ts ON entry.time_slot_id = ts.id
+     JOIN users u ON entry.lecturer_user_id = u.id
+     JOIN practice_teams pt ON entry.practice_team_id = pt.id
+     JOIN course_sections cs ON pt.course_section_id = cs.id
+     JOIN courses c ON cs.course_id = c.id
+     ${whereClause}
+     ORDER BY entry.start_date ASC, entry.day_of_week ASC, ts.start_period ASC`,
+    params
+  );
+
+  return rows.map(formatScheduleResponse);
 }
 
 function autoArrangeScheduleStub(input) {
@@ -543,6 +577,6 @@ module.exports = {
   approveSchedule,
   publishSchedule,
   getPublishedSchedules,
-  getScheduleListStub,
+  getScheduleList,
   autoArrangeScheduleStub
 };
