@@ -62,7 +62,7 @@ const checkConstraintsValidator = [
   body('required_software_ids.*').optional().isInt({ min: 1 }).withMessage('Mỗi software_id phải là số nguyên dương'),
 ];
 
-router.get('/', requireAuth, listSchedules);
+router.get('/', requireAuth, asyncHandler(listSchedules));
 
 router.get('/published', requireAuth, asyncHandler(listPublishedSchedules));
 

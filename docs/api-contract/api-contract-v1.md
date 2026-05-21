@@ -583,3 +583,33 @@
   ]
 }
 ```
+
+### 5.7. List all schedules (General)
+- **Purpose:** Lấy danh sách lịch thực hành với filter tùy chọn. Admin/CBDT thấy mọi trạng thái; frontend scope bằng query params.
+- **Endpoint:** `GET /schedules`
+- **Access:** Đã đăng nhập (Any Role)
+- **Headers:** `Authorization: Bearer <token>`
+- **Query Params (all optional):**
+  - `status`: `draft` | `approved` | `published`
+  - `room_code`: e.g. `2B11`
+  - `lecturer_user_id`: integer
+  - `schedule_request_id`: integer
+- **Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Successfully fetched schedules",
+  "data": {
+    "schedules": [
+      {
+        "id": 9,
+        "entry_status": "published",
+        "status": "published",
+        "room_code": "2B11",
+        "course_code": "INT1434-3",
+        "lecturer_name": "Tran Hoang Nam"
+      }
+    ]
+  }
+}
+```

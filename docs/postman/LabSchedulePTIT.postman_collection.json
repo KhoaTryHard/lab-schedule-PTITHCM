@@ -914,6 +914,44 @@
       ]
     },
     {
+      "name": "15. List all schedules",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/schedules",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "schedules"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"Schedules array returned\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.data.schedules).to.be.an(\"array\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
       "name": "Schedule Constraints",
       "item": [
         {
