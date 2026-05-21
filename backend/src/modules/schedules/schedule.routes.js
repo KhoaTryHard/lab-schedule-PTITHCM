@@ -4,7 +4,10 @@ const {
   checkConstraints,
   createSchedule,
   autoArrange,
-  listSchedules
+  listSchedules,
+  approveScheduleEntry,
+  publishScheduleEntry,
+  listPublishedSchedules
 } = require('./schedule.controller');
 const { requireAuth } = require('../../middlewares/auth.middleware');
 const { requireRoles } = require('../../middlewares/role.middleware');
@@ -59,7 +62,23 @@ const checkConstraintsValidator = [
   body('required_software_ids.*').optional().isInt({ min: 1 }).withMessage('Mỗi software_id phải là số nguyên dương'),
 ];
 
-router.get('/', requireAuth, listSchedules);
+router.get('/', requireAuth, asyncHandler(listSchedules));
+
+router.get('/published', requireAuth, asyncHandler(listPublishedSchedules));
+
+router.patch(
+  '/:id/approve',
+  requireAuth,
+  requireRoles(ROLES.ACADEMIC_OFFICER, ROLES.ADMIN),
+  asyncHandler(approveScheduleEntry)
+);
+
+router.patch(
+  '/:id/publish',
+  requireAuth,
+  requireRoles(ROLES.ACADEMIC_OFFICER, ROLES.ADMIN),
+  asyncHandler(publishScheduleEntry)
+);
 
 router.post(
   '/',

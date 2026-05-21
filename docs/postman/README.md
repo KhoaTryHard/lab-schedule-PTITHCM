@@ -111,6 +111,7 @@ Authorization: Bearer {{auth_token}}
 
 - Nếu chưa login được nhưng đã có JWT hợp lệ, có thể nhập token thủ công vào biến môi trường `auth_token`.
 - `POST /schedules` tạo lịch draft thật trong MySQL và assert constraint thật. Chạy `5.1 Create draft schedule valid` trước, sau đó chạy `5.2 Create draft schedule conflict` để dùng lại cùng phòng/giảng viên/thứ/ca/ngày và kỳ vọng `409`.
+- Sau `5.1`, biến `schedule_id` được ghi vào environment; chạy tiếp `12. Approve schedule` (`PATCH /schedules/:id/approve`) rồi `13. Publish schedule` (`PATCH /schedules/:id/publish`), sau đó `14. Student/GV lookup published schedule` (`GET /schedules/published`).
 - Sau khi `5.1` đã tạo draft, có thể chạy tiếp:
   - `6. Room conflict`: gọi `/schedules/check-constraints` với cùng slot của `5.1`, kỳ vọng `200` nhưng `data.passed = false` và có `ROOM_CONFLICT`.
   - `7. Lecturer conflict`: gọi `/schedules/check-constraints` với cùng slot của `5.1`, kỳ vọng `200` nhưng `data.passed = false` và có `LECTURER_CONFLICT`.
