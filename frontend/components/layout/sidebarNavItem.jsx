@@ -1,8 +1,16 @@
 import Link from "next/link";
 
-import { renderSidebarIcon } from "../icons/systemIcon.jsx";
-import styles from "./appShell.module.css";
+import { renderSidebarIcon } from "../systemIcon.jsx";
 
+/**
+ * Hàm nhận vào:
+ * - icon là mã icon hoặc JSX icon.
+ * - itemName là tên mục hiển thị trên sidebar.
+ * - href là đường dẫn điều hướng.
+ * - isActive là trạng thái mục hiện tại có đang được chọn hay không.
+ * Hàm xử lý: dựng một item menu sidebar có thể tái sử dụng cho nhiều vai trò.
+ * Hàm trả về: JSX của một mục điều hướng.
+ */
 export default function SidebarNavItem({
   icon,
   itemName,
@@ -12,9 +20,9 @@ export default function SidebarNavItem({
 }) {
   const iconContent = typeof icon === "string" ? renderSidebarIcon(icon) : icon;
   const itemClassName = [
-    styles.navItem,
-    isActive ? styles.navItemActive : "",
-    isCollapsed ? styles.navItemCollapsed : "",
+    "appShellNavItem",
+    isActive ? "appShellNavItemActive" : "",
+    isCollapsed ? "appShellNavItemCollapsed" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -25,8 +33,8 @@ export default function SidebarNavItem({
       className={itemClassName}
       title={isCollapsed ? itemName : undefined}
     >
-      <span className={styles.navIcon}>{iconContent}</span>
-      {!isCollapsed && <span className={styles.navLabel}>{itemName}</span>}
+      <span className="appShellNavIcon">{iconContent}</span>
+      {!isCollapsed && <span className="appShellNavLabel">{itemName}</span>}
     </Link>
   );
 }

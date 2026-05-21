@@ -1,12 +1,19 @@
-import AppShell from '../../../components/layout/AppShell';
+import ScheduleLookupTable from "../../../components/schedules/ScheduleLookupTable.jsx";
 
 export default function LecturerSchedulePage() {
   return (
-    <AppShell>
-      <section className="card">
-        <h1>Lịch dạy thực hành của giảng viên</h1>
-        <p>Chỉ hiển thị lịch đã công bố liên quan đến giảng viên đang đăng nhập.</p>
-      </section>
-    </AppShell>
+    <ScheduleLookupTable
+      title="Lịch dạy thực hành của giảng viên"
+      description="Giảng viên xem lịch dạy thực hành đã công bố. Frontend gọi GET /api/schedules với status=published và lecturer_user_id của tài khoản hiện tại."
+      fixedParams={{ status: "published" }}
+      currentUserIdParamName="lecturer_user_id"
+      clientSideRequiredStatus="published"
+      showStatusFilter={false}
+      showCourseSectionFilter={false}
+      showLecturerFilter={false}
+      emptyTitle="Chưa có lịch dạy thực hành"
+      emptyDescription="Chưa có lịch dạy thực hành phù hợp với bộ lọc hiện tại."
+      integrationNote="Frontend đã gửi status=published và lecturer_user_id theo tài khoản đang đăng nhập. Ngoài ra, UI có lớp lọc an toàn client-side để chỉ render lịch published nếu API trả dư dữ liệu. Backend develop hiện tại chưa implement role scope cho GV nên chưa thể xác nhận dữ liệu trả về đã đúng riêng giảng viên."
+    />
   );
 }

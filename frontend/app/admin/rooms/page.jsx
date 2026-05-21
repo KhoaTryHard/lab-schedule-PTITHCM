@@ -5,30 +5,36 @@ import { useEffect, useMemo, useState } from "react";
 import { CardUI, UploadCard } from "../../../components/common/cardUI.jsx";
 import DataTable from "../../../components/common/DataTable.jsx";
 import SectionLayout from "../../../components/common/SectionLayout.jsx";
-import { renderRoomIcon } from "../../../components/icons/systemIcon.jsx";
+import RoomStatusDialog from "../../../components/common/RoomStatusDialog.jsx";
+import { ButtonUI } from "../../../components/common/buttonUI.jsx";
+import { renderRoomIcon as renderSystemRoomIcon } from "../../../components/systemIcon.jsx";
 import {
   getMvpRoomCodes,
   getRooms,
   isMvpRoom,
+  updateRoomById,
 } from "../../../services/roomService";
 
-// Mảng dữ liệu mock cho danh sách phòng máy, bám gần các field chính trong DB.
-
-// Mảng dữ liệu mock cho thiết bị, giữ tên field gần DB để dễ nối API sau.
-
-// Mảng dữ liệu mock cho phần mềm theo phòng.
-
-// Mảng tab quản lý chính ở cột trái.
+/**
+ * Mảng tab quản lý chính của trang phòng máy.
+ * Hiện tại MVP chỉ dùng tab "Phòng máy".
+ */
 const roomTabItems = [{ key: "rooms", label: "Phòng máy" }];
 
-// Mảng thẻ khai báo nhanh dùng giao diện upload giống trang tài khoản.
+/**
+ * Mảng thẻ khai báo nhanh.
+ * Các item này dùng để render UploadCard ở panel bên phải.
+ */
 const roomUploadItems = [
   { key: "room", title: "Phòng máy", iconName: "room" },
   { key: "device", title: "Thiết bị", iconName: "device" },
   { key: "software", title: "Phần mềm", iconName: "software" },
 ];
 
-// Mảng tùy chọn lọc trạng thái theo từng tab.
+/**
+ * Mảng tùy chọn lọc trạng thái theo từng tab.
+ * Backend hiện hỗ trợ room_status: available, maintenance, out_of_order, locked.
+ */
 const statusOptionMap = {
   rooms: [
     { value: "all", label: "Tất cả trạng thái" },
@@ -39,12 +45,16 @@ const statusOptionMap = {
   ],
 };
 
-// Map placeholder tìm kiếm tương ứng với tab đang chọn.
+/**
+ * Map placeholder tìm kiếm tương ứng với tab đang chọn.
+ */
 const searchPlaceholderMap = {
   rooms: "Tìm theo mã phòng: 2B11, 2B21, 2B31...",
 };
 
-// Map tiêu đề bảng tương ứng với tab đang chọn.
+/**
+ * Map tiêu đề bảng tương ứng với tab đang chọn.
+ */
 const roomTableTitleMap = {
   rooms: "Danh sách phòng máy MVP",
 };
@@ -62,24 +72,10 @@ function normalizeText(value) {
 }
 
 /**
- * Hàm nhận vào: dateValue là chuỗi ngày ở dạng YYYY-MM-DD.
- * Hàm xử lý: đổi chuỗi ngày sang định dạng DD/MM/YYYY để hiển thị trên bảng.
- * Hàm trả về: chuỗi ngày đã format hoặc dấu gạch ngang nếu không có dữ liệu.
+ * Hàm nhận vào: status là mã trạng thái từ backend hoặc nhãn tiếng Việt.
+ * Hàm xử lý: đổi mã trạng thái backend thành nhãn tiếng Việt.
+ * Hàm trả về: chuỗi nhãn trạng thái dùng để hiển thị.
  */
-function formatDateLabel(dateValue) {
-  if (!dateValue) {
-    return "—";
-  }
-
-  const [year, month, day] = String(dateValue).split("-");
-
-  if (!year || !month || !day) {
-    return dateValue;
-  }
-
-  return `${day}/${month}/${year}`;
-}
-
 function formatRoomStatus(status) {
   const statusMap = {
     available: "Khả dụng",
@@ -95,6 +91,11 @@ function formatRoomStatus(status) {
   return statusMap[status] || status || "—";
 }
 
+/**
+ * Hàm nhận vào: value là số hoặc giá trị rỗng.
+ * Hàm xử lý: nếu không có dữ liệu thì hiển thị dấu gạch ngang.
+ * Hàm trả về: số gốc hoặc "—".
+ */
 function getNumberValue(value) {
   if (value === null || value === undefined || value === "") {
     return "—";
@@ -104,9 +105,21 @@ function getNumberValue(value) {
 }
 
 /**
- * Hàm nhận vào: status là chuỗi trạng thái của phòng, thiết bị hoặc phần mềm.
- * Hàm xử lý: ánh xạ trạng thái sang màu badge phù hợp để dễ nhìn trên bảng.
- * Hàm trả về: JSX của badge trạng thái.
+ * Hàm nhận vào:
+ * - iconName: mã icon cần hiển thị.
+ * - className: class CSS bổ sung.
+ * - size: kích thước icon.
+ * Hàm xử lý: chọn SVG phù hợp cho card thống kê, thẻ upload.
+ * Hàm trả về: JSX icon SVG.
+ */
+function renderRoomIcon(iconName, className = "", size = 24) {
+  return renderSystemRoomIcon(iconName, className, size);
+}
+
+/**
+ * Hàm nhận vào: status là chuỗi trạng thái phòng.
+ * Hàm xử lý: ánh xạ trạng thái sang badge màu phù hợp.
+ * Hàm trả về: JSX badge trạng thái.
  */
 function buildStatusBadge(status) {
   const statusLabel = formatRoomStatus(status);
@@ -126,23 +139,36 @@ function buildStatusBadge(status) {
 }
 
 /**
- * Hàm nhận vào: iconName là mã icon, title là tên card, value là số liệu hiển thị.
- * Hàm xử lý: dựng card thống kê ở đầu trang theo phong cách đồng bộ với admin/accounts.
- * Hàm trả về: JSX của một card thống kê.
- */
-/**
- * Hàm nhận vào: không nhận props.
- * Hàm xử lý: dựng giao diện quản lý phòng máy và thiết bị cho quản trị viên bằng mock data, hỗ trợ tab, tìm kiếm, lọc trạng thái và khối khai báo bên phải.
- * Hàm trả về: JSX hoàn chỉnh của trang /admin/rooms.
+ * Component nhận vào: không nhận props.
+ * Component xử lý:
+ * - Gọi API lấy danh sách phòng MVP.
+ * - Hiển thị thống kê phòng.
+ * - Hiển thị bảng phòng.
+ * - Cho bấm vào badge trạng thái để mở popup cập nhật trạng thái.
+ * - Gửi PATCH /rooms/:id khi xác nhận khóa phòng.
+ * Component trả về: JSX trang /admin/rooms.
  */
 export default function RoomsPage() {
   const [activeTab, setActiveTab] = useState("rooms");
   const [searchKeyword, setSearchKeyword] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+
   const [rooms, setRooms] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
+  const [selectedRoom, setSelectedRoom] = useState(null);
+  const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
+  const [isUpdatingRoomStatus, setIsUpdatingRoomStatus] = useState(false);
+
+  /**
+   * Hàm nhận vào: không nhận tham số.
+   * Hàm xử lý:
+   * - Gọi API GET /rooms để lấy danh sách phòng.
+   * - Truyền room_status và room_code nếu có bộ lọc.
+   * - Lọc lại đúng scope MVP ở frontend để an toàn.
+   * Hàm trả về: không trả về dữ liệu trực tiếp, chỉ cập nhật state rooms.
+   */
   async function loadRooms() {
     try {
       setIsLoading(true);
@@ -156,7 +182,6 @@ export default function RoomsPage() {
       });
 
       const apiRooms = Array.isArray(response?.data) ? response.data : [];
-
       const scopedRooms = apiRooms.filter((room) => isMvpRoom(room.room_code));
 
       setRooms(scopedRooms);
@@ -167,29 +192,111 @@ export default function RoomsPage() {
     }
   }
 
+  /**
+   * Hàm nhận vào: room là object phòng đang được bấm trên bảng.
+   * Hàm xử lý: lưu phòng đang chọn và mở popup cập nhật trạng thái.
+   * Hàm trả về: không trả về dữ liệu.
+   */
+  function handleOpenStatusDialog(room) {
+    setSelectedRoom(room);
+    setIsStatusDialogOpen(true);
+  }
+
+  /**
+   * Hàm nhận vào: không nhận tham số.
+   * Hàm xử lý: đóng popup và xóa phòng đang chọn.
+   * Hàm trả về: không trả về dữ liệu.
+   */
+  function handleCloseStatusDialog() {
+    setIsStatusDialogOpen(false);
+    setSelectedRoom(null);
+  }
+
+  /**
+   * Hàm nhận vào: payload gồm room_status và notes.
+   * Hàm xử lý:
+   * - Gọi API PATCH /rooms/:id để cập nhật trạng thái phòng.
+   * - Đóng popup.
+   * - Gọi lại loadRooms() để lấy dữ liệu mới nhất từ backend.
+   * Hàm trả về: không trả về dữ liệu trực tiếp.
+   */
+  async function handleSubmitRoomStatus(payload) {
+    if (!selectedRoom?.id) {
+      setErrorMessage("Không xác định được phòng cần cập nhật.");
+      return;
+    }
+
+    try {
+      setIsUpdatingRoomStatus(true);
+      setErrorMessage("");
+
+      await updateRoomById(selectedRoom.id, payload);
+
+      handleCloseStatusDialog();
+
+      await loadRooms();
+    } catch (error) {
+      setErrorMessage(error.message || "Không thể cập nhật trạng thái phòng.");
+    } finally {
+      setIsUpdatingRoomStatus(false);
+    }
+  }
+
+  /**
+   * Hàm nhận vào: nextTab là key tab mới.
+   * Hàm xử lý: đổi tab và reset trạng thái lọc về all.
+   * Hàm trả về: không trả về dữ liệu.
+   */
+  function handleTabChange(nextTab) {
+    setActiveTab(nextTab);
+    setStatusFilter("all");
+  }
+
+  /**
+   * Hàm nhận vào: không nhận tham số.
+   * Hàm xử lý: reset bộ lọc và gọi lại API.
+   * Hàm trả về: không trả về dữ liệu.
+   */
+  function handleRefreshRooms() {
+    setSearchKeyword("");
+    setStatusFilter("all");
+    loadRooms();
+  }
+
+  /**
+   * Gọi API khi mở trang hoặc khi bộ lọc trạng thái thay đổi.
+   */
   useEffect(() => {
     loadRooms();
   }, [statusFilter]);
 
+  /**
+   * Tính toán các card thống kê dựa trên danh sách phòng hiện tại.
+   */
   const roomStats = useMemo(() => {
     const totalRooms = rooms.length;
+
     const availableRooms = rooms.filter(
       (room) =>
         room.room_status === "available" || room.room_status === "Khả dụng",
     ).length;
+
     const maintenanceRooms = rooms.filter((room) =>
       ["maintenance", "locked", "Bảo trì", "Tạm khóa"].includes(
         room.room_status,
       ),
     ).length;
+
     const totalComputers = rooms.reduce(
       (sum, room) => sum + Number(room.total_computers || 0),
       0,
     );
+
     const usableComputers = rooms.reduce(
       (sum, room) => sum + Number(room.usable_student_computers || 0),
       0,
     );
+
     const brokenComputers = rooms.reduce(
       (sum, room) => sum + Number(room.broken_computers || 0),
       0,
@@ -209,6 +316,9 @@ export default function RoomsPage() {
     ];
   }, [rooms]);
 
+  /**
+   * Lọc phòng theo keyword, scope MVP và trạng thái đang chọn.
+   */
   const filteredRoomItems = useMemo(() => {
     const normalizedKeyword = normalizeText(searchKeyword);
 
@@ -234,17 +344,38 @@ export default function RoomsPage() {
     });
   }, [rooms, searchKeyword, statusFilter]);
 
+  /**
+   * Cấu hình cột bảng.
+   * Cột trạng thái có render custom để badge có thể bấm mở popup.
+   */
   const roomColumns = useMemo(
     () => [
       { key: "room_code", label: "Mã phòng" },
       { key: "total_computers", label: "Tổng máy" },
       { key: "broken_computers", label: "Máy hỏng" },
       { key: "usable_student_computers", label: "Máy dùng được" },
-      { key: "room_status", label: "Trạng thái" },
+      {
+        key: "room_status",
+        label: "Trạng thái",
+        render: (value, row) => (
+          <button
+            type="button"
+            className="roomStatusClickable"
+            onClick={() => handleOpenStatusDialog(row.rawRoom)}
+            title="Bấm để cập nhật trạng thái phòng"
+          >
+            {buildStatusBadge(value)}
+          </button>
+        ),
+      },
     ],
     [],
   );
 
+  /**
+   * Chuyển dữ liệu phòng từ API thành rows cho DataTable.
+   * rawRoom giữ lại object gốc để khi bấm trạng thái có đủ id, room_code, room_status.
+   */
   const roomRows = useMemo(
     () =>
       filteredRoomItems.map((room) => ({
@@ -253,21 +384,17 @@ export default function RoomsPage() {
         total_computers: getNumberValue(room.total_computers),
         broken_computers: getNumberValue(room.broken_computers),
         usable_student_computers: getNumberValue(room.usable_student_computers),
-        room_status: buildStatusBadge(room.room_status),
+        room_status: room.room_status,
+        rawRoom: room,
       })),
     [filteredRoomItems],
   );
 
-  const currentColumns = roomColumns;
-  const currentRows = roomRows;
-  const currentStatusOptions = statusOptionMap[activeTab];
-  const currentSearchPlaceholder = searchPlaceholderMap[activeTab];
-  const currentTableTitle = roomTableTitleMap[activeTab];
-
-  function handleTabChange(nextTab) {
-    setActiveTab(nextTab);
-    setStatusFilter("all");
-  }
+  const currentStatusOptions =
+    statusOptionMap[activeTab] || statusOptionMap.rooms;
+  const currentSearchPlaceholder =
+    searchPlaceholderMap[activeTab] || searchPlaceholderMap.rooms;
+  const currentTableTitle = roomTableTitleMap[activeTab] || "Danh sách phòng";
 
   return (
     <div>
@@ -290,9 +417,12 @@ export default function RoomsPage() {
                 const isActive = activeTab === tabItem.key;
 
                 return (
-                  <button
+                  <ButtonUI
                     key={tabItem.key}
-                    type="button"
+                    shape="pill"
+                    tone={isActive ? "primary" : "outline"}
+                    size="sm"
+                    active={isActive}
                     className={
                       isActive
                         ? "roomTabButton roomTabButtonActive"
@@ -301,25 +431,32 @@ export default function RoomsPage() {
                     onClick={() => handleTabChange(tabItem.key)}
                   >
                     {tabItem.label}
-                  </button>
+                  </ButtonUI>
                 );
               })}
             </div>
 
             <div className="inputFind roomSearchGroup">
-              <button
-                type="button"
-                className="button roomSearchButton"
+              <ButtonUI
+                tone="primary"
+                shape="rounded"
+                className="roomSearchButton"
                 onClick={loadRooms}
               >
                 Tìm kiếm
-              </button>
+              </ButtonUI>
+
               <input
                 type="text"
                 className="input roomSearchInput"
                 placeholder={currentSearchPlaceholder}
                 value={searchKeyword}
                 onChange={(event) => setSearchKeyword(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    loadRooms();
+                  }
+                }}
               />
             </div>
           </div>
@@ -328,24 +465,19 @@ export default function RoomsPage() {
             <div className="roomFilterSummary">
               <h3 className="roomSectionTitle">{currentTableTitle}</h3>
               <p className="roomSectionText">
-                Chỉ hiển thị 3 phòng MVP: {getMvpRoomCodes().join(", ")}.
-              </p>
-              <p className="roomSectionText">
-                Hiển thị {currentRows.length} bản ghi theo bộ lọc hiện tại.
+                Hiển thị {roomRows.length} bản ghi theo bộ lọc hiện tại.
               </p>
             </div>
 
             <div className="roomFilterControls">
-              <button
-                type="button"
-                className="button secondary roomRefreshButton"
-                onClick={() => {
-                  setSearchKeyword("");
-                  setStatusFilter("all");
-                }}
+              <ButtonUI
+                tone="secondary"
+                shape="rounded"
+                className="roomRefreshButton"
+                onClick={handleRefreshRooms}
               >
                 Làm mới
-              </button>
+              </ButtonUI>
 
               <select
                 className="select roomStatusSelect"
@@ -372,8 +504,8 @@ export default function RoomsPage() {
                 <h4>Không tải được dữ liệu</h4>
                 <p>{errorMessage}</p>
               </div>
-            ) : currentRows.length > 0 ? (
-              <DataTable columns={currentColumns} rows={currentRows} />
+            ) : roomRows.length > 0 ? (
+              <DataTable columns={roomColumns} rows={roomRows} />
             ) : (
               <div className="roomEmptyState">
                 <h4>Chưa có dữ liệu phù hợp</h4>
@@ -409,6 +541,14 @@ export default function RoomsPage() {
           </SectionLayout>
         </aside>
       </section>
+
+      <RoomStatusDialog
+        room={selectedRoom}
+        isOpen={isStatusDialogOpen}
+        isSubmitting={isUpdatingRoomStatus}
+        onClose={handleCloseStatusDialog}
+        onSubmit={handleSubmitRoomStatus}
+      />
     </div>
   );
 }

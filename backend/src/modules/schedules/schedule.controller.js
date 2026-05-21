@@ -15,7 +15,8 @@ async function listSchedules(req, res) {
     status: req.query.status,
     room_code: req.query.room_code,
     lecturer_user_id: req.query.lecturer_user_id,
-    schedule_request_id: req.query.schedule_request_id
+    schedule_request_id: req.query.schedule_request_id,
+    student_user_id: req.query.student_user_id
   });
   return ok(res, { schedules }, 'Successfully fetched schedules');
 }

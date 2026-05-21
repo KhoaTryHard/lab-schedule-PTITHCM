@@ -5,7 +5,8 @@ import { useMemo, useState } from "react";
 import { CardUI, UploadCard } from "../../../components/common/cardUI.jsx";
 import DataTable from "../../../components/common/DataTable.jsx";
 import SectionLayout from "../../../components/common/SectionLayout.jsx";
-import { renderTrainingIcon } from "../../../components/icons/systemIcon.jsx";
+import { ButtonUI } from "../../../components/common/buttonUI.jsx";
+import { renderTrainingIcon as renderSystemTrainingIcon } from "../../../components/systemIcon.jsx";
 
 // Mảng dữ liệu mock cho học kỳ, giữ field gần bảng semesters để nối API sau thuận tiện hơn.
 const semesterMockItems = [
@@ -136,7 +137,8 @@ const courseMockItems = [
     lab_periods: 30,
     is_lab_required: true,
     course_status: "Active",
-    description: "Khai thác môi trường web, CSDL và các kịch bản kiểm thử an toàn.",
+    description:
+      "Khai thác môi trường web, CSDL và các kịch bản kiểm thử an toàn.",
   },
   {
     id: 3,
@@ -553,6 +555,15 @@ function formatDateLabel(dateValue) {
 }
 
 /**
+ * Hàm nhận vào: iconName là mã icon, className là class CSS bổ sung và size là kích thước SVG.
+ * Hàm xử lý: dựng icon SVG phù hợp cho card thống kê, quick action và phần mô tả của module đào tạo.
+ * Hàm trả về: JSX của icon tương ứng.
+ */
+function renderTrainingIcon(iconName, className = "", size = 24) {
+  return renderSystemTrainingIcon(iconName, className, size);
+}
+
+/**
  * Hàm nhận vào: status là trạng thái nghiệp vụ của học kỳ, ca học, học phần hoặc lớp học phần.
  * Hàm xử lý: ánh xạ trạng thái sang tone badge tương ứng để giao diện nhìn nhất quán với rooms.
  * Hàm trả về: JSX của badge trạng thái.
@@ -729,8 +740,16 @@ export default function TrainingDataPage() {
     ).length;
 
     return [
-      { iconName: "semester", title: "Học kỳ", value: semesterMockItems.length },
-      { iconName: "week", title: "Tuần học", value: academicWeekMockItems.length },
+      {
+        iconName: "semester",
+        title: "Học kỳ",
+        value: semesterMockItems.length,
+      },
+      {
+        iconName: "week",
+        title: "Tuần học",
+        value: academicWeekMockItems.length,
+      },
       { iconName: "slot", title: "Ca học", value: timeSlotMockItems.length },
       { iconName: "course", title: "Học phần", value: courseMockItems.length },
       {
@@ -759,7 +778,10 @@ export default function TrainingDataPage() {
     });
   }, [activeTab, searchKeyword, statusFilter]);
 
-  const currentColumns = useMemo(() => trainingColumnMap[activeTab], [activeTab]);
+  const currentColumns = useMemo(
+    () => trainingColumnMap[activeTab],
+    [activeTab],
+  );
 
   const currentRows = useMemo(() => {
     switch (activeTab) {
@@ -774,9 +796,15 @@ export default function TrainingDataPage() {
           is_current: buildCurrentBadge(item.is_current),
           semester_status: buildTrainingStatusBadge(item.semester_status),
           action: (
-            <button type="button" className="roomLinkButton">
+            <ButtonUI
+              type="button"
+              tone="outline"
+              shape="pill"
+              size="sm"
+              className="roomLinkButton"
+            >
               Xem học kỳ
-            </button>
+            </ButtonUI>
           ),
         }));
       case "weeks":
@@ -788,9 +816,15 @@ export default function TrainingDataPage() {
           end_date: formatDateLabel(item.end_date),
           notes: item.notes || "—",
           action: (
-            <button type="button" className="roomLinkButton">
+            <ButtonUI
+              type="button"
+              tone="outline"
+              shape="pill"
+              size="sm"
+              className="roomLinkButton"
+            >
               Xem tuần
-            </button>
+            </ButtonUI>
           ),
         }));
       case "slots":
@@ -804,9 +838,15 @@ export default function TrainingDataPage() {
           end_time: item.end_time,
           slot_status: buildTrainingStatusBadge(item.slot_status),
           action: (
-            <button type="button" className="roomLinkButton">
+            <ButtonUI
+              type="button"
+              tone="outline"
+              shape="pill"
+              size="sm"
+              className="roomLinkButton"
+            >
               Chỉnh sửa
-            </button>
+            </ButtonUI>
           ),
         }));
       case "courses":
@@ -820,9 +860,15 @@ export default function TrainingDataPage() {
           is_lab_required: item.is_lab_required ? "Có" : "Không",
           course_status: buildTrainingStatusBadge(item.course_status),
           action: (
-            <button type="button" className="roomLinkButton">
+            <ButtonUI
+              type="button"
+              tone="outline"
+              shape="pill"
+              size="sm"
+              className="roomLinkButton"
+            >
               Xem học phần
-            </button>
+            </ButtonUI>
           ),
         }));
       case "sections":
@@ -839,9 +885,15 @@ export default function TrainingDataPage() {
           )}`,
           section_status: buildTrainingStatusBadge(item.section_status),
           action: (
-            <button type="button" className="roomLinkButton">
+            <ButtonUI
+              type="button"
+              tone="outline"
+              shape="pill"
+              size="sm"
+              className="roomLinkButton"
+            >
               Mở lịch
-            </button>
+            </ButtonUI>
           ),
         }));
       case "cohorts":
@@ -853,9 +905,15 @@ export default function TrainingDataPage() {
           intake_year: item.intake_year,
           cohort_status: buildTrainingStatusBadge(item.cohort_status),
           action: (
-            <button type="button" className="roomLinkButton">
+            <ButtonUI
+              type="button"
+              tone="outline"
+              shape="pill"
+              size="sm"
+              className="roomLinkButton"
+            >
               Xem lớp
-            </button>
+            </ButtonUI>
           ),
         }));
       case "lecturers":
@@ -866,9 +924,15 @@ export default function TrainingDataPage() {
           lecturer_role: item.lecturer_role,
           assigned_at: formatDateLabel(item.assigned_at),
           action: (
-            <button type="button" className="roomLinkButton">
+            <ButtonUI
+              type="button"
+              tone="outline"
+              shape="pill"
+              size="sm"
+              className="roomLinkButton"
+            >
               Điều chỉnh
-            </button>
+            </ButtonUI>
           ),
         }));
       default:
@@ -933,9 +997,12 @@ export default function TrainingDataPage() {
                 const isActive = activeTab === tabItem.key;
 
                 return (
-                  <button
+                  <ButtonUI
                     key={tabItem.key}
-                    type="button"
+                    shape="pill"
+                    tone={isActive ? "primary" : "outline"}
+                    size="sm"
+                    active={isActive}
                     className={
                       isActive
                         ? "roomTabButton roomTabButtonActive"
@@ -944,15 +1011,19 @@ export default function TrainingDataPage() {
                     onClick={() => handleTabChange(tabItem.key)}
                   >
                     {tabItem.label}
-                  </button>
+                  </ButtonUI>
                 );
               })}
             </div>
 
             <div className="inputFind roomSearchGroup">
-              <button type="button" className="button roomSearchButton">
+              <ButtonUI
+                tone="primary"
+                shape="rounded"
+                className="roomSearchButton"
+              >
                 Tìm kiếm
-              </button>
+              </ButtonUI>
               <input
                 type="text"
                 className="input roomSearchInput"
@@ -972,16 +1043,17 @@ export default function TrainingDataPage() {
             </div>
 
             <div className="roomFilterControls">
-              <button
-                type="button"
-                className="button secondary roomRefreshButton"
+              <ButtonUI
+                tone="secondary"
+                shape="rounded"
+                className="roomRefreshButton"
                 onClick={() => {
                   setSearchKeyword("");
                   setStatusFilter("all");
                 }}
               >
                 Làm mới
-              </button>
+              </ButtonUI>
 
               <select
                 className="select roomStatusSelect"

@@ -4,7 +4,8 @@ import { useMemo, useState } from "react";
 
 import { CardUI } from "../../../components/common/cardUI.jsx";
 import DataTable from "../../../components/common/DataTable.jsx";
-import { renderReportIcon } from "../../../components/icons/systemIcon.jsx";
+import { ButtonUI } from "../../../components/common/buttonUI.jsx";
+import { renderReportIcon as renderSystemReportIcon } from "../../../components/systemIcon.jsx";
 
 // Mảng dữ liệu mock cho lịch thực hành, bám gần bảng lab_schedule_entries để nối API sau dễ hơn.
 const reportScheduleMockItems = [
@@ -151,7 +152,8 @@ const reportScheduleMockItems = [
     published_at: "2026-02-28",
     cancelled_at: "",
     cancellation_reason: "",
-    notes: "Ca chiều dùng cho các buổi thực hành tấn công web và SQL injection.",
+    notes:
+      "Ca chiều dùng cho các buổi thực hành tấn công web và SQL injection.",
     semester_code: "HK2_2025_2026",
     week_no: 34,
   },
@@ -839,11 +841,11 @@ function buildCsvValue(value) {
  * Hàm trả về: không trả về dữ liệu.
  */
 function exportRowsToCsv(fileName, rows, columns) {
-  const csvHeader = columns.map((column) => buildCsvValue(column.label)).join(",");
+  const csvHeader = columns
+    .map((column) => buildCsvValue(column.label))
+    .join(",");
   const csvBody = rows.map((row) =>
-    columns
-      .map((column) => buildCsvValue(row[column.key]))
-      .join(","),
+    columns.map((column) => buildCsvValue(row[column.key])).join(","),
   );
   const csvContent = `\uFEFF${[csvHeader, ...csvBody].join("\r\n")}`;
   const csvBlob = new Blob([csvContent], {
@@ -859,6 +861,15 @@ function exportRowsToCsv(fileName, rows, columns) {
 }
 
 /**
+ * Hàm nhận vào: iconName là mã icon, className là class CSS bổ sung và size là kích thước SVG.
+ * Hàm xử lý: chọn icon SVG phù hợp cho card thống kê, chart và khu tạo báo cáo.
+ * Hàm trả về: JSX của icon SVG tương ứng.
+ */
+function renderReportIcon(iconName, className = "", size = 24) {
+  return renderSystemReportIcon(iconName, className, size);
+}
+
+/**
  * Hàm nhận vào: status là trạng thái nghiệp vụ của lịch, thiết bị, phần mềm hoặc yêu cầu thay đổi.
  * Hàm xử lý: ánh xạ trạng thái sang tone badge phù hợp với ngữ cảnh báo cáo admin.
  * Hàm trả về: JSX của badge trạng thái.
@@ -868,7 +879,7 @@ function buildReportStatusBadge(status) {
     Published: "roomStatusPositive",
     "Khả dụng": "roomStatusPositive",
     "Hoạt động": "roomStatusPositive",
-    "Đạt": "roomStatusPositive",
+    Đạt: "roomStatusPositive",
     Active: "roomStatusPositive",
     Open: "roomStatusPositive",
     "Đã cài đủ": "roomStatusPositive",
@@ -883,7 +894,7 @@ function buildReportStatusBadge(status) {
     "Đang xử lý": "roomStatusWarning",
     "Đang sửa": "roomStatusWarning",
     Cancelled: "roomStatusDanger",
-    "Hỏng": "roomStatusDanger",
+    Hỏng: "roomStatusDanger",
     Locked: "roomStatusDanger",
     "Tạm ngưng": "roomStatusDanger",
     "Thiếu gói": "roomStatusDanger",
@@ -894,7 +905,9 @@ function buildReportStatusBadge(status) {
   };
 
   return (
-    <span className={`roomStatusBadge ${toneClassMap[status] || "roomStatusNeutral"}`}>
+    <span
+      className={`roomStatusBadge ${toneClassMap[status] || "roomStatusNeutral"}`}
+    >
       {status}
     </span>
   );
@@ -940,7 +953,9 @@ function BarChartCard({ title, description, data }) {
             <div className="reportVerticalBarTrack">
               <div
                 className="reportVerticalBarFill"
-                style={{ height: `${Math.max(calculatePercentage(item.value, maxValue), 10)}%` }}
+                style={{
+                  height: `${Math.max(calculatePercentage(item.value, maxValue), 10)}%`,
+                }}
               />
             </div>
             <span className="reportBarLabel">{item.label}</span>
@@ -973,7 +988,9 @@ function HorizontalBarChart({ title, description, data }) {
             <div className="reportHorizontalTrack">
               <div
                 className="reportHorizontalFill"
-                style={{ width: `${Math.max(calculatePercentage(item.value, maxValue), 8)}%` }}
+                style={{
+                  width: `${Math.max(calculatePercentage(item.value, maxValue), 8)}%`,
+                }}
               />
             </div>
             <span className="reportHorizontalValue">{item.value}</span>
@@ -1063,7 +1080,9 @@ function TrendChart({ title, description, data }) {
             <div className="reportTrendTrack">
               <div
                 className="reportTrendFill"
-                style={{ height: `${Math.max(calculatePercentage(item.value, maxValue), 10)}%` }}
+                style={{
+                  height: `${Math.max(calculatePercentage(item.value, maxValue), 10)}%`,
+                }}
               />
             </div>
             <span className="reportBarLabel">{item.label}</span>
@@ -1403,7 +1422,9 @@ export default function ReportsPage() {
           toDate,
         );
 
-        return matchedSemester && matchedWeek && matchedRoom && matchedDateRange;
+        return (
+          matchedSemester && matchedWeek && matchedRoom && matchedDateRange
+        );
       }),
     [fromDate, roomFilter, semesterFilter, toDate, weekFilter],
   );
@@ -1424,7 +1445,9 @@ export default function ReportsPage() {
           toDate,
         );
 
-        return matchedSemester && matchedWeek && matchedRoom && matchedDateRange;
+        return (
+          matchedSemester && matchedWeek && matchedRoom && matchedDateRange
+        );
       }),
     [fromDate, roomFilter, semesterFilter, toDate, weekFilter],
   );
@@ -1445,7 +1468,9 @@ export default function ReportsPage() {
           toDate,
         );
 
-        return matchedSemester && matchedWeek && matchedRoom && matchedDateRange;
+        return (
+          matchedSemester && matchedWeek && matchedRoom && matchedDateRange
+        );
       }),
     [fromDate, roomFilter, semesterFilter, toDate, weekFilter],
   );
@@ -1466,7 +1491,9 @@ export default function ReportsPage() {
           toDate,
         );
 
-        return matchedSemester && matchedWeek && matchedRoom && matchedDateRange;
+        return (
+          matchedSemester && matchedWeek && matchedRoom && matchedDateRange
+        );
       }),
     [fromDate, roomFilter, semesterFilter, toDate, weekFilter],
   );
@@ -1487,7 +1514,9 @@ export default function ReportsPage() {
           toDate,
         );
 
-        return matchedSemester && matchedWeek && matchedRoom && matchedDateRange;
+        return (
+          matchedSemester && matchedWeek && matchedRoom && matchedDateRange
+        );
       }),
     [fromDate, roomFilter, semesterFilter, toDate, weekFilter],
   );
@@ -1510,7 +1539,9 @@ export default function ReportsPage() {
           toDate,
         );
 
-        return matchedSemester && matchedWeek && matchedRoom && matchedDateRange;
+        return (
+          matchedSemester && matchedWeek && matchedRoom && matchedDateRange
+        );
       }),
     [fromDate, roomFilter, semesterFilter, toDate, weekFilter],
   );
@@ -1666,7 +1697,10 @@ export default function ReportsPage() {
       issueTypeMap[item.issue_type] = (issueTypeMap[item.issue_type] || 0) + 1;
     });
 
-    return Object.entries(issueTypeMap).map(([label, value]) => ({ label, value }));
+    return Object.entries(issueTypeMap).map(([label, value]) => ({
+      label,
+      value,
+    }));
   }, [filteredIssueBaseItems]);
 
   const deviceStatusChartData = useMemo(() => {
@@ -1746,7 +1780,11 @@ export default function ReportsPage() {
       ...item,
       indicator_value: indicatorValueMap[item.indicator_key] || 0,
     }));
-  }, [filteredIssueBaseItems, filteredRoomUsageBaseItems, filteredScheduleBaseItems]);
+  }, [
+    filteredIssueBaseItems,
+    filteredRoomUsageBaseItems,
+    filteredScheduleBaseItems,
+  ]);
 
   const currentItems = useMemo(() => {
     if (activeTab === "overview") {
@@ -1914,7 +1952,11 @@ export default function ReportsPage() {
       notes: item.notes,
     }));
 
-    exportRowsToCsv("bao-cao-thong-ke-phong-may.csv", exportRows, reportColumnMap.template);
+    exportRowsToCsv(
+      "bao-cao-thong-ke-phong-may.csv",
+      exportRows,
+      reportColumnMap.template,
+    );
   }
 
   const currentSearchPlaceholder = searchPlaceholderMap[activeTab];
@@ -1924,8 +1966,8 @@ export default function ReportsPage() {
     <div>
       <section className="card">
         <p className="roomSectionText reportSummaryText">
-          Thống kê số liệu vận hành, sử dụng phòng máy, lịch thực hành, thiết bị và
-          xuất báo cáo phục vụ quản trị hệ thống.
+          Thống kê số liệu vận hành, sử dụng phòng máy, lịch thực hành, thiết bị
+          và xuất báo cáo phục vụ quản trị hệ thống.
         </p>
       </section>
 
@@ -1948,9 +1990,12 @@ export default function ReportsPage() {
                 const isActive = activeTab === tabItem.key;
 
                 return (
-                  <button
+                  <ButtonUI
                     key={tabItem.key}
-                    type="button"
+                    shape="pill"
+                    tone={isActive ? "primary" : "outline"}
+                    size="sm"
+                    active={isActive}
                     className={
                       isActive
                         ? "roomTabButton roomTabButtonActive"
@@ -1959,15 +2004,19 @@ export default function ReportsPage() {
                     onClick={() => handleTabChange(tabItem.key)}
                   >
                     {tabItem.label}
-                  </button>
+                  </ButtonUI>
                 );
               })}
             </div>
 
             <div className="inputFind roomSearchGroup">
-              <button type="button" className="button roomSearchButton">
+              <ButtonUI
+                tone="primary"
+                shape="rounded"
+                className="roomSearchButton"
+              >
                 Tìm kiếm
-              </button>
+              </ButtonUI>
               <input
                 type="text"
                 className="input roomSearchInput"
@@ -1982,8 +2031,8 @@ export default function ReportsPage() {
             <div className="roomFilterSummary">
               <h3 className="roomSectionTitle">Bộ lọc báo cáo</h3>
               <p className="roomSectionText">
-                Lọc theo ngày, học kỳ, tuần học, phòng và trạng thái để tạo thống
-                kê giữa kỳ hoặc báo cáo phục vụ quản trị.
+                Lọc theo ngày, học kỳ, tuần học, phòng và trạng thái để tạo
+                thống kê giữa kỳ hoặc báo cáo phục vụ quản trị.
               </p>
             </div>
 
@@ -2084,37 +2133,45 @@ export default function ReportsPage() {
               </div>
 
               <div className="reportActionGroup">
-                <button
-                  type="button"
-                  className="button roomSearchButton"
+                <ButtonUI
+                  tone="primary"
+                  shape="rounded"
+                  className="roomSearchButton"
                   onClick={handleGenerateStatistics}
                 >
                   Tạo thống kê
-                </button>
-                <button
-                  type="button"
-                  className="button secondary roomRefreshButton"
+                </ButtonUI>
+                <ButtonUI
+                  tone="secondary"
+                  shape="rounded"
+                  className="roomRefreshButton"
                   onClick={handleResetFilters}
                 >
                   Làm mới
-                </button>
-                <button
-                  type="button"
-                  className="button roomSearchButton"
+                </ButtonUI>
+                <ButtonUI
+                  tone="primary"
+                  shape="rounded"
+                  className="roomSearchButton"
                   onClick={handleExportCurrentTab}
                 >
                   Xuất thống kê
-                </button>
-                <button
-                  type="button"
-                  className="button secondary lookupAdvancedButton"
+                </ButtonUI>
+                <ButtonUI
+                  tone="secondary"
+                  shape="rounded"
+                  className="lookupAdvancedButton"
                   onClick={handleExportTemplateReport}
                 >
                   Xuất Excel (CSV)
-                </button>
-                <button type="button" className="button secondary reportGhostButton">
+                </ButtonUI>
+                <ButtonUI
+                  tone="secondary"
+                  shape="rounded"
+                  className="reportGhostButton"
+                >
                   Bộ lọc nâng cao
-                </button>
+                </ButtonUI>
               </div>
 
               {generatedMessage ? (
@@ -2146,7 +2203,9 @@ export default function ReportsPage() {
 
               <article className="card reportChartCard">
                 <div className="reportChartHeader">
-                  <h4 className="roomSectionTitle">Tóm tắt chỉ tiêu QTV_BM06</h4>
+                  <h4 className="roomSectionTitle">
+                    Tóm tắt chỉ tiêu QTV_BM06
+                  </h4>
                   <p className="roomSectionText">
                     Bộ chỉ tiêu mẫu phục vụ báo cáo giữa kỳ cho quản trị viên.
                   </p>
@@ -2155,7 +2214,10 @@ export default function ReportsPage() {
                 <div className="reportIndicatorTableWrap">
                   <DataTable
                     columns={reportColumnMap.template}
-                    rows={getActiveTabRows("template", reportTemplatePreviewItems)}
+                    rows={getActiveTabRows(
+                      "template",
+                      reportTemplatePreviewItems,
+                    )}
                   />
                 </div>
               </article>
@@ -2176,7 +2238,9 @@ export default function ReportsPage() {
                 ) : (
                   <div className="roomEmptyState">
                     <h4>Chưa có dữ liệu sử dụng phòng</h4>
-                    <p>Bộ lọc hiện tại chưa tạo ra bản ghi phù hợp cho phòng máy.</p>
+                    <p>
+                      Bộ lọc hiện tại chưa tạo ra bản ghi phù hợp cho phòng máy.
+                    </p>
                   </div>
                 )}
               </div>
@@ -2198,7 +2262,10 @@ export default function ReportsPage() {
                 ) : (
                   <div className="roomEmptyState">
                     <h4>Chưa có lịch phù hợp</h4>
-                    <p>Không tìm thấy lịch thực hành phù hợp với bộ lọc đang chọn.</p>
+                    <p>
+                      Không tìm thấy lịch thực hành phù hợp với bộ lọc đang
+                      chọn.
+                    </p>
                   </div>
                 )}
               </div>
@@ -2225,7 +2292,9 @@ export default function ReportsPage() {
                 ) : (
                   <div className="roomEmptyState">
                     <h4>Chưa có dữ liệu sự cố</h4>
-                    <p>Không có sự cố phù hợp với phạm vi và trạng thái đang lọc.</p>
+                    <p>
+                      Không có sự cố phù hợp với phạm vi và trạng thái đang lọc.
+                    </p>
                   </div>
                 )}
               </div>
@@ -2255,9 +2324,16 @@ export default function ReportsPage() {
             <>
               <div className="reportMetricGrid">
                 {changeSummaryCards.map((metricItem) => (
-                  <article key={metricItem.label} className="card reportMetricCard">
-                    <span className="reportMetricLabel">{metricItem.label}</span>
-                    <strong className="reportMetricValue">{metricItem.value}</strong>
+                  <article
+                    key={metricItem.label}
+                    className="card reportMetricCard"
+                  >
+                    <span className="reportMetricLabel">
+                      {metricItem.label}
+                    </span>
+                    <strong className="reportMetricValue">
+                      {metricItem.value}
+                    </strong>
                   </article>
                 ))}
               </div>
@@ -2269,8 +2345,8 @@ export default function ReportsPage() {
                   <div className="roomEmptyState">
                     <h4>Chưa có yêu cầu phát sinh</h4>
                     <p>
-                      Không tìm thấy yêu cầu đổi lịch, hủy lịch hay học bù phù hợp với
-                      bộ lọc.
+                      Không tìm thấy yêu cầu đổi lịch, hủy lịch hay học bù phù
+                      hợp với bộ lọc.
                     </p>
                   </div>
                 )}
@@ -2279,9 +2355,12 @@ export default function ReportsPage() {
           ) : (
             <article className="card reportTemplatePreview">
               <div className="reportTemplateHeader">
-                <h3 className="roomSectionTitle">BÁO CÁO THỐNG KÊ SỬ DỤNG PHÒNG MÁY</h3>
+                <h3 className="roomSectionTitle">
+                  BÁO CÁO THỐNG KÊ SỬ DỤNG PHÒNG MÁY
+                </h3>
                 <p className="roomSectionText">
-                  Từ ngày {formatDateLabel(fromDate)} đến ngày {formatDateLabel(toDate)}
+                  Từ ngày {formatDateLabel(fromDate)} đến ngày{" "}
+                  {formatDateLabel(toDate)}
                 </p>
                 <p className="roomSectionText">
                   Người lập: {reportCreator} | Đơn vị: {reportUnit}
@@ -2293,29 +2372,43 @@ export default function ReportsPage() {
               </div>
 
               <div className="reportTemplateActions">
-                <button
-                  type="button"
-                  className="button roomSearchButton"
+                <ButtonUI
+                  tone="primary"
+                  shape="rounded"
+                  className="roomSearchButton"
                   onClick={handleGenerateStatistics}
                 >
                   Tạo báo cáo
-                </button>
-                <button type="button" className="button secondary roomRefreshButton">
+                </ButtonUI>
+                <ButtonUI
+                  tone="secondary"
+                  shape="rounded"
+                  className="roomRefreshButton"
+                >
                   Xem trước báo cáo
-                </button>
-                <button
-                  type="button"
-                  className="button roomSearchButton"
+                </ButtonUI>
+                <ButtonUI
+                  tone="primary"
+                  shape="rounded"
+                  className="roomSearchButton"
                   onClick={handleExportTemplateReport}
                 >
                   Xuất Excel
-                </button>
-                <button type="button" className="button secondary lookupAdvancedButton">
+                </ButtonUI>
+                <ButtonUI
+                  tone="secondary"
+                  shape="rounded"
+                  className="lookupAdvancedButton"
+                >
                   Xuất PDF mock
-                </button>
-                <button type="button" className="button secondary reportGhostButton">
+                </ButtonUI>
+                <ButtonUI
+                  tone="secondary"
+                  shape="rounded"
+                  className="reportGhostButton"
+                >
                   In báo cáo mock
-                </button>
+                </ButtonUI>
               </div>
             </article>
           )}
@@ -2325,8 +2418,8 @@ export default function ReportsPage() {
           <div className="card reportSidebarCard">
             <h5 className="accountUploadTitle">TẠO BÁO CÁO</h5>
             <p className="roomSectionText roomUploadText">
-              Chọn mẫu, cập nhật thông tin người lập và xuất báo cáo dạng CSV để tiếp
-              tục xử lý ở giai đoạn MVP.
+              Chọn mẫu, cập nhật thông tin người lập và xuất báo cáo dạng CSV để
+              tiếp tục xử lý ở giai đoạn MVP.
             </p>
 
             <div className="reportSidebarForm">
@@ -2339,7 +2432,9 @@ export default function ReportsPage() {
                 >
                   <option value="roomUsage">Báo cáo sử dụng phòng máy</option>
                   <option value="issues">Báo cáo tình trạng thiết bị</option>
-                  <option value="schedules">Báo cáo lịch thực hành theo học kỳ</option>
+                  <option value="schedules">
+                    Báo cáo lịch thực hành theo học kỳ
+                  </option>
                   <option value="changes">Báo cáo đổi/hủy/học bù</option>
                   <option value="software">Báo cáo phần mềm theo phòng</option>
                   <option value="template">Mẫu báo cáo tổng hợp</option>
@@ -2388,7 +2483,9 @@ export default function ReportsPage() {
                   <input
                     type="checkbox"
                     checked={includeDetails}
-                    onChange={(event) => setIncludeDetails(event.target.checked)}
+                    onChange={(event) =>
+                      setIncludeDetails(event.target.checked)
+                    }
                   />
                   <span>Kèm bảng chi tiết</span>
                 </label>
@@ -2396,37 +2493,46 @@ export default function ReportsPage() {
                   <input
                     type="checkbox"
                     checked={includeWarnings}
-                    onChange={(event) => setIncludeWarnings(event.target.checked)}
+                    onChange={(event) =>
+                      setIncludeWarnings(event.target.checked)
+                    }
                   />
                   <span>Kèm cảnh báo</span>
                 </label>
               </div>
 
               <div className="reportSidebarActions">
-                <button
-                  type="button"
-                  className="button roomSearchButton"
+                <ButtonUI
+                  tone="primary"
+                  shape="rounded"
+                  className="roomSearchButton"
                   onClick={handleGenerateStatistics}
                 >
                   Tạo báo cáo
-                </button>
-                <button
-                  type="button"
-                  className="button secondary lookupAdvancedButton"
+                </ButtonUI>
+                <ButtonUI
+                  tone="secondary"
+                  shape="rounded"
+                  className="lookupAdvancedButton"
                   onClick={handleExportTemplateReport}
                 >
                   Xuất báo cáo Excel
-                </button>
-                <button type="button" className="button secondary roomRefreshButton">
+                </ButtonUI>
+                <ButtonUI
+                  tone="secondary"
+                  shape="rounded"
+                  className="roomRefreshButton"
+                >
                   Xuất báo cáo PDF mock
-                </button>
-                <button
-                  type="button"
-                  className="button secondary reportGhostButton"
+                </ButtonUI>
+                <ButtonUI
+                  tone="secondary"
+                  shape="rounded"
+                  className="reportGhostButton"
                   onClick={handleExportCurrentTab}
                 >
                   Tải mẫu báo cáo
-                </button>
+                </ButtonUI>
               </div>
             </div>
           </div>

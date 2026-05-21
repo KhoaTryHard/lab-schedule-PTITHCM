@@ -1,3 +1,5 @@
+import { ButtonUI, joinClassNames } from "./buttonUI.jsx";
+
 function renderCardIcon({
   IconComponent,
   iconComponent,
@@ -24,133 +26,41 @@ function renderCardIcon({
   return <ResolvedIconComponent size={iconSize} className={iconClassName} />;
 }
 
-export function UploadCard({
-  icon,
-  iconSize = 20,
-  iconWrapperSize = 40,
-  iconColor = "#8b0000",
-  iconWrapperColor = "rgba(139, 0, 0, 0.08)",
-  title,
-  titleColor = "#0f2750",
-  titleSize = "17px",
-  fileLabel,
-  fileBackgroundColor = "#fffdfd",
-  fileTextColor = "#8b0000",
-  buttonLabel,
-  buttonTextColor = "#ffffff",
-  buttonBackgroundColor = "#7a0000",
-  accept,
-  disabled = false,
-  inputName,
-  onFileChange,
-  onButtonClick,
-  className = "",
-}) {
-  const iconContent = renderCardIcon({
-    icon,
-    iconSize,
-    iconClassName: "uploadCardIconSvg",
-  });
-  const uploadCardClassName = ["card", "uploadCard", className]
-    .filter(Boolean)
-    .join(" ");
-  const iconWrapperStyle = {
-    width: iconWrapperSize,
-    height: iconWrapperSize,
-    backgroundColor: iconWrapperColor,
-    color: iconColor,
-  };
-  const titleStyle = {
-    color: titleColor,
-    fontSize: titleSize,
-  };
-  const fileBoxStyle = {
-    backgroundColor: fileBackgroundColor,
-    color: fileTextColor,
-  };
-  const buttonStyle = {
-    backgroundColor: buttonBackgroundColor,
-    color: buttonTextColor,
-  };
-
+function CardFrame({ children, variant = "summary", className = "" }) {
   return (
-    <article className={uploadCardClassName}>
-      <div className="uploadCardDiv1">
-        <div className="uploadCardDiv11">
-          {iconContent ? (
-            <span className="uploadCardIconWrap" style={iconWrapperStyle}>
-              {iconContent}
-            </span>
-          ) : null}
-        </div>
-
-        <div className="uploadCardDiv12">
-          <h6 className="uploadCardTitle" style={titleStyle}>
-            {title}
-          </h6>
-        </div>
-      </div>
-
-      <div className="uploadCardDiv2">
-        <div className="uploadCardDiv21">
-          <label
-            className={disabled ? "uploadBox uploadBoxDisabled" : "uploadBox"}
-            style={fileBoxStyle}
-          >
-            <input
-              type="file"
-              hidden
-              accept={accept}
-              name={inputName}
-              disabled={disabled}
-              onChange={onFileChange}
-            />
-            <span className="uploadBoxText">{fileLabel}</span>
-          </label>
-        </div>
-
-        <div className="uploadCardDiv22">
-          <button
-            type="button"
-            className="uploadBtn"
-            style={buttonStyle}
-            disabled={disabled}
-            onClick={onButtonClick}
-          >
-            {buttonLabel}
-          </button>
-        </div>
-      </div>
+    <article
+      className={joinClassNames(
+        "cardUIFrame",
+        `cardUIFrame--${variant}`,
+        className,
+      )}
+    >
+      {children}
     </article>
   );
 }
 
-export const CardCreateUpload = UploadCard;
-
 export function CardUI({
   icon,
-  iconSize = 20,
-  iconWrapperSize = 40,
-  iconColor = "#334155",
-  iconWrapperColor = "rgba(139, 0, 0, 0.08)",
+  iconSize = 22,
+  iconWrapperSize = 46,
+  iconColor = "var(--app-role-primary, #334155)",
+  iconWrapperColor = "var(--app-role-primary-soft, rgba(139, 0, 0, 0.08))",
   title,
   number,
-  numberSize = "28px",
+  numberSize = "20px",
   message,
   messageColor = "#64748b",
   messageSize = "12px",
-  titleColor = "#334155",
-  titleSize = "14px",
+  titleColor = "#183b68",
+  titleSize = "15px",
   className = "",
 }) {
   const iconContent = renderCardIcon({
     icon,
     iconSize,
-    iconClassName: "summaryCardIcon",
+    iconClassName: "cardUIIconSvg",
   });
-  const cardClassName = ["accountSummaryCard", "summaryCard", className]
-    .filter(Boolean)
-    .join(" ");
   const iconWrapperStyle = {
     width: iconWrapperSize,
     height: iconWrapperSize,
@@ -170,36 +80,184 @@ export function CardUI({
   };
 
   return (
-    <article className={cardClassName}>
-      <div className="summaryCardDiv1">
-        <div className="summaryCardDiv11">
-          {iconContent ? (
-            <span className="summaryCardIconWrap" style={iconWrapperStyle}>
-              {iconContent}
-            </span>
-          ) : null}
-        </div>
+    <CardFrame variant="summary" className={className}>
+      <div className="cardUISummaryHeader">
+        {iconContent ? (
+          <span className="cardUIIconWrap" style={iconWrapperStyle}>
+            {iconContent}
+          </span>
+        ) : null}
 
-        <div className="summaryCardDiv12">
-          <p className="summaryCardTitle" style={titleStyle}>
+        <div className="cardUISummaryHeading">
+          <p className="cardUITitle" style={titleStyle}>
             {title}
           </p>
+          {message ? (
+            <p className="cardUIDescription" style={messageStyle}>
+              {message}
+            </p>
+          ) : null}
         </div>
       </div>
 
-      <div className="summaryCardDiv2">
-        {message ? (
-          <p className="summaryCardMessage" style={messageStyle}>
-            {message}
-          </p>
-        ) : null}
-      </div>
-
-      <div className="summaryCardDiv3">
-        <h3 className="summaryCardNumber" style={numberStyle}>
+      <div className="cardUISummaryBody">
+        <h3 className="cardUIValue" style={numberStyle}>
           {number}
         </h3>
       </div>
-    </article>
+    </CardFrame>
+  );
+}
+
+export function UploadCard({
+  icon,
+  iconSize = 20,
+  iconWrapperSize = 46,
+  iconColor = "var(--app-role-primary, #8b0000)",
+  iconWrapperColor = "var(--app-role-primary-soft, rgba(139, 0, 0, 0.08))",
+  title,
+  titleColor = "#183b68",
+  titleSize = "15px",
+  fileLabel,
+  buttonLabel,
+  accept,
+  disabled = false,
+  inputName,
+  onFileChange,
+  onButtonClick,
+  className = "",
+}) {
+  const iconContent = renderCardIcon({
+    icon,
+    iconSize,
+    iconClassName: "cardUIIconSvg",
+  });
+  const iconWrapperStyle = {
+    width: iconWrapperSize,
+    height: iconWrapperSize,
+    backgroundColor: iconWrapperColor,
+    color: iconColor,
+  };
+  const titleStyle = {
+    color: titleColor,
+    fontSize: titleSize,
+  };
+
+  return (
+    <CardFrame variant="upload" className={className}>
+      <div className="cardUIUploadHeader">
+        {iconContent ? (
+          <span className="cardUIIconWrap" style={iconWrapperStyle}>
+            {iconContent}
+          </span>
+        ) : null}
+
+        <h6 className="cardUITitle cardUIUploadTitle" style={titleStyle}>
+          {title}
+        </h6>
+      </div>
+
+      <div className="cardUIUploadActions">
+        <ButtonUI
+          as="label"
+          tone="outline"
+          shape="pill"
+          width="full"
+          className={joinClassNames(
+            "cardUIUploadFieldButton",
+            disabled ? "cardUIUploadFieldButton--disabled" : "",
+          )}
+        >
+          <input
+            type="file"
+            hidden
+            accept={accept}
+            name={inputName}
+            disabled={disabled}
+            onChange={onFileChange}
+          />
+          <span className="cardUIUploadFieldText">{fileLabel}</span>
+        </ButtonUI>
+
+        <ButtonUI
+          tone="primary"
+          shape="rounded"
+          width="full"
+          className="cardUIUploadActionButton"
+          disabled={disabled}
+          onClick={onButtonClick}
+        >
+          {buttonLabel}
+        </ButtonUI>
+      </div>
+    </CardFrame>
+  );
+}
+
+export const CardCreateUpload = UploadCard;
+
+export function ActionCard({
+  icon = "PT",
+  title,
+  description,
+  primaryText = "Thực hiện",
+  onPrimaryClick,
+  secondaryText,
+  onSecondaryClick,
+  uploadLabel,
+  disabled = false,
+  className = "",
+}) {
+  return (
+    <CardFrame variant="action" className={className}>
+      <div className="cardUIActionHeader">
+        <span className="cardUIActionIcon">{icon}</span>
+        <div className="cardUIActionHeading">
+          <h3 className="cardUIActionTitle">{title}</h3>
+          {description ? (
+            <p className="cardUIActionText">{description}</p>
+          ) : null}
+        </div>
+      </div>
+
+      {uploadLabel ? (
+        <ButtonUI
+          as="label"
+          tone="outline"
+          shape="pill"
+          width="full"
+          className={joinClassNames(
+            "cardUIUploadFieldButton",
+            disabled ? "cardUIUploadFieldButton--disabled" : "",
+          )}
+        >
+          {uploadLabel}
+          <input type="file" hidden disabled={disabled} />
+        </ButtonUI>
+      ) : null}
+
+      <div className="cardUIActionFooter">
+        {primaryText ? (
+          <ButtonUI
+            tone="primary"
+            shape="rounded"
+            disabled={disabled}
+            onClick={onPrimaryClick}
+          >
+            {primaryText}
+          </ButtonUI>
+        ) : null}
+        {secondaryText ? (
+          <ButtonUI
+            tone="secondary"
+            shape="rounded"
+            disabled={disabled}
+            onClick={onSecondaryClick}
+          >
+            {secondaryText}
+          </ButtonUI>
+        ) : null}
+      </div>
+    </CardFrame>
   );
 }

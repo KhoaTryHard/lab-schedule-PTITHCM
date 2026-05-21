@@ -501,7 +501,7 @@ async function createDraftSchedule(input, createdByUserId) {
 }
 
 async function getScheduleList(filters = {}) {
-  const { status, room_code, lecturer_user_id, schedule_request_id } = filters;
+  const { status, room_code, lecturer_user_id, schedule_request_id, student_user_id } = filters;
   const conditions = [];
   const params = [];
 
@@ -520,6 +520,12 @@ async function getScheduleList(filters = {}) {
   if (lecturer_user_id) {
     conditions.push('entry.lecturer_user_id = ?');
     params.push(parseInt(lecturer_user_id, 10));
+  }
+  if (student_user_id) {
+    conditions.push(
+      'entry.practice_team_id IN (SELECT ptm.practice_team_id FROM practice_team_members ptm WHERE ptm.student_user_id = ?)'
+    );
+    params.push(parseInt(student_user_id, 10));
   }
 
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';

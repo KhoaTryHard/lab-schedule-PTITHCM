@@ -1,10 +1,9 @@
 "use client";
-import "./homePage.css";
 import Image from "next/image";
 import Link from "next/link";
 import { Inter } from "next/font/google";
 
-import { renderLineIcon } from "../components/icons/systemIcon.jsx";
+import { renderLineIcon } from "../components/systemIcon.jsx";
 import campusBackground from "../pictures/HocVienCoSoHomePage.png";
 import logoPtitTrang from "../pictures/PtitLogo.svg";
 
