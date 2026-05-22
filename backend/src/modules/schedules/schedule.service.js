@@ -123,7 +123,7 @@ async function approveSchedule(id, userId) {
     return {
       ok: false,
       statusCode: 409,
-      message: 'Chỉ có thể duyệt lịch ở trạng thái draft',
+      message: 'Only draft schedules can be approved',
       current_status: schedule.entry_status
     };
   }
@@ -152,7 +152,7 @@ async function publishSchedule(id, userId) {
     return {
       ok: false,
       statusCode: 409,
-      message: 'Không thể công bố lịch chưa được duyệt',
+      message: 'Cannot publish a schedule before it is approved',
       current_status: schedule.entry_status
     };
   }
@@ -161,7 +161,7 @@ async function publishSchedule(id, userId) {
     return {
       ok: false,
       statusCode: 409,
-      message: 'Chỉ có thể công bố lịch ở trạng thái approved',
+      message: 'Only approved schedules can be published',
       current_status: schedule.entry_status
     };
   }
@@ -272,7 +272,7 @@ async function checkRoomBlocked(roomId, dayOfWeek, timeSlotId, startDate, endDat
 }
 
 async function checkHolidayBlocked(dayOfWeek, startDate, endDate) {
-  // WEEKDAY(): 0=Mon...6=Sun; day_of_week 1=Mon...7=Sun → WEEKDAY = day_of_week - 1
+  // WEEKDAY(): 0=Mon...6=Sun; day_of_week 1=Mon...7=Sun => WEEKDAY = day_of_week - 1
   const [rows] = await pool.query(
     `SELECT holiday_date, holiday_name FROM calendar_holidays
      WHERE holiday_date BETWEEN ? AND ?
