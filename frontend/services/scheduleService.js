@@ -55,3 +55,32 @@ export function checkScheduleConstraints(payload) {
     body: JSON.stringify(payload),
   });
 }
+
+/**
+ * Hàm nhận vào: input xếp lịch tự động gồm schedule_request_id/request_id và preference nếu có.
+ * Hàm xử lý: gọi API thật POST /api/schedules/auto-arrange.
+ * Hàm trả về: response backend, expected response.data có auto_arrange_status, ranked_options, failed_reasons.
+ */
+export function autoArrange(input) {
+  return apiClient("/schedules/auto-arrange", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+/**
+ * Hàm nhận vào:
+ * - option: phương án xếp lịch được chọn từ ranked_options.
+ * - requestId: id yêu cầu xếp lịch.
+ * Hàm xử lý: tạo lịch draft bằng POST /api/schedules.
+ * Hàm trả về: response backend sau khi tạo lịch draft.
+ */
+export function createScheduleFromOption(option, requestId) {
+  return apiClient("/schedules", {
+    method: "POST",
+    body: JSON.stringify({
+      lab_schedule_request_id: requestId,
+      ...option,
+    }),
+  });
+}
