@@ -542,7 +542,6 @@ export default function AutoArrangePage() {
         >
           <div className="constraintSectionHeader">
             <div>
-              <p className="commonEyebrow">Thông tin lịch cần kiểm tra</p>
               <h2 className="constraintSectionTitle">Thông tin lịch</h2>
             </div>
 
@@ -837,7 +836,6 @@ export default function AutoArrangePage() {
       <section className="card constraintResultCard">
         <div className="constraintSectionHeader">
           <div>
-            <p className="commonEyebrow">Checklist rule</p>
             <h2 className="constraintSectionTitle">Kết quả từng ràng buộc</h2>
           </div>
 
