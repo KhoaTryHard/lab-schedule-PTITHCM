@@ -26,6 +26,14 @@ const STATUS_OPTIONS = [
   { value: "completed", label: "Hoàn thành" },
 ];
 
+const BACKEND_SUPPORTED_FILTERS = new Set([
+  "status",
+  "room_code",
+  "lecturer_user_id",
+  "schedule_request_id",
+  "student_user_id",
+]);
+
 const PRIORITY_FIELD_ORDER = [
   "id",
   "schedule_id",
@@ -49,6 +57,7 @@ const PRIORITY_FIELD_ORDER = [
   "day_of_week",
   "time_slot_id",
   "slot_label",
+  "time_slot",
   "time_slot_label",
   "start_period",
   "end_period",
@@ -94,6 +103,7 @@ const FIELD_LABEL_MAP = {
   day_of_week: "Thứ",
   time_slot_id: "ID ca",
   slot_label: "Ca học",
+  time_slot: "Ca học",
   time_slot_label: "Ca học",
   start_period: "Tiết bắt đầu",
   end_period: "Tiết kết thúc",
@@ -124,6 +134,12 @@ function normalizeText(value) {
   return String(value || "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function normalizeComparableValue(value) {
+  return String(value || "")
+    .trim()
     .toLowerCase();
 }
 
@@ -200,7 +216,7 @@ function buildApiFilters(filters, fixedParams = {}) {
   const apiFilters = {};
 
   Object.entries(filters).forEach(([key, value]) => {
-    if (key === "keyword") {
+    if (!BACKEND_SUPPORTED_FILTERS.has(key)) {
       return;
     }
 
@@ -209,12 +225,13 @@ function buildApiFilters(filters, fixedParams = {}) {
     }
   });
 
-  // fixedParams đặt sau để role-scope như status=published hoặc lecturer_user_id
-  // không bị user override từ filter UI.
-  return {
-    ...apiFilters,
-    ...fixedParams,
-  };
+  Object.entries(fixedParams).forEach(([key, value]) => {
+    if (BACKEND_SUPPORTED_FILTERS.has(key) && hasValue(value)) {
+      apiFilters[key] = String(value).trim();
+    }
+  });
+
+  return apiFilters;
 }
 
 function buildResolvedFixedParams(fixedParams, currentUserIdParamName) {
@@ -344,6 +361,35 @@ function filterRowsByRequiredStatus(rows, requiredStatus) {
   });
 }
 
+function matchesFilterValue(rowValue, filterValue) {
+  if (!hasValue(filterValue) || filterValue === "all") {
+    return true;
+  }
+
+  return (
+    normalizeComparableValue(rowValue) === normalizeComparableValue(filterValue)
+  );
+}
+
+function filterRowsByAppliedFilters(rows, filters) {
+  return rows.filter((row) => {
+    const rowStatus = row?.entry_status || row?.status;
+    const rowWeek = row?.week_no || row?.week;
+    const rowCourseSectionId =
+      row?.course_section_id || row?.section_id || row?.courseSectionId;
+    const rowLecturerUserId =
+      row?.lecturer_user_id || row?.lecturer_id || row?.lecturerUserId;
+
+    return (
+      matchesFilterValue(rowStatus, filters.status) &&
+      matchesFilterValue(rowWeek, filters.week_no) &&
+      matchesFilterValue(row?.room_code, filters.room_code) &&
+      matchesFilterValue(rowCourseSectionId, filters.course_section_id) &&
+      matchesFilterValue(rowLecturerUserId, filters.lecturer_user_id)
+    );
+  });
+}
+
 export default function ScheduleLookupTable({
   title,
   description,
@@ -357,8 +403,7 @@ export default function ScheduleLookupTable({
   showLecturerFilter = true,
   showKeywordFilter = true,
   emptyTitle = "Chưa có lịch thực hành",
-  emptyDescription = "API GET /api/schedules hiện chưa trả lịch phù hợp hoặc backend vẫn đang ở trạng thái stub.",
-  integrationNote = "Màn này gọi API thật GET /api/schedules, không dùng mock data. Backend develop hiện tại mới echo query và trả schedules rỗng nên chưa thể xác nhận dữ liệu lịch thật.",
+  emptyDescription = "Chưa có lịch thực hành phù hợp với bộ lọc hiện tại.",
 }) {
   const [filters, setFilters] = useState(INITIAL_FILTERS);
   const [appliedFilters, setAppliedFilters] = useState(INITIAL_FILTERS);
@@ -372,8 +417,13 @@ export default function ScheduleLookupTable({
       clientSideRequiredStatus,
     );
 
-    return filterRowsByKeyword(statusSafeRows, appliedFilters.keyword);
-  }, [scheduleRows, appliedFilters.keyword, clientSideRequiredStatus]);
+    const filterSafeRows = filterRowsByAppliedFilters(
+      statusSafeRows,
+      appliedFilters,
+    );
+
+    return filterRowsByKeyword(filterSafeRows, appliedFilters.keyword);
+  }, [scheduleRows, appliedFilters, clientSideRequiredStatus]);
 
   const dynamicColumns = useMemo(
     () => buildDynamicColumns(visibleRows),
@@ -431,6 +481,9 @@ export default function ScheduleLookupTable({
         <div className="roomFilterBar">
           <div className="roomFilterSummary">
             <h1 className="roomSectionTitle">{title}</h1>
+            {description ? (
+              <p className="roomSectionText">{description}</p>
+            ) : null}
           </div>
 
           <RefreshButton
@@ -489,7 +542,7 @@ export default function ScheduleLookupTable({
 
           {showCourseSectionFilter ? (
             <label className="commonField">
-              <span className="commonFieldLabel">Lóp học phần</span>
+              <span className="commonFieldLabel">Lớp học phần</span>
               <input
                 className="commonControl"
                 value={filters.course_section_id}

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import ptitLogo from "../../pictures/PtitLogo.svg";
+import { ErrorState, LoadingState } from "../../components/common/UiState.jsx";
 import { login, getMe } from "../../services/authService";
 import { saveToken, saveUser } from "../../lib/authStorage";
 import { getHomePathByRole } from "../../lib/roleRoutes";
@@ -108,6 +109,7 @@ export default function LoginPage() {
               value={username}
               onChange={(event) => setUsername(event.target.value)}
               autoComplete="username"
+              disabled={isSubmitting}
             />
           </div>
         </div>
@@ -125,24 +127,44 @@ export default function LoginPage() {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               autoComplete="current-password"
+              disabled={isSubmitting}
             />
           </div>
         </div>
 
         {errorMessage ? (
-          <div className="authErrorMessage" role="alert">
-            <span className="authErrorIcon">!</span>
-            <p>{errorMessage}</p>
-          </div>
+          <ErrorState
+            title="Đăng nhập thất bại"
+            error={errorMessage}
+            showRetry={false}
+            action={
+              <button
+                type="button"
+                className="buttonUI buttonUI--secondary buttonUI--sm"
+                onClick={() => setErrorMessage("")}
+              >
+                Thử lại
+              </button>
+            }
+          />
         ) : null}
 
         <button
-          className={`authPrimaryButton ${isSubmitting ? "authPrimaryButtonLoading" : ""}`}
+          className={`authPrimaryButton ${
+            isSubmitting ? "authPrimaryButtonLoading" : ""
+          }`}
           type="submit"
           disabled={isSubmitting}
         >
           {isSubmitting ? "Đang xác thực..." : "Đăng nhập"}
         </button>
+
+        {isSubmitting ? (
+          <LoadingState
+            title="Đang xác thực tài khoản..."
+            description="Hệ thống đang gọi API đăng nhập và kiểm tra vai trò."
+          />
+        ) : null}
       </form>
     </section>
   );
