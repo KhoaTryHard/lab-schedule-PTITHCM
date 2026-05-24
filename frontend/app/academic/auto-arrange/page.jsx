@@ -17,14 +17,137 @@ import {
 import { clearAuth } from "../../../lib/authStorage";
 import {
   autoArrange,
+  checkScheduleConstraints,
   createScheduleFromOption,
 } from "../../../services/scheduleService.js";
 import { listScheduleRequests } from "../../../services/scheduleRequestService";
 
-const INITIAL_FORM = {
+const AUTO_ARRANGE_INITIAL_FORM = {
   schedule_request_id: "",
   preferred_day_of_week: "",
   preferred_time_slot: "",
+};
+
+const CHECK_CONSTRAINT_INITIAL_FORM = {
+  request_id: "1",
+  course_section_id: "6",
+  practice_team_id: "1",
+  lecturer_user_id: "8",
+  room_id: "1",
+  room_code: "2B11",
+  day_of_week: "4",
+  time_slot: "Tiết 1-4",
+  start_date: "2026-04-29",
+  end_date: "2026-04-29",
+  student_count: "40",
+  required_software_ids: "",
+};
+
+const CHECK_CONSTRAINT_PASS_FORM = {
+  request_id: "1",
+  course_section_id: "6",
+  practice_team_id: "1",
+  lecturer_user_id: "8",
+  room_id: "1",
+  room_code: "2B11",
+  day_of_week: "4",
+  time_slot: "Tiết 1-4",
+  start_date: "2026-04-29",
+  end_date: "2026-04-29",
+  student_count: "40",
+  required_software_ids: "",
+};
+
+const CHECK_CONSTRAINT_ROOM_STATUS_FAIL_FORM = {
+  request_id: "1",
+  course_section_id: "6",
+  practice_team_id: "1",
+  lecturer_user_id: "8",
+  room_id: "3",
+  room_code: "2B31",
+  day_of_week: "4",
+  time_slot: "Tiết 1-4",
+  start_date: "2026-04-29",
+  end_date: "2026-04-29",
+  student_count: "40",
+  required_software_ids: "",
+};
+
+const CHECK_CONSTRAINT_CONFLICT_FAIL_FORM = {
+  request_id: "1",
+  course_section_id: "1",
+  practice_team_id: "1",
+  lecturer_user_id: "4",
+  room_id: "3",
+  room_code: "2B31",
+  day_of_week: "4",
+  time_slot: "Tiết 7-10",
+  start_date: "2025-09-17",
+  end_date: "2025-09-17",
+  student_count: "40",
+  required_software_ids: "",
+};
+
+const REQUIRED_RULES = [
+  {
+    code: "ROOM_SCOPE",
+    label: "Phạm vi phòng",
+    meaning: "Phòng có thuộc phạm vi cho phép của MVP không.",
+    suggestion: "Chọn phòng thuộc phạm vi 2B11, 2B21 hoặc 2B31.",
+  },
+  {
+    code: "ROOM_STATUS",
+    label: "Trạng thái phòng",
+    meaning: "Phòng có đang ở trạng thái available không.",
+    suggestion:
+      "Chọn phòng khác hoặc cập nhật trạng thái phòng về available trước khi xếp lịch.",
+  },
+  {
+    code: "ROOM_BLOCKED",
+    label: "Phòng bị khóa",
+    meaning: "Phòng có bị block bởi yêu cầu khóa phòng đã duyệt không.",
+    suggestion: "Chọn phòng khác hoặc đổi khoảng thời gian.",
+  },
+  {
+    code: "HOLIDAY_BLOCKED",
+    label: "Ngày nghỉ",
+    meaning:
+      "Ngày học có bị chặn bởi lịch nghỉ hoặc ngày không xếp lịch không.",
+    suggestion: "Chọn ngày khác không thuộc lịch nghỉ.",
+  },
+  {
+    code: "ROOM_CONFLICT",
+    label: "Trùng phòng",
+    meaning: "Phòng có bị trùng lịch cùng thứ, ca và khoảng ngày không.",
+    suggestion: "Đổi phòng, đổi ca hoặc đổi khoảng ngày.",
+  },
+  {
+    code: "LECTURER_CONFLICT",
+    label: "Trùng giảng viên",
+    meaning: "Giảng viên có bị phân công dạy lớp khác cùng thời điểm không.",
+    suggestion: "Chọn giảng viên khác hoặc đổi ca thực hành.",
+  },
+  {
+    code: "CAPACITY_OK",
+    label: "Đủ sức chứa",
+    meaning: "Số máy/sức chứa phòng có đáp ứng tổ thực hành không.",
+    suggestion: "Chọn phòng lớn hơn hoặc tách thêm tổ thực hành.",
+  },
+  {
+    code: "SOFTWARE_OK",
+    label: "Đủ phần mềm",
+    meaning: "Phòng có cài đủ phần mềm yêu cầu không.",
+    suggestion:
+      "Chọn phòng khác hoặc yêu cầu kỹ thuật viên cài bổ sung phần mềm.",
+  },
+];
+
+const EXTRA_RULE_META = {
+  TEAM_CONFLICT: {
+    label: "Trùng tổ thực hành",
+    meaning: "Tổ thực hành có bị xếp trùng cùng thời điểm không.",
+    suggestion: "Đổi ca, đổi ngày hoặc chọn tổ thực hành khác.",
+  },
 };
 
 const DAY_OPTIONS = [
@@ -36,10 +159,15 @@ const DAY_OPTIONS = [
   { value: "6", label: "Thứ 6" },
 ];
 
-const TIME_SLOT_OPTIONS = [
+const AUTO_TIME_SLOT_OPTIONS = [
   { value: "", label: "Không ưu tiên" },
   { value: "1-4", label: "Tiết 1-4" },
   { value: "7-10", label: "Tiết 7-10" },
+];
+
+const CHECK_TIME_SLOT_OPTIONS = [
+  { value: "Tiết 1-4", label: "Tiết 1-4" },
+  { value: "Tiết 7-10", label: "Tiết 7-10" },
 ];
 
 const EMPTY_FAILED_REASON_SAMPLES = [
@@ -98,6 +226,27 @@ function toPositiveInteger(value) {
   }
 
   return parsedValue;
+}
+
+function toRequiredPositiveInteger(value, fieldLabel) {
+  const parsedValue = Number(value);
+
+  if (!Number.isInteger(parsedValue) || parsedValue <= 0) {
+    throw new Error(`${fieldLabel} phải là số nguyên dương.`);
+  }
+
+  return parsedValue;
+}
+
+function parseSoftwareIds(value) {
+  if (!String(value || "").trim()) {
+    return [];
+  }
+
+  return String(value)
+    .split(",")
+    .map((item) => Number(item.trim()))
+    .filter((item) => Number.isInteger(item) && item > 0);
 }
 
 function formatDate(value) {
@@ -442,6 +591,162 @@ function buildCreateOptionPayload(option) {
   return payload;
 }
 
+function buildConstraintPayload(formData) {
+  if (!formData.room_code.trim()) {
+    throw new Error("Vui lòng nhập mã phòng.");
+  }
+
+  if (!formData.time_slot.trim()) {
+    throw new Error("Vui lòng chọn ca học.");
+  }
+
+  if (!formData.start_date || !formData.end_date) {
+    throw new Error("Vui lòng chọn đủ ngày bắt đầu và ngày kết thúc.");
+  }
+
+  if (formData.end_date < formData.start_date) {
+    throw new Error("Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu.");
+  }
+
+  return {
+    room_code: formData.room_code.trim().toUpperCase(),
+    lecturer_user_id: toRequiredPositiveInteger(
+      formData.lecturer_user_id,
+      "ID giảng viên",
+    ),
+    practice_team_id: toRequiredPositiveInteger(
+      formData.practice_team_id,
+      "ID tổ thực hành",
+    ),
+    day_of_week: toRequiredPositiveInteger(
+      formData.day_of_week,
+      "Thứ trong tuần",
+    ),
+    time_slot: formData.time_slot.trim(),
+    start_date: formData.start_date,
+    end_date: formData.end_date,
+    required_software_ids: parseSoftwareIds(formData.required_software_ids),
+  };
+}
+
+function normalizeRuleCode(code) {
+  return String(code || "UNKNOWN_RULE")
+    .trim()
+    .toUpperCase();
+}
+
+function normalizeConstraintResults(apiData) {
+  const rawResults = Array.isArray(apiData?.results)
+    ? apiData.results
+    : Array.isArray(apiData?.constraints)
+      ? apiData.constraints
+      : [];
+
+  return rawResults.map((item, index) => ({
+    id: `${item?.code || "RULE"}-${index + 1}`,
+    code: normalizeRuleCode(item?.code),
+    passed:
+      typeof item?.passed === "boolean"
+        ? item.passed
+        : typeof item?.is_passed === "boolean"
+          ? item.is_passed
+          : null,
+    message:
+      item?.message || item?.detail || "API không trả message cho rule này.",
+    raw: item,
+  }));
+}
+
+function getRuleMeta(code) {
+  return (
+    REQUIRED_RULES.find((rule) => rule.code === code) ||
+    EXTRA_RULE_META[code] || {
+      label: code,
+      meaning: "Rule bổ sung do backend trả về.",
+      suggestion: "Đọc message backend để xử lý.",
+    }
+  );
+}
+
+function buildRuleRows(constraintResults) {
+  const resultMap = new Map(
+    constraintResults.map((result) => [result.code, result]),
+  );
+
+  const requiredRows = REQUIRED_RULES.map((rule) => {
+    const matchedResult = resultMap.get(rule.code);
+
+    if (!matchedResult) {
+      return {
+        id: rule.code,
+        code: rule.code,
+        label: rule.label,
+        meaning: rule.meaning,
+        passed: null,
+        message: "Backend chưa trả kết quả cho rule này.",
+        suggestion: rule.suggestion,
+        isRequired: true,
+      };
+    }
+
+    return {
+      id: rule.code,
+      code: rule.code,
+      label: rule.label,
+      meaning: rule.meaning,
+      passed: matchedResult.passed,
+      message: matchedResult.message,
+      suggestion: rule.suggestion,
+      isRequired: true,
+    };
+  });
+
+  const extraRows = constraintResults
+    .filter(
+      (result) => !REQUIRED_RULES.some((rule) => rule.code === result.code),
+    )
+    .map((result) => {
+      const meta = getRuleMeta(result.code);
+
+      return {
+        id: result.id,
+        code: result.code,
+        label: meta.label,
+        meaning: meta.meaning,
+        passed: result.passed,
+        message: result.message,
+        suggestion: meta.suggestion,
+        isRequired: false,
+      };
+    });
+
+  return [...requiredRows, ...extraRows];
+}
+
+function getResultVariant(passed) {
+  if (passed === true) {
+    return "success";
+  }
+
+  if (passed === false) {
+    return "danger";
+  }
+
+  return "muted";
+}
+
+function getResultLabel(passed) {
+  if (passed === true) {
+    return "PASS";
+  }
+
+  if (passed === false) {
+    return "FAIL";
+  }
+
+  return "CHƯA TRẢ";
+}
+
 function Toast({ toast, onClose }) {
   if (!toast) {
     return null;
@@ -565,7 +870,7 @@ function ReasonsModal({ option, onClose }) {
 export default function AutoArrangePage() {
   const router = useRouter();
 
-  const [formData, setFormData] = useState(INITIAL_FORM);
+  const [autoFormData, setAutoFormData] = useState(AUTO_ARRANGE_INITIAL_FORM);
   const [scheduleRequests, setScheduleRequests] = useState([]);
   const [requestsLoading, setRequestsLoading] = useState(true);
   const [requestError, setRequestError] = useState("");
@@ -573,18 +878,27 @@ export default function AutoArrangePage() {
   const [autoArrangeData, setAutoArrangeData] = useState(null);
   const [isArranging, setIsArranging] = useState(false);
   const [arrangeError, setArrangeError] = useState("");
-  const [validationError, setValidationError] = useState("");
+  const [autoValidationError, setAutoValidationError] = useState("");
   const [selectedReasonOption, setSelectedReasonOption] = useState(null);
   const [creatingOptionKey, setCreatingOptionKey] = useState("");
   const [toast, setToast] = useState(null);
+
+  const [constraintFormData, setConstraintFormData] = useState(
+    CHECK_CONSTRAINT_INITIAL_FORM,
+  );
+  const [constraintData, setConstraintData] = useState(null);
+  const [constraintRows, setConstraintRows] = useState([]);
+  const [isChecking, setIsChecking] = useState(false);
+  const [constraintError, setConstraintError] = useState("");
+  const [constraintLocalMessage, setConstraintLocalMessage] = useState("");
 
   const selectedRequest = useMemo(
     () =>
       scheduleRequests.find(
         (requestItem) =>
-          String(requestItem.id) === formData.schedule_request_id,
+          String(requestItem.id) === autoFormData.schedule_request_id,
       ) || null,
-    [formData.schedule_request_id, scheduleRequests],
+    [autoFormData.schedule_request_id, scheduleRequests],
   );
 
   const filteredRequestOptions = useMemo(() => {
@@ -602,9 +916,86 @@ export default function AutoArrangePage() {
     autoArrangeData?.auto_arrange_status === "no_valid_option" ||
     (autoArrangeData && rankedOptions.length === 0);
 
-  const canSubmit = Boolean(formData.schedule_request_id) && !isArranging;
+  const canAutoArrange =
+    Boolean(autoFormData.schedule_request_id) && !isArranging;
 
-  const columns = useMemo(
+  const failedConstraintRows = useMemo(
+    () => constraintRows.filter((row) => row.passed === false),
+    [constraintRows],
+  );
+
+  const passedConstraintRows = useMemo(
+    () => constraintRows.filter((row) => row.passed === true),
+    [constraintRows],
+  );
+
+  const missingRequiredConstraintRows = useMemo(
+    () => constraintRows.filter((row) => row.isRequired && row.passed === null),
+    [constraintRows],
+  );
+
+  const hasCheckedConstraints = Boolean(constraintData);
+  const hasFailedConstraintRule = failedConstraintRows.length > 0;
+  const apiPassedConstraints = Boolean(constraintData?.passed);
+  const canCreateScheduleAfterCheck =
+    hasCheckedConstraints && apiPassedConstraints && !hasFailedConstraintRule;
+
+  const constraintSummaryStatus = useMemo(() => {
+    if (constraintError) {
+      return {
+        variant: "danger",
+        label: "API lỗi",
+        title: "Không thể kiểm tra ràng buộc",
+        message: constraintError,
+      };
+    }
+
+    if (!hasCheckedConstraints) {
+      return {
+        variant: "muted",
+        label: "",
+        title: "Sẵn sàng kiểm tra",
+        message:
+          "Nhập thông tin lịch hoặc nạp case demo rồi bấm Kiểm tra ràng buộc.",
+      };
+    }
+
+    if (hasFailedConstraintRule || !apiPassedConstraints) {
+      return {
+        variant: "danger",
+        label: "Không hợp lệ",
+        title: "Không thể tạo lịch",
+        message:
+          "Có ít nhất một ràng buộc chưa đạt. Đây là màn hình dùng để chụp minh chứng case FAIL.",
+      };
+    }
+
+    if (missingRequiredConstraintRows.length > 0) {
+      return {
+        variant: "warning",
+        label: "Hợp lệ có cảnh báo",
+        title: "API báo pass nhưng còn rule chưa trả về",
+        message:
+          "Backend chưa trả đủ rule bắt buộc. Có thể chụp minh chứng pass, nhưng nên kiểm tra lại backend nếu cần đủ 8 rule.",
+      };
+    }
+
+    return {
+      variant: "success",
+      label: "Hợp lệ",
+      title: "Có thể tạo lịch",
+      message:
+        "Tất cả ràng buộc đã đạt. Đây là màn hình dùng để chụp minh chứng case PASS.",
+    };
+  }, [
+    apiPassedConstraints,
+    constraintError,
+    hasCheckedConstraints,
+    hasFailedConstraintRule,
+    missingRequiredConstraintRows.length,
+  ]);
+
+  const autoArrangeColumns = useMemo(
     () => [
       {
         key: "rank",
@@ -677,7 +1068,35 @@ export default function AutoArrangePage() {
         ),
       },
     ],
-    [creatingOptionKey],
+    [creatingOptionKey, autoFormData.schedule_request_id],
+  );
+
+  const constraintColumns = useMemo(
+    () => [
+      {
+        key: "code",
+        label: "Rule",
+        render: (value, row) => (
+          <div style={{ display: "grid", gap: 2 }}>
+            <strong>{value}</strong>
+            <span style={{ color: "#64748b", fontSize: 12 }}>{row.label}</span>
+          </div>
+        ),
+      },
+      { key: "meaning", label: "Ý nghĩa" },
+      {
+        key: "passed",
+        label: "Kết quả",
+        render: (value) => (
+          <StatusBadge variant={getResultVariant(value)}>
+            {getResultLabel(value)}
+          </StatusBadge>
+        ),
+      },
+      { key: "message", label: "Thông báo" },
+      { key: "suggestion", label: "Gợi ý xử lý" },
+    ],
+    [],
   );
 
   useEffect(() => {
@@ -714,24 +1133,34 @@ export default function AutoArrangePage() {
     }
   }
 
-  function updateFormData(fieldName, value) {
-    setFormData((currentData) => ({
+  function updateAutoFormData(fieldName, value) {
+    setAutoFormData((currentData) => ({
       ...currentData,
       [fieldName]: value,
     }));
 
-    setValidationError("");
+    setAutoValidationError("");
     setArrangeError("");
+  }
+
+  function updateConstraintFormData(fieldName, value) {
+    setConstraintFormData((currentData) => ({
+      ...currentData,
+      [fieldName]: value,
+    }));
+
+    setConstraintError("");
+    setConstraintLocalMessage("");
   }
 
   async function submitAutoArrange() {
     try {
       setIsArranging(true);
       setArrangeError("");
-      setValidationError("");
+      setAutoValidationError("");
       setAutoArrangeData(null);
 
-      const payload = buildAutoArrangePayload(formData, selectedRequest);
+      const payload = buildAutoArrangePayload(autoFormData, selectedRequest);
       const response = await autoArrange(payload);
       setAutoArrangeData(normalizeAutoArrangeData(response));
     } catch (error) {
@@ -739,8 +1168,8 @@ export default function AutoArrangePage() {
         return;
       }
 
-      if (!formData.schedule_request_id) {
-        setValidationError("Vui lòng chọn yêu cầu xếp lịch.");
+      if (!autoFormData.schedule_request_id) {
+        setAutoValidationError("Vui lòng chọn yêu cầu xếp lịch.");
         return;
       }
 
@@ -750,11 +1179,11 @@ export default function AutoArrangePage() {
     }
   }
 
-  async function handleSubmit(event) {
+  async function handleAutoArrangeSubmit(event) {
     event.preventDefault();
 
-    if (!formData.schedule_request_id) {
-      setValidationError("Vui lòng chọn yêu cầu xếp lịch.");
+    if (!autoFormData.schedule_request_id) {
+      setAutoValidationError("Vui lòng chọn yêu cầu xếp lịch.");
       return;
     }
 
@@ -762,10 +1191,10 @@ export default function AutoArrangePage() {
   }
 
   async function handleUseOption(option) {
-    const requestId = toPositiveInteger(formData.schedule_request_id);
+    const requestId = toPositiveInteger(autoFormData.schedule_request_id);
 
     if (!requestId) {
-      setValidationError("Vui lòng chọn yêu cầu xếp lịch.");
+      setAutoValidationError("Vui lòng chọn yêu cầu xếp lịch.");
       return;
     }
 
@@ -809,11 +1238,66 @@ export default function AutoArrangePage() {
     }
   }
 
-  function resetResult() {
+  function resetAutoArrangeResult() {
     setAutoArrangeData(null);
     setArrangeError("");
-    setValidationError("");
+    setAutoValidationError("");
     setToast(null);
+  }
+
+  function resetConstraintResult() {
+    setConstraintData(null);
+    setConstraintRows([]);
+    setConstraintError("");
+    setConstraintLocalMessage("");
+  }
+
+  function loadConstraintDemoForm(nextForm) {
+    setConstraintFormData(nextForm);
+    resetConstraintResult();
+  }
+
+  async function handleCheckConstraints(event) {
+    event.preventDefault();
+
+    try {
+      setIsChecking(true);
+      setConstraintError("");
+      setConstraintLocalMessage("");
+
+      const payload = buildConstraintPayload(constraintFormData);
+      const response = await checkScheduleConstraints(payload);
+      const apiData = response?.data || {};
+      const normalizedResults = normalizeConstraintResults(apiData);
+
+      setConstraintData(apiData);
+      setConstraintRows(buildRuleRows(normalizedResults));
+    } catch (error) {
+      if (handleAuthError(error)) {
+        return;
+      }
+
+      setConstraintData(null);
+      setConstraintRows([]);
+      setConstraintError(
+        getApiErrorMessage(error, "Không thể kiểm tra ràng buộc xếp lịch."),
+      );
+    } finally {
+      setIsChecking(false);
+    }
+  }
+
+  function handleCreateScheduleAfterCheck() {
+    if (!canCreateScheduleAfterCheck) {
+      setConstraintLocalMessage(
+        "Không thể tạo lịch vì còn ràng buộc chưa đạt hoặc chưa có kết quả kiểm tra hợp lệ.",
+      );
+      return;
+    }
+
+    setConstraintLocalMessage(
+      "Ràng buộc đã đạt. Đây là bước kiểm tra trước khi tạo lịch draft.",
+    );
   }
 
   return (
@@ -826,219 +1310,311 @@ export default function AutoArrangePage() {
 
       <div className="commonPageHeader">
         <div className="commonPageHeaderBody">
-          <p className="commonEyebrow">Academic · Auto Arrange</p>
-          <h1 className="commonTitle">Xếp lịch tự động</h1>
+          <p className="commonEyebrow">Academic · Scheduling demo</p>
+          <h1 className="commonTitle">Xếp lịch tự động & kiểm tra ràng buộc</h1>
           <p className="commonDescription">
-            Chọn yêu cầu xếp lịch, nhập ưu tiên ngày/ca nếu có, sau đó hệ thống
-            gọi API thật để trả về top 3 phương án phòng máy được xếp hạng.
+            Trang này phục vụ luồng demo chính: Auto Arrange tạo 3 phương án xếp
+            hạng, đồng thời khôi phục Check Constraints để chụp ảnh PASS và FAIL
+            cho báo cáo.
           </p>
         </div>
 
         <div className="commonHeaderActions">
-          <StatusBadge variant="info">
+          <StatusBadge variant="info">API thật</StatusBadge>
+          <StatusBadge variant="published">Demo scope</StatusBadge>
+        </div>
+      </div>
+
+      <section className="card">
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            gap: 16,
+            marginBottom: 14,
+          }}
+        >
+          <div>
+            <p className="commonEyebrow">Auto Arrange</p>
+            <h2
+              style={{
+                margin: "6px 0 0",
+                color: "#0f172a",
+                fontSize: 22,
+                fontWeight: 800,
+              }}
+            >
+              Sinh top 3 phương án xếp lịch
+            </h2>
+          </div>
+
+          <StatusBadge variant={rankedOptions.length > 0 ? "success" : "info"}>
             {rankedOptions.length > 0
               ? `${rankedOptions.length} option`
               : "Sẵn sàng"}
           </StatusBadge>
         </div>
-      </div>
 
-      <section
-        className="commonGrid"
-        style={{
-          gridTemplateColumns: "minmax(0, 0.9fr) minmax(320px, 0.45fr)",
-          alignItems: "start",
-        }}
-      >
-        <form className="card" onSubmit={handleSubmit}>
-          <div style={{ display: "grid", gap: 14 }}>
-            <div>
-              <p className="commonEyebrow">Form input</p>
-              <h2
-                style={{
-                  margin: "6px 0 0",
-                  color: "#0f172a",
-                  fontSize: 20,
-                  fontWeight: 800,
-                }}
-              >
-                Thông tin xếp lịch
-              </h2>
-            </div>
+        <section
+          className="commonGrid commonGrid2"
+          style={{ alignItems: "start" }}
+        >
+          <form onSubmit={handleAutoArrangeSubmit}>
+            <div style={{ display: "grid", gap: 14 }}>
+              {requestsLoading ? (
+                <LoadingState
+                  title="Đang tải yêu cầu xếp lịch..."
+                  description="Danh sách dùng để chọn schedule_request_id."
+                />
+              ) : requestError ? (
+                <ErrorState
+                  title="Không thể tải yêu cầu xếp lịch"
+                  error={requestError}
+                  onRetry={loadScheduleRequests}
+                />
+              ) : (
+                <>
+                  <label className="label">
+                    Yêu cầu xếp lịch <span style={{ color: "#b91c1c" }}>*</span>
+                    <select
+                      className="select"
+                      value={autoFormData.schedule_request_id}
+                      onChange={(event) =>
+                        updateAutoFormData(
+                          "schedule_request_id",
+                          event.target.value,
+                        )
+                      }
+                      disabled={isArranging}
+                    >
+                      <option value="">Chọn schedule request</option>
+                      {filteredRequestOptions.map((requestItem) => (
+                        <option key={requestItem.id} value={requestItem.id}>
+                          #{requestItem.id} · {requestItem.courseLabel} ·{" "}
+                          {requestItem.request_status}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
 
-            {requestsLoading ? (
-              <LoadingState
-                title="Đang tải yêu cầu xếp lịch..."
-                description="Danh sách dùng để chọn schedule_request_id."
-              />
-            ) : requestError ? (
-              <ErrorState
-                title="Không thể tải yêu cầu xếp lịch"
-                error={requestError}
-                onRetry={loadScheduleRequests}
-              />
-            ) : (
-              <>
-                <label className="label">
-                  Yêu cầu xếp lịch <span style={{ color: "#b91c1c" }}>*</span>
-                  <select
-                    className="select"
-                    value={formData.schedule_request_id}
-                    onChange={(event) =>
-                      updateFormData("schedule_request_id", event.target.value)
-                    }
-                    disabled={isArranging}
-                  >
-                    <option value="">Chọn schedule request</option>
-                    {filteredRequestOptions.map((requestItem) => (
-                      <option key={requestItem.id} value={requestItem.id}>
-                        #{requestItem.id} · {requestItem.courseLabel} ·{" "}
-                        {requestItem.request_status}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                  {!autoFormData.schedule_request_id || autoValidationError ? (
+                    <p
+                      role="alert"
+                      style={{
+                        margin: "-6px 0 4px",
+                        color: "#b91c1c",
+                        fontSize: 13,
+                        fontWeight: 700,
+                      }}
+                    >
+                      {autoValidationError ||
+                        "Bắt buộc chọn schedule_request_id để bật nút Auto Arrange."}
+                    </p>
+                  ) : null}
 
-                {!formData.schedule_request_id || validationError ? (
-                  <p
-                    role="alert"
+                  <div className="commonGrid commonGrid2">
+                    <label className="label">
+                      Ngày ưu tiên
+                      <select
+                        className="select"
+                        value={autoFormData.preferred_day_of_week}
+                        onChange={(event) =>
+                          updateAutoFormData(
+                            "preferred_day_of_week",
+                            event.target.value,
+                          )
+                        }
+                        disabled={isArranging}
+                      >
+                        {DAY_OPTIONS.map((option) => (
+                          <option key={option.label} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="label">
+                      Ca ưu tiên
+                      <select
+                        className="select"
+                        value={autoFormData.preferred_time_slot}
+                        onChange={(event) =>
+                          updateAutoFormData(
+                            "preferred_time_slot",
+                            event.target.value,
+                          )
+                        }
+                        disabled={isArranging}
+                      >
+                        {AUTO_TIME_SLOT_OPTIONS.map((option) => (
+                          <option key={option.label} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+
+                  <div
                     style={{
-                      margin: "-6px 0 4px",
-                      color: "#b91c1c",
-                      fontSize: 13,
-                      fontWeight: 700,
+                      display: "flex",
+                      flexWrap: "wrap",
+                      alignItems: "center",
+                      gap: 10,
                     }}
                   >
-                    {validationError ||
-                      "Bắt buộc chọn schedule_request_id để bật nút Auto Arrange."}
-                  </p>
-                ) : null}
+                    <ButtonUI
+                      type="submit"
+                      tone="primary"
+                      shape="rounded"
+                      disabled={!canAutoArrange || requestsLoading}
+                    >
+                      {isArranging ? "⏳ Đang Auto Arrange..." : "Auto Arrange"}
+                    </ButtonUI>
+
+                    <RefreshButton
+                      type="button"
+                      onClick={resetAutoArrangeResult}
+                      disabled={isArranging}
+                    >
+                      Xóa kết quả
+                    </RefreshButton>
+                  </div>
+                </>
+              )}
+            </div>
+          </form>
+
+          <aside>
+            {selectedRequest ? (
+              <div className="commonActionCard">
+                <p className="commonEyebrow">Tóm tắt request</p>
+                <h3 style={{ margin: 0, fontSize: 18 }}>
+                  {selectedRequest.courseLabel}
+                </h3>
 
                 <div className="commonGrid commonGrid2">
-                  <label className="label">
-                    Ngày ưu tiên
-                    <select
-                      className="select"
-                      value={formData.preferred_day_of_week}
-                      onChange={(event) =>
-                        updateFormData(
-                          "preferred_day_of_week",
-                          event.target.value,
-                        )
-                      }
-                      disabled={isArranging}
-                    >
-                      {DAY_OPTIONS.map((option) => (
-                        <option key={option.label} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <label className="label">
-                    Ca ưu tiên
-                    <select
-                      className="select"
-                      value={formData.preferred_time_slot}
-                      onChange={(event) =>
-                        updateFormData(
-                          "preferred_time_slot",
-                          event.target.value,
-                        )
-                      }
-                      disabled={isArranging}
-                    >
-                      {TIME_SLOT_OPTIONS.map((option) => (
-                        <option key={option.label} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-
-                <div
-                  style={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    alignItems: "center",
-                    gap: 10,
-                  }}
-                >
-                  <ButtonUI
-                    type="submit"
-                    tone="primary"
-                    shape="rounded"
-                    disabled={!canSubmit || requestsLoading}
-                  >
-                    {isArranging ? "⏳ Đang Auto Arrange..." : "Auto Arrange"}
-                  </ButtonUI>
-
-                  <RefreshButton
-                    type="button"
-                    onClick={resetResult}
-                    disabled={isArranging}
-                  >
-                    Xóa kết quả
-                  </RefreshButton>
-                </div>
-              </>
-            )}
-          </div>
-        </form>
-
-        <aside className="card">
-          <p className="commonEyebrow">Tóm tắt</p>
-
-          {selectedRequest ? (
-            <div style={{ display: "grid", gap: 10, marginTop: 10 }}>
-              <h3 style={{ margin: 0, fontSize: 18 }}>
-                {selectedRequest.courseLabel}
-              </h3>
-
-              <p className="commonDescription">
-                ID yêu cầu: <strong>#{selectedRequest.id}</strong>
-              </p>
-
-              <div className="commonGrid commonGrid2">
-                <div className="commonActionCard">
-                  <p className="commonActionTitle">Số tổ</p>
-                  <strong>
-                    {getDisplayValue(selectedRequest.requested_team_count)}
-                  </strong>
-                </div>
-
-                <div className="commonActionCard">
-                  <p className="commonActionTitle">Số buổi</p>
-                  <strong>
-                    {getDisplayValue(selectedRequest.total_required_sessions)}
-                  </strong>
-                </div>
-
-                <div className="commonActionCard">
-                  <p className="commonActionTitle">Tuần bắt đầu</p>
-                  <strong>
-                    {formatDate(selectedRequest.preferred_week_start)}
-                  </strong>
-                </div>
-
-                <div className="commonActionCard">
-                  <p className="commonActionTitle">Tuần kết thúc</p>
-                  <strong>
-                    {formatDate(selectedRequest.preferred_week_end)}
-                  </strong>
+                  <p className="commonDescription">
+                    ID: <strong>#{selectedRequest.id}</strong>
+                  </p>
+                  <p className="commonDescription">
+                    Trạng thái:{" "}
+                    <strong>
+                      {getDisplayValue(selectedRequest.request_status)}
+                    </strong>
+                  </p>
+                  <p className="commonDescription">
+                    Số tổ:{" "}
+                    <strong>
+                      {getDisplayValue(selectedRequest.requested_team_count)}
+                    </strong>
+                  </p>
+                  <p className="commonDescription">
+                    Số buổi:{" "}
+                    <strong>
+                      {getDisplayValue(selectedRequest.total_required_sessions)}
+                    </strong>
+                  </p>
+                  <p className="commonDescription">
+                    Từ:{" "}
+                    <strong>
+                      {formatDate(selectedRequest.preferred_week_start)}
+                    </strong>
+                  </p>
+                  <p className="commonDescription">
+                    Đến:{" "}
+                    <strong>
+                      {formatDate(selectedRequest.preferred_week_end)}
+                    </strong>
+                  </p>
                 </div>
               </div>
-            </div>
+            ) : (
+              <EmptyState
+                title="Chưa chọn yêu cầu"
+                description="Chọn một schedule request để xem tóm tắt trước khi xếp lịch."
+                icon="🧭"
+              />
+            )}
+          </aside>
+        </section>
+
+        <div style={{ marginTop: 16 }}>
+          {isArranging ? (
+            <LoadingState
+              title="Đang sinh phương án xếp lịch..."
+              description="API có thể mất khoảng 2 giây vì phải kiểm tra nhiều candidate."
+            />
+          ) : arrangeError ? (
+            <ErrorState
+              title="Không thể Auto Arrange"
+              error={arrangeError}
+              onRetry={submitAutoArrange}
+              retryLabel="Thử Auto Arrange lại"
+            />
+          ) : isNoValidOption ? (
+            <EmptyState
+              title="Không có phương án hợp lệ"
+              description="Thử đổi tuần, đổi ca, hoặc giảm sĩ số team."
+              icon="🧩"
+              action={
+                <div style={{ width: "100%", marginTop: 10 }}>
+                  <p
+                    style={{
+                      margin: "0 0 8px",
+                      color: "#334155",
+                      fontWeight: 800,
+                    }}
+                  >
+                    Một số lý do fail mẫu:
+                  </p>
+
+                  <ul
+                    style={{
+                      display: "grid",
+                      gap: 8,
+                      margin: 0,
+                      paddingLeft: 18,
+                      color: "#475569",
+                      lineHeight: 1.6,
+                    }}
+                  >
+                    {failedReasons.map((reason) => (
+                      <li key={reason.id}>
+                        <strong>
+                          Phòng {reason.room_code} +{" "}
+                          {formatDayOfWeek(reason.day_of_week)} +{" "}
+                          {reason.time_slot}:
+                        </strong>{" "}
+                        {reason.failed_rules.length > 0
+                          ? reason.failed_rules.map(formatFailedRule).join("; ")
+                          : "Backend chưa trả failed_rules."}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              }
+            />
+          ) : rankedOptions.length > 0 ? (
+            <DataTable
+              columns={autoArrangeColumns}
+              rows={rankedOptions}
+              rowKey="optionKey"
+              pageSize={3}
+              enablePagination={false}
+              emptyTitle="Chưa có phương án"
+              emptyDescription="Bấm Auto Arrange để gọi API và hiển thị top 3 option."
+            />
           ) : (
             <EmptyState
-              title="Chưa chọn yêu cầu"
-              description="Chọn một schedule request để xem tóm tắt trước khi xếp lịch."
-              icon="🧭"
+              title="Chưa có kết quả Auto Arrange"
+              description="Chọn yêu cầu xếp lịch rồi bấm Auto Arrange."
+              icon="📋"
             />
           )}
-        </aside>
+        </div>
       </section>
 
       <section className="card">
@@ -1052,104 +1628,402 @@ export default function AutoArrangePage() {
           }}
         >
           <div>
-            <p className="commonEyebrow">Ranked options</p>
+            <p className="commonEyebrow">Check Constraints</p>
             <h2
               style={{
                 margin: "6px 0 0",
                 color: "#0f172a",
-                fontSize: 20,
+                fontSize: 22,
                 fontWeight: 800,
               }}
             >
-              Top 3 phương án đề xuất
+              Kiểm tra 8 rule bằng API thật
             </h2>
+            <p className="commonDescription">
+              Phần này khôi phục case cũ từ branch develop để chụp ảnh PASS/FAIL
+              cho báo cáo. Không fake kết quả; mọi rule lấy từ backend.
+            </p>
           </div>
 
-          {autoArrangeData?.auto_arrange_status ? (
-            <StatusBadge
-              variant={
-                autoArrangeData.auto_arrange_status === "success"
-                  ? "success"
-                  : "warning"
-              }
-            >
-              {autoArrangeData.auto_arrange_status}
+          {constraintSummaryStatus.label ? (
+            <StatusBadge variant={constraintSummaryStatus.variant}>
+              {constraintSummaryStatus.label}
             </StatusBadge>
           ) : null}
         </div>
 
-        {isArranging ? (
-          <LoadingState
-            title="Đang sinh phương án xếp lịch..."
-            description="API có thể mất khoảng 2 giây vì phải kiểm tra nhiều candidate."
-          />
-        ) : arrangeError ? (
-          <ErrorState
-            title="Không thể Auto Arrange"
-            error={arrangeError}
-            onRetry={submitAutoArrange}
-            retryLabel="Thử Auto Arrange lại"
-          />
-        ) : isNoValidOption ? (
-          <EmptyState
-            title="Không có phương án hợp lệ"
-            description="Thử đổi tuần, đổi ca, hoặc giảm sĩ số team."
-            icon="🧩"
-            action={
-              <div style={{ width: "100%", marginTop: 10 }}>
-                <p
-                  style={{
-                    margin: "0 0 8px",
-                    color: "#334155",
-                    fontWeight: 800,
-                  }}
-                >
-                  Một số lý do fail mẫu:
-                </p>
+        <section
+          className="commonGrid commonGrid2"
+          style={{ alignItems: "start" }}
+        >
+          <form onSubmit={handleCheckConstraints}>
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 10,
+                marginBottom: 14,
+              }}
+            >
+              <RefreshButton
+                onClick={() =>
+                  loadConstraintDemoForm(CHECK_CONSTRAINT_PASS_FORM)
+                }
+                disabled={isChecking}
+              >
+                Nạp case PASS
+              </RefreshButton>
 
-                <ul
-                  style={{
-                    display: "grid",
-                    gap: 8,
-                    margin: 0,
-                    paddingLeft: 18,
-                    color: "#475569",
-                    lineHeight: 1.6,
-                  }}
+              <RefreshButton
+                onClick={() =>
+                  loadConstraintDemoForm(CHECK_CONSTRAINT_ROOM_STATUS_FAIL_FORM)
+                }
+                disabled={isChecking}
+              >
+                Nạp case ROOM_STATUS 2B31
+              </RefreshButton>
+
+              <RefreshButton
+                onClick={() =>
+                  loadConstraintDemoForm(CHECK_CONSTRAINT_CONFLICT_FAIL_FORM)
+                }
+                disabled={isChecking}
+              >
+                Nạp case ROOM_CONFLICT
+              </RefreshButton>
+            </div>
+
+            <div className="commonGrid commonGrid3">
+              <label className="label">
+                ID yêu cầu
+                <input
+                  className="input"
+                  type="number"
+                  min="1"
+                  value={constraintFormData.request_id}
+                  onChange={(event) =>
+                    updateConstraintFormData("request_id", event.target.value)
+                  }
+                  disabled={isChecking}
+                />
+              </label>
+
+              <label className="label">
+                ID lớp học phần
+                <input
+                  className="input"
+                  type="number"
+                  min="1"
+                  value={constraintFormData.course_section_id}
+                  onChange={(event) =>
+                    updateConstraintFormData(
+                      "course_section_id",
+                      event.target.value,
+                    )
+                  }
+                  disabled={isChecking}
+                />
+              </label>
+
+              <label className="label">
+                ID tổ thực hành
+                <input
+                  className="input"
+                  type="number"
+                  min="1"
+                  value={constraintFormData.practice_team_id}
+                  onChange={(event) =>
+                    updateConstraintFormData(
+                      "practice_team_id",
+                      event.target.value,
+                    )
+                  }
+                  disabled={isChecking}
+                />
+              </label>
+
+              <label className="label">
+                ID giảng viên
+                <input
+                  className="input"
+                  type="number"
+                  min="1"
+                  value={constraintFormData.lecturer_user_id}
+                  onChange={(event) =>
+                    updateConstraintFormData(
+                      "lecturer_user_id",
+                      event.target.value,
+                    )
+                  }
+                  disabled={isChecking}
+                />
+              </label>
+
+              <label className="label">
+                ID phòng
+                <input
+                  className="input"
+                  type="number"
+                  min="1"
+                  value={constraintFormData.room_id}
+                  onChange={(event) =>
+                    updateConstraintFormData("room_id", event.target.value)
+                  }
+                  disabled={isChecking}
+                />
+              </label>
+
+              <label className="label">
+                Mã phòng
+                <input
+                  className="input"
+                  value={constraintFormData.room_code}
+                  placeholder="Ví dụ: 2B31"
+                  onChange={(event) =>
+                    updateConstraintFormData("room_code", event.target.value)
+                  }
+                  disabled={isChecking}
+                />
+              </label>
+
+              <label className="label">
+                Thứ trong tuần
+                <select
+                  className="select"
+                  value={constraintFormData.day_of_week}
+                  onChange={(event) =>
+                    updateConstraintFormData("day_of_week", event.target.value)
+                  }
+                  disabled={isChecking}
                 >
-                  {failedReasons.map((reason) => (
-                    <li key={reason.id}>
-                      <strong>
-                        Phòng {reason.room_code} +{" "}
-                        {formatDayOfWeek(reason.day_of_week)} +{" "}
-                        {reason.time_slot}:
-                      </strong>{" "}
-                      {reason.failed_rules.length > 0
-                        ? reason.failed_rules.map(formatFailedRule).join("; ")
-                        : "Backend chưa trả failed_rules."}
-                    </li>
+                  <option value="1">Chủ nhật</option>
+                  <option value="2">Thứ 2</option>
+                  <option value="3">Thứ 3</option>
+                  <option value="4">Thứ 4</option>
+                  <option value="5">Thứ 5</option>
+                  <option value="6">Thứ 6</option>
+                  <option value="7">Thứ 7</option>
+                </select>
+              </label>
+
+              <label className="label">
+                Ca học
+                <select
+                  className="select"
+                  value={constraintFormData.time_slot}
+                  onChange={(event) =>
+                    updateConstraintFormData("time_slot", event.target.value)
+                  }
+                  disabled={isChecking}
+                >
+                  {CHECK_TIME_SLOT_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
                   ))}
-                </ul>
+                </select>
+              </label>
+
+              <label className="label">
+                Số sinh viên
+                <input
+                  className="input"
+                  type="number"
+                  min="1"
+                  value={constraintFormData.student_count}
+                  onChange={(event) =>
+                    updateConstraintFormData(
+                      "student_count",
+                      event.target.value,
+                    )
+                  }
+                  disabled={isChecking}
+                />
+              </label>
+
+              <label className="label">
+                Từ ngày
+                <input
+                  className="input"
+                  type="date"
+                  value={constraintFormData.start_date}
+                  onChange={(event) =>
+                    updateConstraintFormData("start_date", event.target.value)
+                  }
+                  disabled={isChecking}
+                />
+              </label>
+
+              <label className="label">
+                Đến ngày
+                <input
+                  className="input"
+                  type="date"
+                  value={constraintFormData.end_date}
+                  onChange={(event) =>
+                    updateConstraintFormData("end_date", event.target.value)
+                  }
+                  disabled={isChecking}
+                />
+              </label>
+
+              <label className="label">
+                ID phần mềm yêu cầu
+                <input
+                  className="input"
+                  value={constraintFormData.required_software_ids}
+                  placeholder="Ví dụ: 1,2,6,8"
+                  onChange={(event) =>
+                    updateConstraintFormData(
+                      "required_software_ids",
+                      event.target.value,
+                    )
+                  }
+                  disabled={isChecking}
+                />
+              </label>
+            </div>
+
+            <div
+              style={{
+                margin: "12px 0",
+                padding: 12,
+                border: "1px solid rgba(139, 0, 0, 0.1)",
+                borderRadius: 14,
+                background: "#fffafa",
+                color: "#334155",
+                lineHeight: 1.6,
+              }}
+            >
+              <strong>Preview:</strong> Phòng{" "}
+              {constraintFormData.room_code || "—"} ·{" "}
+              {formatDayOfWeek(constraintFormData.day_of_week)} ·{" "}
+              {constraintFormData.time_slot || "—"} ·{" "}
+              {constraintFormData.start_date || "—"} đến{" "}
+              {constraintFormData.end_date || "—"}
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 10,
+              }}
+            >
+              <ButtonUI
+                tone="primary"
+                shape="rounded"
+                type="submit"
+                disabled={isChecking}
+              >
+                {isChecking ? "Đang kiểm tra..." : "Kiểm tra ràng buộc"}
+              </ButtonUI>
+
+              <ButtonUI
+                tone={canCreateScheduleAfterCheck ? "primary" : "secondary"}
+                shape="rounded"
+                type="button"
+                onClick={handleCreateScheduleAfterCheck}
+                disabled={!canCreateScheduleAfterCheck || isChecking}
+              >
+                Tạo lịch
+              </ButtonUI>
+
+              <RefreshButton
+                onClick={resetConstraintResult}
+                disabled={isChecking}
+              >
+                Xóa kết quả
+              </RefreshButton>
+            </div>
+          </form>
+
+          <aside className="commonActionCard">
+            <p className="commonEyebrow">Kết quả tổng quan</p>
+            <h3 style={{ margin: 0, fontSize: 20 }}>
+              {constraintSummaryStatus.title}
+            </h3>
+            <p className="commonDescription">
+              {constraintSummaryStatus.message}
+            </p>
+
+            <div className="commonGrid commonGrid2">
+              <div className="commonActionCard">
+                <p className="commonActionTitle">Tổng rule</p>
+                <strong>
+                  {constraintRows.length || REQUIRED_RULES.length}
+                </strong>
               </div>
-            }
-          />
-        ) : rankedOptions.length > 0 ? (
-          <DataTable
-            columns={columns}
-            rows={rankedOptions}
-            rowKey="optionKey"
-            pageSize={3}
-            enablePagination={false}
-            emptyTitle="Chưa có phương án"
-            emptyDescription="Bấm Auto Arrange để gọi API và hiển thị top 3 option."
-          />
-        ) : (
-          <EmptyState
-            title="Chưa có kết quả Auto Arrange"
-            description="Chọn yêu cầu xếp lịch rồi bấm Auto Arrange."
-            icon="📋"
-          />
-        )}
+
+              <div className="commonActionCard">
+                <p className="commonActionTitle">Pass</p>
+                <strong>{passedConstraintRows.length}</strong>
+              </div>
+
+              <div className="commonActionCard">
+                <p className="commonActionTitle">Fail</p>
+                <strong>{failedConstraintRows.length}</strong>
+              </div>
+
+              <div className="commonActionCard">
+                <p className="commonActionTitle">Chưa trả</p>
+                <strong>{missingRequiredConstraintRows.length}</strong>
+              </div>
+            </div>
+
+            {constraintLocalMessage ? (
+              <p
+                style={{
+                  margin: 0,
+                  padding: 12,
+                  borderRadius: 14,
+                  background: canCreateScheduleAfterCheck
+                    ? "#ecfdf5"
+                    : "#fef2f2",
+                  color: canCreateScheduleAfterCheck ? "#047857" : "#b91c1c",
+                  fontWeight: 700,
+                  lineHeight: 1.5,
+                }}
+              >
+                {constraintLocalMessage}
+              </p>
+            ) : null}
+
+            <p className="commonDescription">
+              Ghi chú: case <strong>ROOM_STATUS 2B31</strong> chỉ fail thật nếu
+              DB đang để phòng 2B31 khác <strong>available</strong>. Frontend
+              không tự dựng rule giả.
+            </p>
+          </aside>
+        </section>
+
+        <div style={{ marginTop: 16 }}>
+          {isChecking ? (
+            <LoadingState
+              title="Đang kiểm tra ràng buộc..."
+              description="Hệ thống đang gọi API /schedules/check-constraints."
+            />
+          ) : constraintError ? (
+            <ErrorState
+              title="Không thể kiểm tra ràng buộc"
+              error={constraintError}
+              showRetry={false}
+            />
+          ) : hasCheckedConstraints ? (
+            <DataTable
+              columns={constraintColumns}
+              rows={constraintRows}
+              emptyTitle="API chưa trả rule"
+              emptyDescription="Backend chưa trả danh sách results/constraints."
+            />
+          ) : (
+            <EmptyState
+              title="Chưa có kết quả kiểm tra"
+              description="Nhập dữ liệu lịch thực hành hoặc nạp case demo rồi bấm Kiểm tra ràng buộc."
+              icon="✅"
+            />
+          )}
+        </div>
       </section>
     </section>
   );
