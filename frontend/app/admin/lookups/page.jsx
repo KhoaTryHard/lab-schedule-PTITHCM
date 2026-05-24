@@ -740,10 +740,7 @@ export default function LookupsPage() {
           <div className="card option roomFilterBar lookupFilterBar">
             <div className="roomFilterSummary">
               <h3 className="roomSectionTitle">Kết quả tra cứu</h3>
-              <p className="roomSectionText">
-                Dữ liệu lấy từ API backend hiện có: lịch thực hành, yêu cầu xếp
-                lịch và phòng máy. Không dùng mock tĩnh.
-              </p>
+              <p className="roomSectionText">Dữ liệu tra cứu được lọc.</p>
             </div>
 
             <div className="lookupFilterGrid">

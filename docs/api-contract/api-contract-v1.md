@@ -287,7 +287,81 @@
 
 ## 5. Schedules (Lịch thực hành)
 
-### 5.1. Kiểm tra ràng buộc (Check Constraints)
+### 5.1. Create draft schedule
+- **Purpose:** Tạo một lịch thực hành nháp trong bảng `lab_schedule_entries`.
+- **Endpoint:** `POST /schedules`
+- **Access:** `ACADEMIC_OFFICER` (CBDT), `ADMIN` (QTV)
+- **Headers:** `Authorization: Bearer <token>`
+- **Minimal Request Body:**
+```json
+{
+  "lab_schedule_request_id": 1,
+  "practice_team_id": 1,
+  "room_code": "2B11",
+  "lecturer_user_id": 3,
+  "day_of_week": 3,
+  "time_slot": "7-10",
+  "start_date": "2026-06-02",
+  "end_date": "2026-06-02"
+}
+```
+- **Optional fields:** `available_slot_id`, `required_software_ids`, `notes`.
+- **Note:** `time_slot` accepts either the exact database label such as `Tiết 7-10` or the short period range `7-10`.
+- **Validation before insert:** API gọi schedule constraint service trước khi lưu. API không insert nếu có hard constraint fail, bao gồm `ROOM_CONFLICT`, `LECTURER_CONFLICT`, room scope/status/block, holiday block, capacity hoặc software requirement.
+- **Response (201 Created):**
+```json
+{
+  "success": true,
+  "message": "Successfully created draft schedule",
+  "data": {
+    "schedule": {
+      "id": 9,
+      "practice_team_id": 1,
+      "room_code": "2B11",
+      "lecturer_user_id": 3,
+      "day_of_week": 3,
+      "time_slot": "7-10",
+      "start_date": "2026-06-02",
+      "end_date": "2026-06-02",
+      "entry_status": "draft"
+    },
+    "constraints": {
+      "passed": true,
+      "results": [
+        {
+          "code": "ROOM_CONFLICT",
+          "passed": true,
+          "message": "No room conflict detected"
+        }
+      ]
+    }
+  }
+}
+```
+- **Response (409 Conflict):**
+```json
+{
+  "success": false,
+  "message": "Schedule constraints failed",
+  "details": {
+    "passed": false,
+    "results": [
+      {
+        "code": "ROOM_CONFLICT",
+        "passed": false,
+        "message": "Room is already booked for 1 session(s) overlapping this period"
+      },
+      {
+        "code": "LECTURER_CONFLICT",
+        "passed": false,
+        "message": "Lecturer has 1 conflicting session(s) in this period"
+      }
+    ]
+  }
+}
+```
+
+### 5.2. Kiểm tra ràng buộc (Check Constraints)
 - **Mục đích:** Kiểm tra tính hợp lệ của một phương án xếp lịch (so với các ràng buộc cứng).
 - **Endpoint:** `POST /schedules/check-constraints`
 - **Quyền truy cập:** `ACADEMIC_OFFICER`, `ADMIN`
@@ -347,7 +421,7 @@
 }
 ```
 
-### 5.2. Chạy thuật toán tự động xếp lịch (Auto Arrange)
+### 5.3. Chạy thuật toán tự động xếp lịch (Auto Arrange)
 - **Mục đích:** Chạy thuật toán để tự động tìm phương án xếp lịch (phòng/ca) tốt nhất.
 - **Endpoint:** `POST /schedules/auto-arrange`
 - **Quyền truy cập:** `ACADEMIC_OFFICER`, `ADMIN`
@@ -430,6 +504,112 @@
       }
     ],
     "failed_reasons": []
+  }
+}
+```
+
+### 5.4. Approve schedule
+- **Purpose:** Duyệt lịch thực hành từ `draft` sang `approved`.
+- **Endpoint:** `PATCH /schedules/:id/approve`
+- **Access:** `ACADEMIC_OFFICER` (CBDT), `ADMIN` (QTV)
+- **Headers:** `Authorization: Bearer <token>`
+- **Path Params:** `id` — `lab_schedule_entries.id`
+- **Preconditions:** `entry_status` phải là `draft`
+- **Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Successfully approved schedule",
+  "data": {
+    "id": 9,
+    "entry_status": "approved",
+    "status": "approved",
+    "room_code": "2B11",
+    "approved_by_user_id": 1,
+    "approved_at": "2026-05-18T10:00:00.000Z"
+  }
+}
+```
+- **Response (403 Forbidden):** User không thuộc QTV/CBDT.
+- **Response (404 Not Found):** Không tìm thấy lịch.
+- **Response (409 Conflict):** Lịch không ở trạng thái `draft`.
+
+### 5.5. Publish schedule
+- **Purpose:** Công bố lịch đã duyệt từ `approved` sang `published`.
+- **Endpoint:** `PATCH /schedules/:id/publish`
+- **Access:** `ACADEMIC_OFFICER` (CBDT), `ADMIN` (QTV)
+- **Headers:** `Authorization: Bearer <token>`
+- **Path Params:** `id` — `lab_schedule_entries.id`
+- **Preconditions:** `entry_status` phải là `approved` (không cho publish từ `draft`)
+- **Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Successfully published schedule",
+  "data": {
+    "id": 9,
+    "entry_status": "published",
+    "status": "published",
+    "room_code": "2B11",
+    "published_by_user_id": 1,
+    "published_at": "2026-05-18T10:05:00.000Z"
+  }
+}
+```
+- **Response (403 Forbidden):** User không thuộc QTV/CBDT.
+- **Response (404 Not Found):** Không tìm thấy lịch.
+- **Response (409 Conflict):** Lịch chưa `approved` hoặc đã `published`.
+
+### 5.6. Lookup published schedules
+- **Purpose:** Tra cứu lịch đã công bố cho GV/SV/KTV và các vai trò đã đăng nhập.
+- **Endpoint:** `GET /schedules/published`
+- **Access:** Đã đăng nhập (Any Role)
+- **Headers:** `Authorization: Bearer <token>`
+- **Query Params (optional):** `schedule_request_id`, `room_code`, `lecturer_user_id`
+- **Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Successfully fetched published schedules",
+  "data": [
+    {
+      "id": 9,
+      "entry_status": "published",
+      "status": "published",
+      "room_code": "2B11",
+      "course_code": "INT1434-3",
+      "lecturer_name": "Tran Hoang Nam"
+    }
+  ]
+}
+```
+
+### 5.7. List all schedules (General)
+- **Purpose:** Lấy danh sách lịch thực hành với filter tùy chọn. Admin/CBDT thấy mọi trạng thái; frontend scope bằng query params.
+- **Endpoint:** `GET /schedules`
+- **Access:** Đã đăng nhập (Any Role)
+- **Headers:** `Authorization: Bearer <token>`
+- **Query Params (all optional):**
+  - `status`: `draft` | `approved` | `published`
+  - `room_code`: e.g. `2B11`
+  - `lecturer_user_id`: integer
+  - `schedule_request_id`: integer
+- **Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Successfully fetched schedules",
+  "data": {
+    "schedules": [
+      {
+        "id": 9,
+        "entry_status": "published",
+        "status": "published",
+        "room_code": "2B11",
+        "course_code": "INT1434-3",
+        "lecturer_name": "Tran Hoang Nam"
+      }
+    ]
   }
 }
 ```

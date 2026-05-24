@@ -1964,13 +1964,6 @@ export default function ReportsPage() {
 
   return (
     <div>
-      <section className="card">
-        <p className="roomSectionText reportSummaryText">
-          Thống kê số liệu vận hành, sử dụng phòng máy, lịch thực hành, thiết bị
-          và xuất báo cáo phục vụ quản trị hệ thống.
-        </p>
-      </section>
-
       <section className="card summaryCardGrid summaryCardGridCompact">
         {reportStats.map((statItem) => (
           <CardUI
