@@ -20,6 +20,7 @@ import { getUser } from "../../../lib/authStorage";
 import {
   createScheduleRequest,
   listScheduleRequests,
+  submitScheduleRequest,
 } from "../../../services/scheduleRequestService";
 
 const REQUEST_STATUS_META = {
@@ -220,9 +221,60 @@ function buildRequestStatusBadge(status) {
   );
 }
 
+function getValidationErrorText(errorItem) {
+  if (typeof errorItem === "string") {
+    return errorItem;
+  }
+
+  return (
+    errorItem?.msg ||
+    errorItem?.message ||
+    errorItem?.error ||
+    "Dữ liệu không hợp lệ."
+  );
+}
+
+function getValidationErrorField(errorItem) {
+  return errorItem?.path || errorItem?.param || errorItem?.field || null;
+}
+
 function getApiErrorMessage(error, fallbackMessage) {
   if (Array.isArray(error?.details) && error.details.length > 0) {
-    return error.details.join(", ");
+    return error.details.map(getValidationErrorText).join(", ");
+  }
+
+  if (error?.details && typeof error.details === "object") {
+    return Object.values(error.details)
+      .filter(Boolean)
+      .map(getValidationErrorText)
+      .join(", ");
+  }
+
+  return error?.message || fallbackMessage;
+}
+
+function getApiFieldErrors(error) {
+  if (!Array.isArray(error?.details)) {
+    return {};
+  }
+
+  return error.details.reduce((fieldErrors, errorItem) => {
+    const fieldName = getValidationErrorField(errorItem);
+
+    if (!fieldName) {
+      return fieldErrors;
+    }
+
+    return {
+      ...fieldErrors,
+      [fieldName]: getValidationErrorText(errorItem),
+    };
+  }, {});
+}
+
+function getFirstApiErrorMessage(error, fallbackMessage) {
+  if (Array.isArray(error?.details) && error.details.length > 0) {
+    return getValidationErrorText(error.details[0]);
   }
 
   if (error?.details && typeof error.details === "object") {
@@ -264,58 +316,9 @@ function getOptionalDayOfWeek(value) {
   return parsedValue;
 }
 
-function getValidationErrorText(errorItem) {
-  if (typeof errorItem === "string") {
-    return errorItem;
-  }
-
-  return (
-    errorItem?.msg ||
-    errorItem?.message ||
-    errorItem?.error ||
-    "Dữ liệu không hợp lệ."
-  );
-}
-
-function getValidationErrorField(errorItem) {
-  return errorItem?.path || errorItem?.param || errorItem?.field || null;
-}
-
-function getApiFieldErrors(error) {
-  if (!Array.isArray(error?.details)) {
-    return {};
-  }
-
-  return error.details.reduce((fieldErrors, errorItem) => {
-    const fieldName = getValidationErrorField(errorItem);
-
-    if (!fieldName) {
-      return fieldErrors;
-    }
-
-    return {
-      ...fieldErrors,
-      [fieldName]: getValidationErrorText(errorItem),
-    };
-  }, {});
-}
-
-function getFirstApiErrorMessage(error, fallbackMessage) {
-  if (Array.isArray(error?.details) && error.details.length > 0) {
-    return getValidationErrorText(error.details[0]);
-  }
-
-  if (error?.details && typeof error.details === "object") {
-    return Object.values(error.details).filter(Boolean).join(", ");
-  }
-
-  return error?.message || fallbackMessage;
-}
-
 function validateCreateForm(formData, currentUser) {
   const fieldErrors = {};
 
-  // Route đã được RoleGuard bảo vệ, kiểm tra thêm tại page để tránh cache user lệch.
   if (!canManageScheduleRequests(currentUser)) {
     fieldErrors.form =
       "Chỉ tài khoản QTV hoặc CBDT mới được tạo yêu cầu xếp lịch.";
@@ -402,6 +405,7 @@ export default function ScheduleRequestsPage() {
   const [isLoadingRequests, setIsLoadingRequests] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [submittingRequestId, setSubmittingRequestId] = useState("");
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [createForm, setCreateForm] = useState(initialCreateForm);
@@ -432,10 +436,6 @@ export default function ScheduleRequestsPage() {
           ? [response.data]
           : [];
 
-      // Backend đã tự filter theo role:
-      // - CBDT chỉ thấy yêu cầu do chính mình tạo.
-      // - QTV thấy toàn bộ yêu cầu.
-      // Vì vậy frontend không tự lọc theo requested_by_user_id để tránh lệch dữ liệu.
       const normalizedRequestItems = sortScheduleRequests(
         rawRequestItems.map(normalizeScheduleRequestItem),
       );
@@ -485,6 +485,29 @@ export default function ScheduleRequestsPage() {
     });
   }, [activeStatus, requestItems, searchKeyword]);
 
+  async function handleSubmitExistingRequest(requestId) {
+    if (!requestId || submittingRequestId) {
+      return;
+    }
+
+    try {
+      setSubmittingRequestId(String(requestId));
+      setErrorMessage("");
+      setSuccessMessage("");
+
+      await submitScheduleRequest(requestId);
+
+      setSuccessMessage(`Đã gửi yêu cầu xếp lịch #${requestId}.`);
+      await loadScheduleRequests();
+    } catch (error) {
+      setErrorMessage(
+        getApiErrorMessage(error, "Không thể gửi yêu cầu xếp lịch."),
+      );
+    } finally {
+      setSubmittingRequestId("");
+    }
+  }
+
   const requestColumns = useMemo(
     () => [
       { key: "course_section_id", label: "ID lớp học phần" },
@@ -509,14 +532,38 @@ export default function ScheduleRequestsPage() {
       { key: "notes", label: "Ghi chú" },
       { key: "created_at", label: "Tạo lúc" },
       { key: "updated_at", label: "Cập nhật" },
+      {
+        key: "actions",
+        label: "Thao tác",
+        render: (_, row) => {
+          if (row.request_status_code !== "draft") {
+            return "—";
+          }
+
+          return (
+            <ButtonUI
+              tone="primary"
+              shape="rounded"
+              size="sm"
+              disabled={Boolean(submittingRequestId)}
+              onClick={() => handleSubmitExistingRequest(row.id)}
+            >
+              {submittingRequestId === String(row.id)
+                ? "Đang gửi..."
+                : "Gửi yêu cầu"}
+            </ButtonUI>
+          );
+        },
+      },
     ],
-    [],
+    [submittingRequestId],
   );
 
   const requestRows = useMemo(
     () =>
       filteredRequestItems.map((requestItem) => ({
         id: requestItem.id,
+        request_status_code: requestItem.request_status,
         course_section_id: getDisplayValue(requestItem.course_section_id),
         courseLabel: requestItem.courseLabel,
         course_code: getDisplayValue(requestItem.course_code),
@@ -624,8 +671,6 @@ export default function ScheduleRequestsPage() {
   function handleOpenCreateModal() {
     setSuccessMessage("");
 
-    // Đồng bộ frontend với backend contract:
-    // GET/POST /api/schedule-requests cho phép QTV và CBDT.
     if (!canManageScheduleRequests(currentUser)) {
       setErrorMessage(
         "Chỉ tài khoản QTV hoặc CBDT mới được tạo yêu cầu xếp lịch.",
@@ -719,6 +764,7 @@ export default function ScheduleRequestsPage() {
             <p className="commonStateText">{successMessage}</p>
           </div>
         ) : null}
+
         <div className="card accountsView accountPrimaryPanel">
           <FilterSearchToolbar
             tabs={requestStatusTabs}
@@ -755,16 +801,24 @@ export default function ScheduleRequestsPage() {
                 Yêu cầu xếp lịch
               </ButtonUI>
 
-              <RefreshButton onClick={handleResetFilters}>
+              <ButtonUI
+                tone="primary"
+                shape="rounded"
+                type="button"
+                onClick={handleResetFilters}
+              >
                 Đặt lại bộ lọc
-              </RefreshButton>
+              </ButtonUI>
 
-              <RefreshButton
+              <ButtonUI
+                tone="primary"
+                shape="rounded"
+                type="button"
                 onClick={handleReloadData}
                 disabled={isLoadingRequests}
               >
                 Đồng bộ lại
-              </RefreshButton>
+              </ButtonUI>
             </div>
           </div>
 

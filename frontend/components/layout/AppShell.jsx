@@ -11,11 +11,6 @@ const fallbackNavItems = [
   { icon: "dashboard", itemName: "Tổng quan", href: "/admin" },
 ];
 
-/**
- * Hàm nhận vào: fullName là họ tên người dùng.
- * Hàm xử lý: lấy tối đa 2 chữ cái cuối trong tên để làm avatar.
- * Hàm trả về: chuỗi viết tắt, ví dụ "Quản trị viên hệ thống" -> "HT".
- */
 function createAvatarText(fullName) {
   if (!fullName) return "PT";
 
@@ -27,24 +22,12 @@ function createAvatarText(fullName) {
     .join("");
 }
 
-/**
- * Hàm nhận vào:
- * - pathname: đường dẫn hiện tại của trình duyệt.
- * - href: đường dẫn của một mục sidebar.
- * Hàm xử lý: kiểm tra href có khớp route hiện tại hoặc là route cha hay không.
- * Hàm trả về: true nếu href khớp, false nếu không khớp.
- */
 function checkActivePath(pathname, href) {
   if (!href) return false;
   if (href === "/") return pathname === href;
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-/**
- * Hàm nhận vào: danh sách menu và pathname hiện tại.
- * Hàm xử lý: tìm menu khớp sâu nhất, ví dụ /admin/accounts ưu tiên hơn /admin.
- * Hàm trả về: object menu active duy nhất để tránh 2 mục sidebar cùng sáng màu.
- */
 function findCurrentNavItem(navItems, pathname) {
   const matchedItems = navItems
     .filter((item) => checkActivePath(pathname, item.href))
@@ -70,17 +53,6 @@ function buildAppShellClassName(isCollapsed, roleCode) {
     .join(" ");
 }
 
-/**
- * Component nhận vào:
- * - children: nội dung trang con cần render ở vùng main.
- * - navItems: danh sách menu sidebar theo vai trò.
- * - brandTitle, brandSubtitle: tiêu đề và mô tả sidebar.
- * - userName, userRole: thông tin mặc định khi localStorage chưa có user.
- * - pageTitle: tiêu đề ép cứng nếu trang cần override.
- * - topBarBadge: nhãn vai trò ở topbar.
- * Component xử lý: render layout sidebar/topbar/main và xác định active menu duy nhất.
- * Component trả về: JSX khung layout dùng chung cho Admin/CBDT/GV/KTV/SV.
- */
 export default function AppShell({
   children,
   navItems = [],
@@ -150,6 +122,7 @@ export default function AppShell({
               icon={item.icon}
               itemName={item.itemName}
               href={item.href}
+              badge={item.badge}
               isActive={currentNavItem?.href === item.href}
               isCollapsed={isSidebarCollapsed}
             />
