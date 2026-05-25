@@ -272,14 +272,16 @@ async function checkRoomBlocked(roomId, dayOfWeek, timeSlotId, startDate, endDat
 }
 
 async function checkHolidayBlocked(dayOfWeek, startDate, endDate) {
-  // WEEKDAY(): 0=Mon...6=Sun; day_of_week 1=Mon...7=Sun => WEEKDAY = day_of_week - 1
+  // day_of_week encoding: 1=Sun,2=Mon,...,7=Sat
+  // MySQL WEEKDAY(): 0=Mon,...,5=Sat,6=Sun
+  // Conversion: (dayOfWeek + 5) % 7
   const [rows] = await pool.query(
     `SELECT holiday_date, holiday_name FROM calendar_holidays
      WHERE holiday_date BETWEEN ? AND ?
        AND is_lab_scheduling_blocked = 1
        AND holiday_status = 'active'
        AND WEEKDAY(holiday_date) = ?`,
-    [startDate, endDate, dayOfWeek - 1]
+    [startDate, endDate, (dayOfWeek + 5) % 7]
   );
 
   const passed = rows.length === 0;
@@ -547,31 +549,175 @@ async function getScheduleList(filters = {}) {
   return rows.map(formatScheduleResponse);
 }
 
-function autoArrangeScheduleStub(input) {
-  const preferredDay = input.preferred_day_of_week || 3;
-  const preferredTimeSlot = input.preferred_time_slot || '7-10';
-  const startDate = input.start_date || '2026-04-28';
-  const endDate = input.end_date || startDate;
+async function getRoomEntryCount(room_code, start_date, end_date) {
+  const [rows] = await pool.query(
+    `SELECT COUNT(*) as count FROM lab_schedule_entries entry
+     JOIN rooms r ON entry.room_id = r.id
+     WHERE r.room_code = ?
+       AND entry.entry_status IN ('draft', 'approved', 'published')
+       AND entry.start_date <= ? AND entry.end_date >= ?`,
+    [room_code, end_date, start_date]
+  );
+  return rows[0].count;
+}
 
-  const rankedOptions = ROOM_SCOPE.map((roomCode, index) => ({
-    room_code: roomCode,
-    day_of_week: preferredDay,
-    time_slot: preferredTimeSlot,
-    start_date: startDate,
-    end_date: endDate,
-    score: 90 - index * 5,
-    reasons: [
-      'In MVP room scope',
-      'Passes demo hard constraints',
-      'Ranked by simple rule-based scoring stub'
-    ]
-  }));
+async function hasCourseInRoom(room_code, course_section_id) {
+  const [rows] = await pool.query(
+    `SELECT COUNT(*) as count FROM lab_schedule_entries entry
+     JOIN rooms r ON entry.room_id = r.id
+     JOIN practice_teams pt ON entry.practice_team_id = pt.id
+     WHERE r.room_code = ?
+       AND pt.course_section_id = ?
+       AND entry.entry_status IN ('approved', 'published')`,
+    [room_code, course_section_id]
+  );
+  return rows[0].count > 0;
+}
+
+async function scoreCandidate(candidate, input) {
+  const { room_code, day_of_week, time_slot, start_date, end_date } = candidate;
+  const { preferred_day_of_week, preferred_time_slot, course_section_id, practice_team_id } = input;
+
+  let score = 0;
+  const reasons = [];
+
+  const dayMatch = preferred_day_of_week && day_of_week === preferred_day_of_week;
+  const slotMatch = preferred_time_slot && time_slot === preferred_time_slot;
+  if (dayMatch && slotMatch) {
+    score += 30;
+    reasons.push('Matches preferred day and time slot');
+  } else if (dayMatch) {
+    score += 15;
+    reasons.push('Matches preferred day of week');
+  } else if (slotMatch) {
+    score += 10;
+    reasons.push('Matches preferred time slot');
+  }
+
+  score += 25;
+  reasons.push('Has all required software');
+
+  const [[roomRows], [teamRows], entryCount, hasHistory] = await Promise.all([
+    pool.query('SELECT usable_student_computers FROM rooms WHERE room_code = ?', [room_code]),
+    pool.query('SELECT planned_size FROM practice_teams WHERE id = ?', [practice_team_id]),
+    getRoomEntryCount(room_code, start_date, end_date),
+    course_section_id ? hasCourseInRoom(room_code, course_section_id) : Promise.resolve(false)
+  ]);
+
+  if (roomRows[0] && teamRows[0]) {
+    const spare = roomRows[0].usable_student_computers - teamRows[0].planned_size;
+    if (spare >= 0 && spare <= 5) {
+      score += 15;
+      reasons.push('Optimal room capacity (tight fit)');
+    } else if (spare >= 0 && spare <= 10) {
+      score += 10;
+      reasons.push('Good room capacity');
+    } else if (spare >= 0 && spare <= 15) {
+      score += 5;
+      reasons.push('Adequate room capacity');
+    }
+  }
+
+  if (entryCount <= 2) {
+    score += 15;
+    reasons.push('Room has few existing schedules in this period');
+  } else if (entryCount <= 4) {
+    score += 10;
+    reasons.push('Room has moderate schedules in this period');
+  } else if (entryCount <= 6) {
+    score += 5;
+    reasons.push('Room schedule load is acceptable');
+  }
+
+  if (hasHistory) {
+    score += 10;
+    reasons.push('Room previously used by this course section');
+  }
+
+  const roomIndex = ROOM_SCOPE.indexOf(room_code);
+  score += Math.max(0, 5 - roomIndex * 2);
+
+  return { room_code, day_of_week, time_slot, start_date, end_date, score, reasons };
+}
+
+async function autoArrangeSchedule(input) {
+  const {
+    request_id = null,
+    course_section_id,
+    practice_team_id,
+    lecturer_user_id,
+    preferred_day_of_week,
+    preferred_time_slot,
+    start_date,
+    end_date,
+    required_software_ids = []
+  } = input;
+
+  const resolvedStart = start_date || new Date().toISOString().split('T')[0];
+  const resolvedEnd = end_date || resolvedStart;
+
+  const days = preferred_day_of_week ? [preferred_day_of_week] : [2, 3, 4, 5, 6];
+  const slots = preferred_time_slot ? [preferred_time_slot] : ['1-4', '7-10'];
+
+  const candidates = [];
+  for (const room_code of ROOM_SCOPE) {
+    for (const day_of_week of days) {
+      for (const time_slot of slots) {
+        candidates.push({ room_code, day_of_week, time_slot, start_date: resolvedStart, end_date: resolvedEnd });
+      }
+    }
+  }
+
+  const validCandidates = [];
+  const failedReasonMap = new Map();
+
+  for (const candidate of candidates) {
+    const result = await checkScheduleConstraints({
+      room_code: candidate.room_code,
+      day_of_week: candidate.day_of_week,
+      time_slot: candidate.time_slot,
+      start_date: candidate.start_date,
+      end_date: candidate.end_date,
+      lecturer_user_id,
+      practice_team_id,
+      required_software_ids
+    });
+
+    if (result.passed) {
+      validCandidates.push(candidate);
+    } else {
+      result.results
+        .filter((r) => !r.passed)
+        .forEach((r) => {
+          if (!failedReasonMap.has(r.code)) {
+            failedReasonMap.set(r.code, r.message);
+          }
+        });
+    }
+  }
+
+  if (validCandidates.length === 0) {
+    return {
+      request_id,
+      auto_arrange_status: 'no_options',
+      selected_option: null,
+      ranked_options: [],
+      failed_reasons: Array.from(failedReasonMap.entries()).map(([code, message]) => ({ code, message }))
+    };
+  }
+
+  const scoredOptions = await Promise.all(
+    validCandidates.map((candidate) => scoreCandidate(candidate, input))
+  );
+
+  scoredOptions.sort((a, b) => b.score - a.score);
+  const topOptions = scoredOptions.slice(0, 3);
 
   return {
-    request_id: input.request_id || null,
+    request_id,
     auto_arrange_status: 'success',
-    selected_option: rankedOptions[0],
-    ranked_options: rankedOptions,
+    selected_option: topOptions[0],
+    ranked_options: topOptions,
     failed_reasons: []
   };
 }
@@ -584,5 +730,5 @@ module.exports = {
   publishSchedule,
   getPublishedSchedules,
   getScheduleList,
-  autoArrangeScheduleStub
+  autoArrangeSchedule
 };
