@@ -121,9 +121,9 @@ Target branch for PRs: `develop` (not `main`). `main` is for stable submissions 
 | #31 W4-05 | Hide/stub 6 admin-academic pages without backend API (accounts, lookups, reports, settings, trainingData×2) | PR #39 `feature/thanh-integrate-frontend` -> `develop` | `a4c0482` merge |
 | #32 W4-06 | Polish UI states on 6 main demo pages (LoadingState, ErrorState, EmptyState via UiState.jsx + DataTable) | PR #39 `feature/thanh-integrate-frontend` -> `develop` | `a4c0482` merge |
 | #35 W4-09 | Auto-arrange page frontend: form (7 fields) + ranked options table (score badge, reasons modal) + "Chọn lịch này" button with confirmation | PR #39 `feature/thanh-integrate-frontend` -> `develop` | `a4c0482` merge |
-| #27 W4-02 | `database/seed_demo_final.sql` — full demo data cho 5 roles (10 users, 3 rooms, 6 sections, 8 schedule entries, 7 requests covering all status tabs) | `feature/thanh-integrate-frontend` (local) | — |
-| #28 W4-03 | Confirm + implement auto-arrange Option B: real rule-based algorithm in `schedule.service.js`; fix `checkHolidayBlocked` day_of_week formula bug | `develop` (local) | — |
-| #34 W4-08 | Replace `autoArrangeScheduleStub` with `autoArrangeSchedule` (async, real DB queries, scoring 6 criteria, top 3 options) | `develop` (local) | — |
+| #27 W4-02 | `database/seed_demo_final.sql` — full demo data cho 5 roles (10 users, 3 rooms, 6 sections, 8 schedule entries, 7 requests covering all status tabs) | `develop` | `c612389` |
+| #28 W4-03 | Confirm + implement auto-arrange Option B: real rule-based algorithm in `schedule.service.js`; fix `checkHolidayBlocked` day_of_week formula bug | `develop` | `2b79033` |
+| #34 W4-08 | Replace `autoArrangeScheduleStub` with `autoArrangeSchedule` (async, real DB queries, scoring 6 criteria, top 3 options) | `develop` | `2b79033` |
 
 ### Trạng thái hiện tại
 
@@ -140,30 +140,19 @@ Target branch for PRs: `develop` (not `main`). `main` is for stable submissions 
 | Demo seed data | ✅ Hoàn chỉnh | `database/seed_demo_final.sql` — 10 users, 8 entries, 7 requests; chạy bằng `mysql -u root -p lab_schedule_ptit_v2 < database/seed_demo_final.sql` |
 | Final Postman evidence | ❌ Chưa hoàn chỉnh | #30 W4-04 đang open, sẽ đóng #18 W3-08 |
 | PR #39 | ✅ **Đã merge** | `feature/thanh-integrate-frontend` -> `develop`, merge commit `a4c0482` |
+| #28 + #34 commit | ✅ **Đã push** | `autoArrangeSchedule` real algorithm + HOLIDAY_BLOCKED fix + CLAUDE.md — commit `2b79033` trên `develop` |
 
 ### Bước tiếp theo
 
-1. **Dọn working tree** — xóa file `nul` (Windows artifact), discard `package-lock.json`:
-   ```powershell
-   Remove-Item nul -Force
-   git checkout backend/package-lock.json frontend/package-lock.json
-   ```
-
-2. **Commit + push `CLAUDE.md` và `seed_demo_final.sql`**:
-   ```bash
-   git add CLAUDE.md database/seed_demo_final.sql
-   git commit -m "docs: update CLAUDE.md; add seed_demo_final.sql for 5-role demo"
-   git push
-   ```
-
-3. **Làm task còn lại**:
-   - **#30 W4-04**: final Postman collection 20 requests (closes #18 W3-08).
+1. **#30 W4-04** (task duy nhất còn lại): final Postman collection với ≥20 requests bao phủ toàn bộ API — đóng cả #18 W3-08.
+   - Tham khảo `docs/api-contract/api-contract-v1.md` để biết đầy đủ endpoints.
+   - Collection hiện tại: `docs/postman/LabSchedulePTIT.postman_collection.json`.
+   - Assertions nên dùng `code`, `passed`, `status`, `entry_status` thay vì match exact message string (xem quyết định quan trọng bên dưới).
 
 ### Ghi chú repo hiện tại
 
-- Current HEAD trên `develop`: `a4c0482` — merge PR #39 từ `feature/thanh-integrate-frontend`
-- Branch `feature/thanh-integrate-frontend` đã merge vào `develop` qua PR #39
-- Working tree: `backend/package-lock.json`, `frontend/package-lock.json` modified; `CLAUDE.md` và `database/seed_demo_final.sql` untracked; file `nul` untracked (Windows artifact — xóa bằng `Remove-Item nul -Force`)
+- Current HEAD trên `develop`: `2b79033` — real auto-arrange algorithm + HOLIDAY_BLOCKED bugfix + CLAUDE.md
+- Working tree: **sạch** (không còn file untracked hay modified)
 - Demo accounts (password `123456`): `admin` (QTV), `cbdt1` (CBDT), `gv_ntbnguyen` (GV), `ktv1` (KTV), `sv1` (SV)
 
 ### Quyết định quan trọng
