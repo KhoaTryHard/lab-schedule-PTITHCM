@@ -4,16 +4,14 @@ export default function LecturerSchedulePage() {
   return (
     <ScheduleLookupTable
       title="Lịch dạy thực hành của giảng viên"
-      description="Giảng viên xem lịch dạy thực hành đã công bố. Frontend gọi GET /api/schedules với status=published và lecturer_user_id của tài khoản hiện tại."
-      fixedParams={{ status: "published" }}
+      usePublishedEndpoint
       currentUserIdParamName="lecturer_user_id"
-      clientSideRequiredStatus="published"
       showStatusFilter={false}
       showCourseSectionFilter={false}
       showLecturerFilter={false}
+      showScheduleRequestFilter
       emptyTitle="Chưa có lịch dạy thực hành"
-      emptyDescription="Chưa có lịch dạy thực hành phù hợp với bộ lọc hiện tại."
-      integrationNote="Frontend đã gửi status=published và lecturer_user_id theo tài khoản đang đăng nhập. Ngoài ra, UI có lớp lọc an toàn client-side để chỉ render lịch published nếu API trả dư dữ liệu. Backend develop hiện tại chưa implement role scope cho GV nên chưa thể xác nhận dữ liệu trả về đã đúng riêng giảng viên."
+      emptyDescription="Chưa có lịch dạy thực hành đã công bố phù hợp với bộ lọc hiện tại."
     />
   );
 }
