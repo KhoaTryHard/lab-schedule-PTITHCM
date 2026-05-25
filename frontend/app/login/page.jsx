@@ -4,90 +4,30 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { ErrorState, LoadingState } from "../../components/common/UiState.jsx";
 import ptitLogo from "../../pictures/PtitLogo.svg";
 import { login, getMe } from "../../services/authService";
 import { saveToken, saveUser } from "../../lib/authStorage";
 import { getHomePathByRole } from "../../lib/roleRoutes";
 
-function AuthFeedback({ type = "error", title, message, onRetry }) {
-  const isError = type === "error";
-
+function AuthRetryButton({ onClick }) {
   return (
-    <div
-      role={isError ? "alert" : "status"}
-      aria-live="polite"
+    <button
+      type="button"
+      onClick={onClick}
       style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 12,
-        padding: "14px 16px",
-        borderRadius: 18,
-        border: isError
-          ? "1px solid rgba(139, 0, 0, 0.18)"
-          : "1px solid rgba(4, 120, 87, 0.18)",
-        background: "rgba(255, 255, 255, 0.92)",
-        color: isError ? "#610000" : "#047857",
-        boxShadow: "0 14px 28px rgba(15, 23, 42, 0.08)",
+        minHeight: 36,
+        padding: "0 14px",
+        borderRadius: 12,
+        border: "1px solid rgba(139, 0, 0, 0.24)",
+        background: "#ffffff",
+        color: "#8b0000",
+        fontWeight: 800,
+        cursor: "pointer",
       }}
     >
-      <span
-        aria-hidden="true"
-        style={{
-          display: "inline-grid",
-          placeItems: "center",
-          width: 38,
-          height: 38,
-          flex: "0 0 auto",
-          borderRadius: 14,
-          background: isError ? "#fff1f2" : "#ecfdf5",
-          fontSize: 20,
-        }}
-      >
-        {isError ? "⚠️" : "⏳"}
-      </span>
-
-      <div style={{ minWidth: 0, flex: 1 }}>
-        <strong
-          style={{
-            display: "block",
-            color: isError ? "#610000" : "#047857",
-            fontSize: 15,
-            lineHeight: 1.35,
-          }}
-        >
-          {title}
-        </strong>
-        <p
-          style={{
-            margin: "4px 0 0",
-            color: "#64748b",
-            fontSize: 14,
-            lineHeight: 1.5,
-          }}
-        >
-          {message}
-        </p>
-      </div>
-
-      {isError && onRetry ? (
-        <button
-          type="button"
-          onClick={onRetry}
-          style={{
-            minHeight: 36,
-            padding: "0 14px",
-            borderRadius: 12,
-            border: "1px solid rgba(139, 0, 0, 0.24)",
-            background: "#ffffff",
-            color: "#8b0000",
-            fontWeight: 800,
-            cursor: "pointer",
-          }}
-        >
-          Thử lại
-        </button>
-      ) : null}
-    </div>
+      Thử lại
+    </button>
   );
 }
 
@@ -209,19 +149,17 @@ export default function LoginPage() {
         </div>
 
         {errorMessage ? (
-          <AuthFeedback
-            type="error"
+          <ErrorState
             title="Đăng nhập thất bại"
-            message={errorMessage}
-            onRetry={handleRetry}
+            error={errorMessage}
+            action={<AuthRetryButton onClick={handleRetry} />}
           />
         ) : null}
 
         {isSubmitting ? (
-          <AuthFeedback
-            type="loading"
+          <LoadingState
             title="Đang xác thực"
-            message="Hệ thống đang kiểm tra tài khoản và phân quyền."
+            description="Hệ thống đang kiểm tra tài khoản và phân quyền."
           />
         ) : null}
 

@@ -6,7 +6,6 @@ export default function AdminSchedulesPage() {
       title="Tra cứu lịch thực hành toàn hệ thống"
       emptyTitle="Chưa có lịch thực hành"
       emptyDescription="Chưa có lịch thực hành phù hợp với bộ lọc hiện tại."
-      enableWorkflowActions
       showScheduleRequestFilter
     />
   );
