@@ -335,13 +335,8 @@ function buildScheduleRows(rows) {
   });
 }
 
-function buildScheduleColumns({
-  enableWorkflowActions,
-  mutatingKey,
-  onApprove,
-  onPublish,
-}) {
-  const columns = [
+function buildBaseScheduleColumns() {
+  return [
     {
       key: "lab_schedule_request_id",
       label: "Mã yêu cầu",
@@ -448,6 +443,28 @@ function buildScheduleColumns({
       render: (value) => <SmallCell>{value}</SmallCell>,
     },
   ];
+}
+
+function filterColumnsByKeys(columns, visibleColumnKeys) {
+  if (!Array.isArray(visibleColumnKeys) || visibleColumnKeys.length === 0) {
+    return columns;
+  }
+
+  const visibleKeySet = new Set(visibleColumnKeys);
+  return columns.filter((column) => visibleKeySet.has(column.key));
+}
+
+function buildScheduleColumns({
+  enableWorkflowActions,
+  mutatingKey,
+  onApprove,
+  onPublish,
+  visibleColumnKeys,
+}) {
+  const columns = filterColumnsByKeys(
+    buildBaseScheduleColumns(),
+    visibleColumnKeys,
+  );
 
   if (!enableWorkflowActions) {
     return columns;
@@ -509,6 +526,7 @@ export default function ScheduleLookupTable({
   clientSideRequiredStatus = "",
   usePublishedEndpoint = false,
   enableWorkflowActions = false,
+  visibleColumnKeys = null,
   showStatusFilter = true,
   showWeekFilter = true,
   showRoomFilter = true,
@@ -553,8 +571,9 @@ export default function ScheduleLookupTable({
         mutatingKey,
         onApprove: handleApproveSchedule,
         onPublish: handlePublishSchedule,
+        visibleColumnKeys,
       }),
-    [enableWorkflowActions, mutatingKey],
+    [enableWorkflowActions, mutatingKey, visibleColumnKeys],
   );
 
   async function loadScheduleData(activeFilters = appliedFilters) {
