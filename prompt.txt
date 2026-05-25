@@ -1,0 +1,241 @@
+tui đã đẩy code mới nhất lên branch "feature/thanh-integrate-frontend", kiểm tra code mới nhất đảm bảo các issue như sau hoàn thành, 
+[TASK] [W4-05][frontend][critical] Hide or stub 7 admin/academic pages without backend API #31
+Mục tiêu
+Backend chỉ mount 5 module API (/health, /auth, /rooms, /schedule-requests, /schedules). Frontend đã làm nhiều page không có API tương ứng. Click vào sẽ vỡ demo (white screen hoặc crash).
+Pages bị ảnh hưởng
+Page	Lý do
+frontend/app/admin/accounts/page.jsx	Không có /api/users
+frontend/app/admin/lookups/page.jsx	Không có API tương ứng
+frontend/app/admin/settings/page.jsx	Không có API
+frontend/app/admin/reports/page.jsx	Không có /api/dashboard /api/reports
+frontend/app/admin/trainingData/page.jsx	Không có /api/semesters /api/courses...
+frontend/app/admin/schedules/page.jsx	Có thể trùng academic/schedules — quyết định ẩn
+frontend/app/academic/trainingData/page.jsx	Không có /api/semesters /api/courses...
+Hai lựa chọn xử lý
+Lựa chọn A — Remove khỏi sidebar (đơn giản nhất)
+Update frontend/lib/roleConfig.js hoặc roleRoutes.js: bỏ menu item của 7 page
+Giữ file page.jsx tồn tại (để route không 404 nếu type URL)
+Mỗi page hiện component <UiState type="empty" message="Tính năng đang phát triển — Sprint 2">
+Lựa chọn B — Hiện "Coming soon" rõ ràng (đẹp hơn)
+Sidebar vẫn show menu nhưng có badge "Soon"
+Click vào → page hiển thị banner: "🚧 Tính năng này thuộc Sprint 2, hiện đang phát triển. Vui lòng quay lại sau."
+Khuyến nghị: Lựa chọn A cho admin/* (gọn sidebar), Lựa chọn B cho academic/trainingData (CBDT có thể tò mò).
+Việc cần làm
+Đọc frontend/lib/roleConfig.js để xem cấu hình menu hiện tại
+Áp dụng Lựa chọn A hoặc B theo từng page
+Test login QTV → sidebar gọn (chỉ menu thật)
+Test login CBDT → sidebar có schedule-requests, schedules, auto-arrange
+Test click bất kỳ menu → KHÔNG crash, KHÔNG console error nghiêm trọng
+Definition of Done
+Sidebar QTV chỉ còn: Dashboard (placeholder), Rooms, Schedules (read-only)
+Sidebar CBDT chỉ còn: Dashboard, Schedule Requests, Schedules, Auto-Arrange
+Sidebar GV chỉ còn: My Teaching Schedule
+Sidebar KTV chỉ còn: Room Schedule
+Sidebar SV chỉ còn: My Lab Schedule
+Click thử 5 role × hết menu → không có page crash
+Commit fix(frontend): hide pages without backend API for demo scope
+Priority
+🔴 Critical — Click sai 1 page → vỡ demo
+Estimate
+2 giờ
+Dependency
+Không
+--- END ---
+
+[TASK] [W4-06][frontend][polish] Polish UI of 6 main demo pages (loading/error/empty states) #32
+Mục tiêu
+6 page xuất hiện trong demo phải có UX state đầy đủ và styling chuẩn. Demo trên màn hình lớn, mọi chi tiết đều thấy được.
+Pages cần polish
+frontend/app/login/page.jsx
+frontend/app/academic/schedule-requests/page.jsx
+frontend/app/academic/schedules/page.jsx
+frontend/app/academic/auto-arrange/page.jsx (xem thêm #W4-17)
+frontend/app/lecturer/my-schedule/page.jsx
+frontend/app/student/my-schedule/page.jsx
+frontend/app/technician/room-schedule/page.jsx
+Việc cần làm cho mỗi page
+Sử dụng <UiState> component cho 3 trạng thái:
+Loading (skeleton hoặc spinner)
+Error (hiển thị message từ backend, có nút "Thử lại")
+Empty ("Chưa có dữ liệu" với icon)
+Success state: data render bằng <DataTable> hoặc card list
+StatusBadge dùng cho status field: draft (vàng), approved (xanh), published (xanh đậm), cancelled (đỏ)
+FilterSearchToolbar nếu có filter
+Test browsers/sizes
+Chrome 1366×768 (laptop demo phổ biến)
+Chrome 1920×1080
+Edge (browser dự phòng)
+Không bị tràn layout
+Sidebar không che content
+Modal không vỡ
+Definition of Done
+7 page test xong 3 state mỗi cái
+Test cross-browser Chrome + Edge
+Không có console error
+Status badge nhất quán
+Commit polish(frontend): add full UI states to 7 main demo pages
+Priority
+🔴 High
+Estimate
+4 giờ
+Dependency
+#W4-02 (cần seed data để test)
+--- END ---
+
+[TASK] [TASK] [W4-09][frontend] Auto-arrange page: form + ranked options table + use option button #35
+Mục tiêu
+Page frontend/app/academic/auto-arrange/page.jsx đã tồn tại (commit "hoan thanh fix academic/auto-arrange").
+Phải đảm bảo nó:
+Có form input để chọn schedule request + preferences
+Gọi API real POST /api/schedules/auto-arrange (sau khi #W4-08 done)
+Hiển thị 3 ranked option đẹp với score + reasons
+Cho phép chọn option → tạo schedule draft
+Việc cần làm
+A. Form + state
+Form fields: schedule_request_id (required), preferred_day_of_week (optional), preferred_time_slot (optional)
+State management với useState
+Validation: phải chọn schedule_request_id mới enable button
+B. Service layer
+Thêm function vào frontend/services/scheduleService.js:
+  export async function autoArrange(input) {
+    return apiClient.post('/api/schedules/auto-arrange', input);
+  }
+  
+  export async function createScheduleFromOption(option, requestId) {
+    return apiClient.post('/api/schedules', {
+      lab_schedule_request_id: requestId,
+      ...option
+    });
+  }
+C. Render result
+Loading state: spinner + disable button khi đợi (có thể mất 2s)
+Success state:
+Table dùng <DataTable> component có sẵn
+Score badge: ≥100 xanh đậm, 75-99 xanh nhạt, <75 vàng
+"Lý do" hiển thị trong Modal hoặc Tooltip khi click
+Button "Use this option" trên mỗi row
+Empty state (no_valid_option):
+Dùng <UiState type="empty">
+Hiển thị failed_reasons sample với từng rule fail (ví dụ: "Phòng 2B11 + T4 + 7-10: ROOM_CONFLICT")
+Gợi ý: "Thử đổi tuần, đổi ca, hoặc giảm sĩ số team"
+D. Use option flow
+Click "Use this option" → confirm dialog "Tạo lịch draft với phương án này?"
+Confirm → call POST /api/schedules với data từ option
+Success → redirect về /academic/schedules với toast "Đã tạo lịch draft"
+Error → hiển thị error toast, giữ trên trang auto-arrange
+Error handling
+Tình huống	Xử lý
+Loading	Spinner + disable button
+No request selected	Validation error inline
+API 401/403	Redirect login
+API 500	UiState error + retry button
+No valid option	UiState empty + failed_reasons
+Create schedule fail	Toast error, không leave page
+Definition of Done
+Form render đầy đủ với 3 field
+Click "Auto Arrange" gọi API, hiển thị 3 ranked option
+Score badge màu khác nhau theo ngưỡng
+Click "Use this option" → confirm → tạo schedule draft thành công → redirect
+Test với team size lớn → no_valid_option hiển thị đúng với failed_reasons
+Test với preferred_day=4 → option đúng day score cao nhất
+Cross-browser Chrome + Edge không vỡ layout
+Commit: feat(frontend): implement auto-arrange page with ranked options
+Priority
+🔴 High — Page highlight của demo
+Estimate
+3 giờ
+Dependency
+#W4-08 (cần API auto-arrange thật)
+--- END ---
+
+Nếu kiểm tra, phân tích hết rồi và nhận thấy chưa hoàn thành, hãy đánh dấu lại điểm chưa hoàn thành, sau đó đề xuất và đưa ra code dùng được, tui sẽ copy và paste vào máy tính local
+Vì bạn chỉ được phép đọc và mở lên đọc và phân tích backend, docs, frontend, nên tuyệt đối không được tác động thêm, xóa, sửa trên github repo "KhoaTryHard/lab-schedule-PTITHCM"
+Sau khi xong toàn bộ phía trên tiếp theo là công việc sửa:
+Bạn đề chỉ được đề xuất và code liên quan đến frontend
+Như hai ảnh đầu tiên ở trang login/page, phần kiểm tra làm rất tốt, nhưng nó khá xấu và mất đi tính thẩm mỹ, nên tui yêu cầu các khung trắng hiển thị icon và dòng tin nhắn, còn nút bấm thì khi bấm đăng nhập trong thì nút đăng nhập sẽ có tin nhắn như "đang xác thực", "thử lại" sao cho đúng quy chuẩn "
+Sử dụng <UiState> component cho 3 trạng thái:
+Loading (skeleton hoặc spinner)
+Error (hiển thị message từ backend, có nút "Thử lại")
+Empty ("Chưa có dữ liệu" với icon)"
+màu nút bấm ở trang đăng nhập vẫn giữ như cũ, đảm bảm trang không bị vỡ và vẫn giữ được các issue nhất, có thể tham khảo branch "develop" để xem lại thiết kế giao diện
+
+Sau khi xong tiến hành qua các trang của admin
+ở mục "Lịch thực hành" trong sidebar , đồng bộ màu nút bấm của "Đồng bộ lịch", "xóa lọc"
+ở mục "Lịch thực hành" chỗ này "Tra cứu lịch thực hành toàn hệ thống
+Quản trị viên theo dõi toàn bộ lịch thực hành từ API thật GET /api/schedules." tiến hành bỏ "Quản trị viên theo dõi toàn bộ lịch thực hành từ API thật GET /api/schedules."
+trong bảng tra cứu "ID	Mã yêu cầu	Mã học phần	Tên học phần	Nhóm	ID tổ TH	ID giảng viên	Giảng viên	Phòng	Thứ	Ca học	Ngày bắt đầu	Ngày kết thúc	Trạng thái	Trạng thái	Người duyệt	Người công bố	Thời điểm duyệt	Thời điểm công bố	Ghi chú	Ngày tạo	Ngày cập nhật	planned_size	team_no"
+rút gọn bớt thành "Mã yêu cầu	Mã học phần	Tên học phần	Nhóm	((ID tổ TH) thành "tổ") Giảng viên  Phòng   Thứ     Ca học  Ngày bất đầu    Ngày kết thúc Trạng thái Người duyệt	Người công bố	Thời điểm duyệt	Thời điểm công bố	Ghi chú	Ngày tạo	Ngày cập nhật   số lượng ghế   (planned_size đổi thành tên tiếng việt phù hợp)	(team_no đổi thành tên tiếng việt phù hợp" kích thước chữ của data là khoảng 10
+
+
+Sau khi xong tiến hành qua các trang của academic 
+ở mục "Yêu cầu xếp lịch" hai nút bấm "Đặt lại bộ lọc, Đồng bộ lại" đồng bộ màu nút bấm, khai tử các liên quan nút bấm "Yêu cầu xếp lịch" trong "Danh sách yêu cầu xếp lịch
+Hiển thị 12 bản ghi phù hợp với bộ lọc hiện tại.
+
+Yêu cầu xếp lịch
+Đặt lại bộ lọc
+Đồng bộ lại"
+ở mục "Lịch thực hành" tham khảo ở admin
+ở mục "Xếp lịch tự động" chỗ "Academic · Scheduling demo Xếp lịch tự động & kiểm tra ràng buộc
+Trang này phục vụ luồng demo chính: Auto Arrange tạo 3 phương án xếp hạng, đồng thời khôi phục Check Constraints để chụp ảnh PASS và FAIL cho báo cáo." hãy sửa thành "Academic · Scheduling", "kiểm tra ràng buộc & Xếp lịch tự động" "Trang này phục vụ luồng demo chính: Auto Arrange tạo 3 phương án xếp hạng, đồng thời khôi phục Check Constraints để chụp ảnh PASS và FAIL cho báo cáo." bỏ đi, "API thật
+Demo scope" bỏ đi, màu nút "xóa kết quả" đồng bộ màu đỏ, khi bấm "Use this option" thay vì hiển thị "localhost:3000 says Tạo lịch draft với phương án này?" thì hãy thiết kết một cái cho đẹp với viền màu đỏ sẫm trong màu trắng, chữ màu đỏ sẫm "Tạo lịch draft với phương án này?" với nút ok màu đỏ, nút cancel có viền màu đỏ, trong nút màu trắng đậm hơn tý, màu chữ cancel màu đỏ, tiếng hành bổ sung thêm các khung này "Có lỗi
+practice_team_id phải là số nguyên dương, lecturer_user_id phải là số nguyên dương start_date phải là ngày hợp lệ (YYYY-MM-DD), end_date phải là ngày hợp lệ (YYYY-MM-DD)", cho phép chọn ngày, chỗ lecturer_user_id phải cho xổ xuống các tên của các giảng viên lecturer_user có trong db cùng với "id: tên" sếp theo thứ tự, 
+Các lý do đề xuất cũng phải chuyển sang tiếng việt, đổi dòng này "Bắt buộc chọn schedule_request_id để bật nút Auto Arrange." thành, "chưa chọn yêu cầu xếp lịch" "schedule request" thành "yêu cầu xếp lịch", nút auto Arrange chuyển thành "tự động xếp lịch", tên "use this option" chuyển thành "Chọn lịch này"
+Check Constraints chuyển thành tiếng việt "Kiểm tra ràng buộc" và bỏ dòng này "Kiểm tra 8 rule bằng API thật
+Phần này khôi phục case cũ từ branch develop để chụp ảnh PASS/FAIL cho báo cáo. Không fake kết quả; mọi rule lấy từ backend."
+kiểm tra xem khi "Không hợp lệ, Nạp case PASS, Nạp case ROOM_STATUS 2B31, Nạp case ROOM_CONFLICT" thì nó hiển thị thật, nhưng phải đảm bảo khi người dùng nhập vào nó cũng phải kiểm tra ràng buộc được thật, mấy cái dòng của bảng này "Rule	Ý nghĩa	Kết quả	Thông báo	Gợi ý xử lý
+ROOM_SCOPE
+Phạm vi phòng
+Phòng có thuộc phạm vi cho phép của MVP không.	PASS	Room 2B31 is in MVP scope	Chọn phòng thuộc phạm vi 2B11, 2B21 hoặc 2B31.
+ROOM_STATUS
+Trạng thái phòng
+Phòng có đang ở trạng thái available không.	PASS	Room 2B31 is available	Chọn phòng khác hoặc cập nhật trạng thái phòng về available trước khi xếp lịch.
+ROOM_BLOCKED
+Phòng bị khóa
+Phòng có bị block bởi yêu cầu khóa phòng đã duyệt không.	PASS	Room is not blocked for this period	Chọn phòng khác hoặc đổi khoảng thời gian.
+HOLIDAY_BLOCKED
+Ngày nghỉ
+Ngày học có bị chặn bởi lịch nghỉ hoặc ngày không xếp lịch không.	PASS	No blocked holidays on the selected schedule	Chọn ngày khác không thuộc lịch nghỉ.
+ROOM_CONFLICT
+Trùng phòng
+Phòng có bị trùng lịch cùng thứ, ca và khoảng ngày không.	FAIL	Room is already booked for 1 session(s) overlapping this period	Đổi phòng, đổi ca hoặc đổi khoảng ngày.
+LECTURER_CONFLICT
+Trùng giảng viên
+Giảng viên có bị phân công dạy lớp khác cùng thời điểm không.	FAIL	Lecturer has 1 conflicting session(s) in this period	Chọn giảng viên khác hoặc đổi ca thực hành.
+CAPACITY_OK
+Đủ sức chứa
+Số máy/sức chứa phòng có đáp ứng tổ thực hành không.	PASS	Room has 40 usable computers, team size is 40	Chọn phòng lớn hơn hoặc tách thêm tổ thực hành.
+SOFTWARE_OK
+Đủ phần mềm
+Phòng có cài đủ phần mềm yêu cầu không.	PASS	No specific software requirements	Chọn phòng khác hoặc yêu cầu kỹ thuật viên cài bổ sung phần mềm.", đừng để anh mà chuẩn hóa sang tiếng việt, bao gồm cả những thứ liên quan
+"Kết quả tổng quan
+
+Sẵn sàng kiểm tra
+Nhập thông tin lịch hoặc nạp case demo rồi bấm Kiểm tra ràng buộc.
+
+Tổng rule
+
+8
+Pass
+
+0
+Fail
+
+0
+Chưa trả
+
+0
+Ghi chú: case ROOM_STATUS 2B31 chỉ fail thật nếu DB đang để phòng 2B31 khác available. Frontend không tự dựng rule giả." mấy cái thẻ này nhỏ lại để ở dưới cùng cột đó hiển thị "✅
+Chưa có kết quả kiểm tra
+Nhập dữ liệu lịch thực hành hoặc nạp case demo rồi bấm Kiểm tra ràng buộc.
+ thay vì phải lướt xuống thêm
+
+Yêu cầu phân tích kiểm tra thật kỹ, ghi nhớ mới, không bịa, code bạn đưa tui là dạng tui có thể copy và paste trên local, cụ thể chi tiết, sau khi làm tất cả những điều trên ở local, tui mới git push lên
+
+
+
+
+
+
+
+
+

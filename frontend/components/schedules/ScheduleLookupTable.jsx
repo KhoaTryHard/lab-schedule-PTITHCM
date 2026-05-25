@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import DataTable from "../common/DataTable.jsx";
 import StatusBadge from "../common/StatusBadge.jsx";
-import { ButtonUI, RefreshButton } from "../common/buttonUI.jsx";
+import { ButtonUI } from "../common/buttonUI.jsx";
 import { listSchedules } from "../../services/scheduleService";
 import { getUser } from "../../lib/authStorage";
 
@@ -33,98 +33,6 @@ const BACKEND_SUPPORTED_FILTERS = new Set([
   "schedule_request_id",
   "student_user_id",
 ]);
-
-const PRIORITY_FIELD_ORDER = [
-  "id",
-  "schedule_id",
-  "lab_schedule_request_id",
-  "available_slot_id",
-  "course_section_id",
-  "course_code",
-  "course_name",
-  "section_code",
-  "course_section_code",
-  "group_no",
-  "practice_team_id",
-  "practice_team_code",
-  "practice_team_name",
-  "lecturer_user_id",
-  "lecturer_name",
-  "lecturer_full_name",
-  "room_id",
-  "room_code",
-  "room_name",
-  "day_of_week",
-  "time_slot_id",
-  "slot_label",
-  "time_slot",
-  "time_slot_label",
-  "start_period",
-  "end_period",
-  "start_date",
-  "end_date",
-  "week_no",
-  "week",
-  "entry_status",
-  "status",
-  "created_by_user_id",
-  "approved_by_user_id",
-  "published_by_user_id",
-  "cancelled_by_user_id",
-  "approved_at",
-  "published_at",
-  "cancelled_at",
-  "cancellation_reason",
-  "notes",
-  "created_at",
-  "updated_at",
-];
-
-const FIELD_LABEL_MAP = {
-  id: "ID",
-  schedule_id: "Mã lịch",
-  lab_schedule_request_id: "Mã yêu cầu",
-  available_slot_id: "Khung giờ khả dụng",
-  course_section_id: "ID lớp học phần",
-  course_code: "Mã học phần",
-  course_name: "Tên học phần",
-  section_code: "Mã lớp học phần",
-  course_section_code: "Mã lớp học phần",
-  group_no: "Nhóm",
-  practice_team_id: "ID tổ TH",
-  practice_team_code: "Mã tổ TH",
-  practice_team_name: "Tên tổ TH",
-  lecturer_user_id: "ID giảng viên",
-  lecturer_name: "Giảng viên",
-  lecturer_full_name: "Giảng viên",
-  room_id: "ID phòng",
-  room_code: "Phòng",
-  room_name: "Tên phòng",
-  day_of_week: "Thứ",
-  time_slot_id: "ID ca",
-  slot_label: "Ca học",
-  time_slot: "Ca học",
-  time_slot_label: "Ca học",
-  start_period: "Tiết bắt đầu",
-  end_period: "Tiết kết thúc",
-  start_date: "Ngày bắt đầu",
-  end_date: "Ngày kết thúc",
-  week_no: "Tuần",
-  week: "Tuần",
-  entry_status: "Trạng thái",
-  status: "Trạng thái",
-  created_by_user_id: "Người tạo",
-  approved_by_user_id: "Người duyệt",
-  published_by_user_id: "Người công bố",
-  cancelled_by_user_id: "Người hủy",
-  approved_at: "Thời điểm duyệt",
-  published_at: "Thời điểm công bố",
-  cancelled_at: "Thời điểm hủy",
-  cancellation_reason: "Lý do hủy",
-  notes: "Ghi chú",
-  created_at: "Ngày tạo",
-  updated_at: "Ngày cập nhật",
-};
 
 function hasValue(value) {
   return value !== undefined && value !== null && String(value).trim() !== "";
@@ -190,10 +98,6 @@ function formatDayOfWeek(value) {
   return dayMap[value] || value || "—";
 }
 
-function getFieldLabel(fieldName) {
-  return FIELD_LABEL_MAP[fieldName] || fieldName;
-}
-
 function extractScheduleItems(response) {
   const data = response?.data;
 
@@ -248,88 +152,6 @@ function buildResolvedFixedParams(fixedParams, currentUserIdParamName) {
   }
 
   return resolvedFixedParams;
-}
-
-function getAllRowFields(rows) {
-  const fieldSet = new Set();
-
-  rows.forEach((row) => {
-    Object.keys(row || {}).forEach((key) => {
-      fieldSet.add(key);
-    });
-  });
-
-  const priorityFields = PRIORITY_FIELD_ORDER.filter((fieldName) =>
-    fieldSet.has(fieldName),
-  );
-
-  const remainingFields = [...fieldSet]
-    .filter((fieldName) => !PRIORITY_FIELD_ORDER.includes(fieldName))
-    .sort();
-
-  return [...priorityFields, ...remainingFields];
-}
-
-function shouldRenderStatusBadge(fieldName) {
-  return ["entry_status", "status", "request_status"].includes(fieldName);
-}
-
-function shouldFormatDateTime(fieldName) {
-  return (
-    fieldName.endsWith("_at") ||
-    fieldName === "createdAt" ||
-    fieldName === "updatedAt"
-  );
-}
-
-function shouldFormatDate(fieldName) {
-  return (
-    fieldName.endsWith("_date") ||
-    fieldName === "startDate" ||
-    fieldName === "endDate"
-  );
-}
-
-function formatCellValue(fieldName, value) {
-  if (value === null || value === undefined || value === "") {
-    return "—";
-  }
-
-  if (fieldName === "day_of_week") {
-    return formatDayOfWeek(value);
-  }
-
-  if (shouldRenderStatusBadge(fieldName)) {
-    return <StatusBadge value={value} />;
-  }
-
-  if (shouldFormatDateTime(fieldName)) {
-    return formatDateTime(value);
-  }
-
-  if (shouldFormatDate(fieldName)) {
-    return formatDate(value);
-  }
-
-  if (typeof value === "boolean") {
-    return value ? "Có" : "Không";
-  }
-
-  if (Array.isArray(value) || typeof value === "object") {
-    return (
-      <code style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(value)}</code>
-    );
-  }
-
-  return value;
-}
-
-function buildDynamicColumns(rows) {
-  return getAllRowFields(rows).map((fieldName) => ({
-    key: fieldName,
-    label: getFieldLabel(fieldName),
-    render: (value) => formatCellValue(fieldName, value),
-  }));
 }
 
 function filterRowsByKeyword(rows, keyword) {
@@ -390,6 +212,178 @@ function filterRowsByAppliedFilters(rows, filters) {
   });
 }
 
+function SmallCell({ children, strong = false }) {
+  return (
+    <span
+      style={{
+        display: "inline-block",
+        fontSize: 10,
+        lineHeight: 1.45,
+        fontWeight: strong ? 800 : 600,
+        color: strong ? "#0f172a" : "#334155",
+        minWidth: 0,
+      }}
+    >
+      {children ?? "—"}
+    </span>
+  );
+}
+
+function getValue(row, ...keys) {
+  for (const key of keys) {
+    if (row?.[key] !== undefined && row?.[key] !== null && row?.[key] !== "") {
+      return row[key];
+    }
+  }
+
+  return "—";
+}
+
+function buildScheduleRows(rows) {
+  return rows.map((row, index) => ({
+    rowKey: row?.id || `${row?.lab_schedule_request_id || "schedule"}-${index}`,
+    lab_schedule_request_id: getValue(row, "lab_schedule_request_id"),
+    course_code: getValue(row, "course_code"),
+    course_name: getValue(row, "course_name"),
+    group_no: getValue(row, "group_no"),
+    practice_team: getValue(
+      row,
+      "practice_team_name",
+      "practice_team_code",
+      "team_no",
+    ),
+    lecturer: getValue(
+      row,
+      "lecturer_name",
+      "lecturer_full_name",
+      "lecturer_user_id",
+    ),
+    room_code: getValue(row, "room_code"),
+    day_of_week: row?.day_of_week,
+    time_slot: getValue(row, "time_slot", "time_slot_label", "slot_label"),
+    start_date: row?.start_date,
+    end_date: row?.end_date,
+    status: row?.entry_status || row?.status,
+    approved_by: getValue(row, "approved_by_name", "approved_by_user_id"),
+    published_by: getValue(row, "published_by_name", "published_by_user_id"),
+    approved_at: row?.approved_at,
+    published_at: row?.published_at,
+    notes: getValue(row, "notes"),
+    created_at: row?.created_at,
+    updated_at: row?.updated_at,
+    planned_size: getValue(row, "planned_size"),
+    team_no: getValue(row, "team_no"),
+  }));
+}
+
+const SCHEDULE_COLUMNS = [
+  {
+    key: "lab_schedule_request_id",
+    label: "Mã yêu cầu",
+    render: (value) => <SmallCell strong>{value}</SmallCell>,
+  },
+  {
+    key: "course_code",
+    label: "Mã học phần",
+    render: (value) => <SmallCell strong>{value}</SmallCell>,
+  },
+  {
+    key: "course_name",
+    label: "Tên học phần",
+    render: (value) => <SmallCell>{value}</SmallCell>,
+  },
+  {
+    key: "group_no",
+    label: "Nhóm",
+    render: (value) => <SmallCell>{value}</SmallCell>,
+  },
+  {
+    key: "practice_team",
+    label: "Tổ",
+    render: (value) => <SmallCell>{value}</SmallCell>,
+  },
+  {
+    key: "lecturer",
+    label: "Giảng viên",
+    render: (value) => <SmallCell>{value}</SmallCell>,
+  },
+  {
+    key: "room_code",
+    label: "Phòng",
+    render: (value) => <SmallCell strong>{value}</SmallCell>,
+  },
+  {
+    key: "day_of_week",
+    label: "Thứ",
+    render: (value) => <SmallCell>{formatDayOfWeek(value)}</SmallCell>,
+  },
+  {
+    key: "time_slot",
+    label: "Ca học",
+    render: (value) => <SmallCell>{value}</SmallCell>,
+  },
+  {
+    key: "start_date",
+    label: "Ngày bắt đầu",
+    render: (value) => <SmallCell>{formatDate(value)}</SmallCell>,
+  },
+  {
+    key: "end_date",
+    label: "Ngày kết thúc",
+    render: (value) => <SmallCell>{formatDate(value)}</SmallCell>,
+  },
+  {
+    key: "status",
+    label: "Trạng thái",
+    render: (value) => <StatusBadge value={value} />,
+  },
+  {
+    key: "approved_by",
+    label: "Người duyệt",
+    render: (value) => <SmallCell>{value}</SmallCell>,
+  },
+  {
+    key: "published_by",
+    label: "Người công bố",
+    render: (value) => <SmallCell>{value}</SmallCell>,
+  },
+  {
+    key: "approved_at",
+    label: "Thời điểm duyệt",
+    render: (value) => <SmallCell>{formatDateTime(value)}</SmallCell>,
+  },
+  {
+    key: "published_at",
+    label: "Thời điểm công bố",
+    render: (value) => <SmallCell>{formatDateTime(value)}</SmallCell>,
+  },
+  {
+    key: "notes",
+    label: "Ghi chú",
+    render: (value) => <SmallCell>{value}</SmallCell>,
+  },
+  {
+    key: "created_at",
+    label: "Ngày tạo",
+    render: (value) => <SmallCell>{formatDateTime(value)}</SmallCell>,
+  },
+  {
+    key: "updated_at",
+    label: "Ngày cập nhật",
+    render: (value) => <SmallCell>{formatDateTime(value)}</SmallCell>,
+  },
+  {
+    key: "planned_size",
+    label: "Sĩ số tổ",
+    render: (value) => <SmallCell>{value}</SmallCell>,
+  },
+  {
+    key: "team_no",
+    label: "Tổ TH",
+    render: (value) => <SmallCell>{value}</SmallCell>,
+  },
+];
+
 export default function ScheduleLookupTable({
   title,
   description,
@@ -425,8 +419,8 @@ export default function ScheduleLookupTable({
     return filterRowsByKeyword(filterSafeRows, appliedFilters.keyword);
   }, [scheduleRows, appliedFilters, clientSideRequiredStatus]);
 
-  const dynamicColumns = useMemo(
-    () => buildDynamicColumns(visibleRows),
+  const tableRows = useMemo(
+    () => buildScheduleRows(visibleRows),
     [visibleRows],
   );
 
@@ -486,12 +480,14 @@ export default function ScheduleLookupTable({
             ) : null}
           </div>
 
-          <RefreshButton
+          <ButtonUI
+            tone="primary"
+            shape="rounded"
             onClick={() => loadScheduleData(appliedFilters)}
             disabled={isLoading}
           >
             Đồng bộ lịch
-          </RefreshButton>
+          </ButtonUI>
         </div>
 
         <form onSubmit={handleSubmit} className="commonFilterGrid">
@@ -577,14 +573,21 @@ export default function ScheduleLookupTable({
                 onChange={(event) =>
                   updateFilter("keyword", event.target.value)
                 }
-                placeholder="Lọc trên dữ liệu đã tải: học phần, giảng viên, phòng..."
+                placeholder="Lọc theo học phần, giảng viên, phòng..."
               />
             </label>
           ) : null}
 
           <div className="commonFilterActions">
-            <ButtonUI type="submit">Áp dụng lọc</ButtonUI>
-            <ButtonUI tone="secondary" type="button" onClick={handleReset}>
+            <ButtonUI type="submit" tone="primary" shape="rounded">
+              Áp dụng lọc
+            </ButtonUI>
+            <ButtonUI
+              tone="primary"
+              shape="rounded"
+              type="button"
+              onClick={handleReset}
+            >
               Xóa lọc
             </ButtonUI>
           </div>
@@ -597,8 +600,10 @@ export default function ScheduleLookupTable({
           error={loadError}
           emptyTitle={emptyTitle}
           emptyDescription={emptyDescription}
-          columns={dynamicColumns}
-          rows={visibleRows}
+          columns={SCHEDULE_COLUMNS}
+          rows={tableRows}
+          rowKey="rowKey"
+          pageSize={10}
         />
       </section>
     </div>
