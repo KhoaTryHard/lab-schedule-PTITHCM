@@ -382,7 +382,7 @@
 ```json
 {
   "success": true,
-  "message": "Constraint check stub",
+  "message": "Constraint check completed",
   "data": {
     "passed": true,
     "results": [
@@ -445,7 +445,7 @@
 ```json
 {
   "success": true,
-  "message": "Auto arrange preview stub",
+  "message": "Auto arrange options",
   "data": {
     "request_id": 1,
     "auto_arrange_status": "success",
@@ -458,8 +458,8 @@
       "score": 90,
       "reasons": [
         "In MVP room scope",
-        "Passes demo hard constraints",
-        "Ranked by simple rule-based scoring stub"
+        "Passes hard constraints",
+        "Ranked by real rule-based filter and scoring"
       ]
     },
     "ranked_options": [
@@ -472,8 +472,8 @@
         "score": 90,
         "reasons": [
           "In MVP room scope",
-          "Passes demo hard constraints",
-          "Ranked by simple rule-based scoring stub"
+          "Passes hard constraints",
+          "Ranked by real rule-based filter and scoring"
         ]
       },
       {
@@ -485,8 +485,8 @@
         "score": 85,
         "reasons": [
           "In MVP room scope",
-          "Passes demo hard constraints",
-          "Ranked by simple rule-based scoring stub"
+          "Passes hard constraints",
+          "Ranked by real rule-based filter and scoring"
         ]
       },
       {
@@ -498,8 +498,8 @@
         "score": 80,
         "reasons": [
           "In MVP room scope",
-          "Passes demo hard constraints",
-          "Ranked by simple rule-based scoring stub"
+          "Passes hard constraints",
+          "Ranked by real rule-based filter and scoring"
         ]
       }
     ],

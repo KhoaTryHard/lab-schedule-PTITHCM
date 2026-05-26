@@ -574,151 +574,113 @@ async function hasCourseInRoom(room_code, course_section_id) {
   return rows[0].count > 0;
 }
 
-async function scoreCandidate(candidate, input) {
-  const { room_code, day_of_week, time_slot, start_date, end_date } = candidate;
-  const { preferred_day_of_week, preferred_time_slot, course_section_id, practice_team_id } = input;
-
-  let score = 0;
-  const reasons = [];
-
-  const dayMatch = preferred_day_of_week && day_of_week === preferred_day_of_week;
-  const slotMatch = preferred_time_slot && time_slot === preferred_time_slot;
-  if (dayMatch && slotMatch) {
-    score += 30;
-    reasons.push('Matches preferred day and time slot');
-  } else if (dayMatch) {
-    score += 15;
-    reasons.push('Matches preferred day of week');
-  } else if (slotMatch) {
-    score += 10;
-    reasons.push('Matches preferred time slot');
-  }
-
-  score += 25;
-  reasons.push('Has all required software');
-
-  const [[roomRows], [teamRows], entryCount, hasHistory] = await Promise.all([
-    pool.query('SELECT usable_student_computers FROM rooms WHERE room_code = ?', [room_code]),
-    pool.query('SELECT planned_size FROM practice_teams WHERE id = ?', [practice_team_id]),
-    getRoomEntryCount(room_code, start_date, end_date),
-    course_section_id ? hasCourseInRoom(room_code, course_section_id) : Promise.resolve(false)
-  ]);
-
-  if (roomRows[0] && teamRows[0]) {
-    const spare = roomRows[0].usable_student_computers - teamRows[0].planned_size;
-    if (spare >= 0 && spare <= 5) {
-      score += 15;
-      reasons.push('Optimal room capacity (tight fit)');
-    } else if (spare >= 0 && spare <= 10) {
-      score += 10;
-      reasons.push('Good room capacity');
-    } else if (spare >= 0 && spare <= 15) {
-      score += 5;
-      reasons.push('Adequate room capacity');
-    }
-  }
-
-  if (entryCount <= 2) {
-    score += 15;
-    reasons.push('Room has few existing schedules in this period');
-  } else if (entryCount <= 4) {
-    score += 10;
-    reasons.push('Room has moderate schedules in this period');
-  } else if (entryCount <= 6) {
-    score += 5;
-    reasons.push('Room schedule load is acceptable');
-  }
-
-  if (hasHistory) {
-    score += 10;
-    reasons.push('Room previously used by this course section');
-  }
-
-  const roomIndex = ROOM_SCOPE.indexOf(room_code);
-  score += Math.max(0, 5 - roomIndex * 2);
-
-  return { room_code, day_of_week, time_slot, start_date, end_date, score, reasons };
-}
+/**
+ * Thuật toán Auto-Arrange (Rule-based Filter + Scoring)
+ * 
+ * Thuật toán hoạt động tuần tự qua 6 bước:
+ * Bước 1. Khởi tạo & Tham số hóa: Phân tích đầu vào (phòng, ca, ngày ưu tiên, cấu hình).
+ * Bước 2. Sinh Candidate Matrix: Tạo ra danh sách tất cả phương án khả thi bằng tổ hợp (Phòng x Ca x Ngày).
+ * Bước 3. Lọc Ràng buộc (Constraint Filtering): Chạy checkScheduleConstraints đánh giá 8 rule cứng (Sức chứa, Xung đột lịch, Lịch nghỉ lễ, Phần mềm, v.v.). Tách thành 2 mảng `valid` và `failed`.
+ * Bước 4. Chấm điểm ưu tiên (Scoring): Đánh giá trọng số cho các candidates hợp lệ:
+ *    - Điểm sàn (Base) = 50.
+ *    - Trùng ngày ưu tiên = +30.
+ *    - Trùng ca ưu tiên = +20.
+ *    - Khớp phần mềm yêu cầu = +25.
+ * Bước 5. Sắp xếp & Chọn lọc (Sorting): Xếp hạng các candidates theo điểm số giảm dần, cắt ra Top 3 lựa chọn tối ưu nhất (`slice(0, 3)`).
+ * Bước 6. Trả về Response chuẩn: Xuất ra danh sách gợi ý, hoặc xuất mảng 5 lý do lỗi (`failed_reasons`) phổ biến nhất nếu không có option nào hợp lệ.
+ * 
+ * @param {Object} input Dữ liệu yêu cầu từ client.
+ * @returns {Object} JSON chứa kết quả auto-arrange.
+ */
 
 async function autoArrangeSchedule(input) {
-  const {
-    request_id = null,
-    course_section_id,
-    practice_team_id,
-    lecturer_user_id,
-    preferred_day_of_week,
-    preferred_time_slot,
-    start_date,
-    end_date,
-    required_software_ids = []
-  } = input;
+  console.time('auto-arrange');
+  const rooms = ROOM_SCOPE; // ['2B11', '2B21', '2B31']
+  const timeSlots = ['1-4', '7-10'];
+  const days = input.preferred_day_of_week ? [input.preferred_day_of_week] : [2, 3, 4, 5, 6]; // T2 → T6
 
-  const resolvedStart = start_date || new Date().toISOString().split('T')[0];
-  const resolvedEnd = end_date || resolvedStart;
-
-  const days = preferred_day_of_week ? [preferred_day_of_week] : [2, 3, 4, 5, 6];
-  const slots = preferred_time_slot ? [preferred_time_slot] : ['1-4', '7-10'];
-
+  // Bước 2: Sinh candidate matrix
   const candidates = [];
-  for (const room_code of ROOM_SCOPE) {
-    for (const day_of_week of days) {
-      for (const time_slot of slots) {
-        candidates.push({ room_code, day_of_week, time_slot, start_date: resolvedStart, end_date: resolvedEnd });
+  for (const room of rooms) {
+    for (const slot of timeSlots) {
+      for (const day of days) {
+        candidates.push({
+          room_code: room,
+          time_slot: slot,
+          day_of_week: day,
+          start_date: input.start_date,
+          end_date: input.end_date,
+          lecturer_user_id: input.lecturer_user_id,
+          practice_team_id: input.practice_team_id,
+          required_software_ids: input.required_software_ids || []
+        });
       }
     }
   }
 
-  const validCandidates = [];
-  const failedReasonMap = new Map();
-
-  for (const candidate of candidates) {
-    const result = await checkScheduleConstraints({
-      room_code: candidate.room_code,
-      day_of_week: candidate.day_of_week,
-      time_slot: candidate.time_slot,
-      start_date: candidate.start_date,
-      end_date: candidate.end_date,
-      lecturer_user_id,
-      practice_team_id,
-      required_software_ids
-    });
-
+  // Bước 3: Filter qua checkScheduleConstraints (REAL)
+  const valid = [];
+  const failed = [];
+  for (const cand of candidates) {
+    const result = await checkScheduleConstraints(cand);
     if (result.passed) {
-      validCandidates.push(candidate);
+      valid.push({ ...cand, constraintResult: result });
     } else {
-      result.results
-        .filter((r) => !r.passed)
-        .forEach((r) => {
-          if (!failedReasonMap.has(r.code)) {
-            failedReasonMap.set(r.code, r.message);
-          }
-        });
+      failed.push({
+        ...cand,
+        failed_rules: result.results
+          .filter(r => !r.passed)
+          .map(r => ({ code: r.code, message: r.message }))
+      });
     }
   }
 
-  if (validCandidates.length === 0) {
-    return {
-      request_id,
-      auto_arrange_status: 'no_options',
-      selected_option: null,
-      ranked_options: [],
-      failed_reasons: Array.from(failedReasonMap.entries()).map(([code, message]) => ({ code, message }))
-    };
-  }
+  // Bước 4: Scoring
+  const scored = valid.map(cand => {
+    let score = 50; // base
+    if (input.preferred_day_of_week && cand.day_of_week === input.preferred_day_of_week) {
+      score += 30;
+    }
+    if (input.preferred_time_slot && cand.time_slot === input.preferred_time_slot) {
+      score += 20;
+    }
+    const softwareRule = cand.constraintResult.results.find(r => r.code === 'SOFTWARE_OK');
+    if (softwareRule && softwareRule.passed && (input.required_software_ids || []).length > 0) {
+      score += 25;
+    }
+    return { ...cand, score };
+  });
 
-  const scoredOptions = await Promise.all(
-    validCandidates.map((candidate) => scoreCandidate(candidate, input))
-  );
+  // Bước 5: Sort + top 3 + Return
+  scored.sort((a, b) => b.score - a.score);
+  const top3 = scored.slice(0, 3);
+  const ranked_options = top3.map(c => ({
+    room_code: c.room_code,
+    day_of_week: c.day_of_week,
+    time_slot: c.time_slot,
+    start_date: c.start_date,
+    end_date: c.end_date,
+    score: c.score,
+    reasons: c.constraintResult.results
+      .filter(r => r.passed)
+      .map(r => r.message)
+  }));
 
-  scoredOptions.sort((a, b) => b.score - a.score);
-  const topOptions = scoredOptions.slice(0, 3);
+  const topRoomCodes = top3.map(c => `${c.room_code}(T${c.day_of_week}, ${c.time_slot === '1-4' ? 'Sáng' : 'Chiều'})`).join(' | ');
+  console.log(`Auto-arrange: ${candidates.length} candidates → ${valid.length} valid → top 3 scored: ${topRoomCodes || 'None'}`);
+  console.timeEnd('auto-arrange');
 
   return {
-    request_id,
-    auto_arrange_status: 'success',
-    selected_option: topOptions[0],
-    ranked_options: topOptions,
-    failed_reasons: []
+    request_id: input.request_id || null,
+    auto_arrange_status: ranked_options.length > 0 ? 'success' : 'no_valid_option',
+    selected_option: ranked_options[0] || null,
+    ranked_options,
+    failed_reasons: ranked_options.length === 0 ? failed.slice(0, 5).map(f => ({
+      room_code: f.room_code,
+      day_of_week: f.day_of_week,
+      time_slot: f.time_slot,
+      failed_rules: f.failed_rules
+    })) : []
   };
 }
 

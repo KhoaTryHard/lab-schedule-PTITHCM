@@ -122,7 +122,7 @@ Authorization: Bearer {{auth_token}}
   - `demo_room_code`: phòng in-scope, mặc định `2B11`.
   - `demo_day_of_week`, `demo_time_slot`, `demo_start_date`, `demo_end_date`: slot test còn trống cho request thành công.
 - Dữ liệu demo mặc định trong environment đang giả định có `rooms.room_code = '2B11'` ở trạng thái `available`, time slot khớp `7-10` hoặc `Tiết 7-10`, `practice_teams.id = 1`, `users.id = 3`, và ngày `2026-06-02` chưa bị trùng lịch/block/holiday trước khi chạy `5.1`. Nếu database local khác seed, cập nhật lại các biến demo trước khi chạy collection.
-- Các API arrange/check-constraints hiện vẫn là stub/demo, chỉ nên assert status code cơ bản. Không đánh dấu pass nghiệp vụ nếu backend chưa xử lý dữ liệu thật.
+- Auto-arrange and check-constraints use real MySQL-backed rule-based logic; W4-08 requests assert business results, not only status codes.
 
 ## Ghi chú kết quả test
 
