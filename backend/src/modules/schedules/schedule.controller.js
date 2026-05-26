@@ -3,7 +3,7 @@ const { validationResult } = require('express-validator');
 const {
   checkScheduleConstraints,
   createDraftSchedule,
-  autoArrangeScheduleStub,
+  autoArrangeSchedule,
   getScheduleList,
   approveSchedule,
   publishSchedule,
@@ -15,7 +15,8 @@ async function listSchedules(req, res) {
     status: req.query.status,
     room_code: req.query.room_code,
     lecturer_user_id: req.query.lecturer_user_id,
-    schedule_request_id: req.query.schedule_request_id
+    schedule_request_id: req.query.schedule_request_id,
+    student_user_id: req.query.student_user_id
   });
   return ok(res, { schedules }, 'Successfully fetched schedules');
 }
@@ -53,7 +54,7 @@ async function createSchedule(req, res) {
 }
 
 async function autoArrange(req, res) {
-  return ok(res, autoArrangeScheduleStub(req.body), 'Auto arrange preview stub');
+  return ok(res, await autoArrangeSchedule(req.body), 'Auto arrange options');
 }
 
 async function approveScheduleEntry(req, res) {

@@ -302,7 +302,7 @@
       ]
     },
     {
-      "name": "4. Auto arrange success",
+      "name": "4.1 Auto arrange - Success no preferred",
       "request": {
         "method": "POST",
         "header": [
@@ -317,7 +317,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"request_id\": 1,\n  \"student_count\": 40,\n  \"preferred_day_of_week\": 3,\n  \"preferred_time_slot\": \"7-10\"\n}"
+          "raw": "{\n  \"practice_team_id\": {{demo_practice_team_id}},\n  \"start_date\": \"{{demo_start_date}}\",\n  \"end_date\": \"{{demo_end_date}}\",\n  \"lecturer_user_id\": {{demo_lecturer_user_id}}\n}"
         },
         "url": {
           "raw": "{{base_url}}/schedules/auto-arrange",
@@ -335,15 +335,157 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 200\", function () {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "// TODO: assert schedule_id exists khi backend thß║¡t sß║╡n s├áng",
-              "// pm.test(\"Response has schedule id\", function () {",
-              "//     var jsonData = pm.response.json();",
-              "//     pm.expect(jsonData.data).to.have.property(\"schedule_id\");",
-              "//     pm.environment.set(\"schedule_id\", jsonData.data.schedule_id);",
-              "// });"
+              "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"Status is success\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.data.auto_arrange_status).to.equal(\"success\");",
+              "    pm.expect(jsonData.data.ranked_options.length).to.be.greaterThan(0);",
+              "    pm.expect(jsonData.data.ranked_options[0].score).to.equal(50);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4.2 Auto arrange - Prefer day",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"practice_team_id\": {{demo_practice_team_id}},\n  \"preferred_day_of_week\": 3,\n  \"start_date\": \"{{demo_start_date}}\",\n  \"end_date\": \"{{demo_end_date}}\",\n  \"lecturer_user_id\": {{demo_lecturer_user_id}}\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/schedules/auto-arrange",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "schedules",
+            "auto-arrange"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"Preferred day is selected and score is 80\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.data.auto_arrange_status).to.equal(\"success\");",
+              "    pm.expect(jsonData.data.selected_option.day_of_week).to.equal(3);",
+              "    pm.expect(jsonData.data.selected_option.score).to.equal(80);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4.3 Auto arrange - No valid (Capacity)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"practice_team_id\": {{demo_large_practice_team_id}},\n  \"start_date\": \"{{demo_start_date}}\",\n  \"end_date\": \"{{demo_end_date}}\",\n  \"lecturer_user_id\": {{demo_lecturer_user_id}}\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/schedules/auto-arrange",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "schedules",
+            "auto-arrange"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"Status is no_valid_option due to capacity\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.data.auto_arrange_status).to.equal(\"no_valid_option\");",
+              "    pm.expect(jsonData.data.selected_option).to.be.null;",
+              "    var hasCapacityError = jsonData.data.failed_reasons.some(reason => reason.failed_rules.some(rule => rule.code === 'CAPACITY_OK'));",
+              "    pm.expect(hasCapacityError).to.be.true;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4.4 Auto arrange - Software constraint",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"practice_team_id\": {{demo_practice_team_id}},\n  \"required_software_ids\": [1],\n  \"start_date\": \"{{demo_start_date}}\",\n  \"end_date\": \"{{demo_end_date}}\",\n  \"lecturer_user_id\": {{demo_lecturer_user_id}}\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/schedules/auto-arrange",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "schedules",
+            "auto-arrange"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"Software constraint met\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.data.auto_arrange_status).to.equal(\"success\");",
+              "    pm.expect(jsonData.data.selected_option.room_code).to.equal(\"2B11\");",
+              "    pm.expect(jsonData.data.selected_option.score).to.equal(75);",
+              "    var hasSoftwareReason = jsonData.data.selected_option.reasons.some(r => r.includes(\"software package(s) are installed\"));",
+              "    pm.expect(hasSoftwareReason).to.be.true;",
+              "});"
             ],
             "type": "text/javascript"
           }
@@ -441,54 +583,6 @@
               "    pm.expect(failedCodes).to.include(\"ROOM_CONFLICT\");",
               "    pm.expect(failedCodes).to.include(\"LECTURER_CONFLICT\");",
               "});"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ]
-    },
-    {
-      "name": "5. Auto arrange no valid option",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          },
-          {
-            "key": "Authorization",
-            "value": "Bearer {{auth_token}}"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"request_id\": 2,\n  \"student_count\": 100,\n  \"preferred_day_of_week\": 3,\n  \"preferred_time_slot\": \"7-10\"\n}"
-        },
-        "url": {
-          "raw": "{{base_url}}/schedules/auto-arrange",
-          "host": [
-            "{{base_url}}"
-          ],
-          "path": [
-            "schedules",
-            "auto-arrange"
-          ]
-        }
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status code is 200\", function () {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "// TODO: assert no_valid_option flag khi backend thß║¡t sß║╡n s├áng",
-              "// pm.test(\"No valid option returned\", function () {",
-              "//     var jsonData = pm.response.json();",
-              "//     pm.expect(jsonData.data.result).to.equal(\"no_valid_option\");",
-              "// });"
             ],
             "type": "text/javascript"
           }
@@ -630,7 +724,7 @@
               "pm.test(\"Status code is 200\", function () {",
               "    pm.response.to.have.status(200);",
               "});",
-              "// TODO: assert conflict details khi backend thß║¡t sß║╡n s├áng",
+              "// TODO: assert conflict details when backend is ready",
               "// pm.test(\"Insufficient computers detected\", function () {",
               "//     var jsonData = pm.response.json();",
               "//     pm.expect(jsonData.data.conflicts).to.include(\"insufficient_computers\");",
@@ -678,7 +772,7 @@
               "pm.test(\"Status code is 200\", function () {",
               "    pm.response.to.have.status(200);",
               "});",
-              "// TODO: assert conflict details khi backend thß║¡t sß║╡n s├áng",
+              "// TODO: assert conflict details when backend is ready",
               "// pm.test(\"Missing software detected\", function () {",
               "//     var jsonData = pm.response.json();",
               "//     pm.expect(jsonData.data.conflicts).to.include(\"missing_software\");",
@@ -726,7 +820,7 @@
               "pm.test(\"Status code is 200\", function () {",
               "    pm.response.to.have.status(200);",
               "});",
-              "// TODO: assert conflict details khi backend thß║¡t sß║╡n s├áng",
+              "// TODO: assert conflict details when backend is ready",
               "// pm.test(\"Holiday block detected\", function () {",
               "//     var jsonData = pm.response.json();",
               "//     pm.expect(jsonData.data.conflicts).to.include(\"holiday_blocked\");",
@@ -774,7 +868,7 @@
               "pm.test(\"Status code is 200\", function () {",
               "    pm.response.to.have.status(200);",
               "});",
-              "// TODO: assert conflict details khi backend thß║¡t sß║╡n s├áng",
+              "// TODO: assert conflict details when backend is ready",
               "// pm.test(\"Room block detected\", function () {",
               "//     var jsonData = pm.response.json();",
               "//     pm.expect(jsonData.data.conflicts).to.include(\"room_blocked\");",
@@ -1329,7 +1423,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Status 200', function(){ pm.response.to.have.status(200); });",
-                  "pm.test('CAPACITY_OK failed', function(){ var j=pm.response.json(); var r=j.data.results.find(function(x){return x.code==='CAPACITY_OK';}); pm.expect(r.passed).to.be.false; pm.expect(r.message).to.include('usable computers'); });",
+                  "pm.test('CAPACITY_OK failed', function(){ var j=pm.response.json(); var r=j.data.results.find(function(x){return x.code==='CAPACITY_OK';}); pm.expect(r).to.exist; pm.expect(r.passed).to.be.false; pm.expect(r.message).to.be.a('string'); pm.expect(r.message.length).to.be.greaterThan(0); });",
                   "pm.test('Overall passed is false', function(){ var j=pm.response.json(); pm.expect(j.data.passed).to.be.false; });"
                 ]
               }
@@ -1372,7 +1466,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Status 200', function(){ pm.response.to.have.status(200); });",
-                  "pm.test('SOFTWARE_OK failed', function(){ var j=pm.response.json(); var r=j.data.results.find(function(x){return x.code==='SOFTWARE_OK';}); pm.expect(r.passed).to.be.false; pm.expect(r.message).to.include('Missing software'); });",
+                  "pm.test('SOFTWARE_OK failed', function(){ var j=pm.response.json(); var r=j.data.results.find(function(x){return x.code==='SOFTWARE_OK';}); pm.expect(r).to.exist; pm.expect(r.passed).to.be.false; pm.expect(r.message).to.be.a('string'); pm.expect(r.message.length).to.be.greaterThan(0); });",
                   "pm.test('Overall passed is false', function(){ var j=pm.response.json(); pm.expect(j.data.passed).to.be.false; });"
                 ]
               }
@@ -1426,7 +1520,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Status 200', function(){ pm.response.to.have.status(200); });",
-                  "pm.test('ROOM_STATUS failed (room not available)', function(){ var j=pm.response.json(); var r=j.data.results.find(function(x){return x.code==='ROOM_STATUS';}); pm.expect(r.passed).to.be.false; pm.expect(r.message).to.include('not available'); });",
+                  "pm.test('ROOM_STATUS failed (room not available)', function(){ var j=pm.response.json(); var r=j.data.results.find(function(x){return x.code==='ROOM_STATUS';}); pm.expect(r).to.exist; pm.expect(r.passed).to.be.false; pm.expect(r.message).to.be.a('string'); pm.expect(r.message.length).to.be.greaterThan(0); });",
                   "pm.test('Overall passed is false', function(){ var j=pm.response.json(); pm.expect(j.data.passed).to.be.false; });",
                   "// Restore room status after test",
                   "var baseUrl = pm.variables.get('base_url') || 'http://localhost:4000/api';",

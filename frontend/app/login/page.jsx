@@ -4,16 +4,33 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { ErrorState, LoadingState } from "../../components/common/UiState.jsx";
 import ptitLogo from "../../pictures/PtitLogo.svg";
 import { login, getMe } from "../../services/authService";
 import { saveToken, saveUser } from "../../lib/authStorage";
 import { getHomePathByRole } from "../../lib/roleRoutes";
 
-/**
- * Hàm nhận vào: không nhận props.
- * Hàm xử lý: dựng giao diện đăng nhập và gọi API Auth thật.
- * Hàm trả về: JSX hiển thị form đăng nhập, lỗi và trạng thái loading.
- */
+function AuthRetryButton({ onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        minHeight: 36,
+        padding: "0 14px",
+        borderRadius: 12,
+        border: "1px solid rgba(139, 0, 0, 0.24)",
+        background: "#ffffff",
+        color: "#8b0000",
+        fontWeight: 800,
+        cursor: "pointer",
+      }}
+    >
+      Thử lại
+    </button>
+  );
+}
+
 export default function LoginPage() {
   const router = useRouter();
 
@@ -22,11 +39,6 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  /**
-   * Hàm nhận vào: event submit form.
-   * Hàm xử lý: gọi POST /auth/login, lưu token, gọi /auth/me, lưu user và điều hướng theo role.
-   * Hàm trả về: không trả về dữ liệu.
-   */
   async function handleSubmit(event) {
     event.preventDefault();
     setErrorMessage("");
@@ -76,6 +88,11 @@ export default function LoginPage() {
     }
   }
 
+  function handleRetry() {
+    setErrorMessage("");
+    setPassword("");
+  }
+
   return (
     <section className="authCard">
       <div className="authCardBrand">
@@ -108,6 +125,7 @@ export default function LoginPage() {
               value={username}
               onChange={(event) => setUsername(event.target.value)}
               autoComplete="username"
+              disabled={isSubmitting}
             />
           </div>
         </div>
@@ -125,23 +143,38 @@ export default function LoginPage() {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               autoComplete="current-password"
+              disabled={isSubmitting}
             />
           </div>
         </div>
 
         {errorMessage ? (
-          <div className="authErrorMessage" role="alert">
-            <span className="authErrorIcon">!</span>
-            <p>{errorMessage}</p>
-          </div>
+          <ErrorState
+            title="Đăng nhập thất bại"
+            error={errorMessage}
+            action={<AuthRetryButton onClick={handleRetry} />}
+          />
+        ) : null}
+
+        {isSubmitting ? (
+          <LoadingState
+            title="Đang xác thực"
+            description="Hệ thống đang kiểm tra tài khoản và phân quyền."
+          />
         ) : null}
 
         <button
-          className={`authPrimaryButton ${isSubmitting ? "authPrimaryButtonLoading" : ""}`}
+          className={`authPrimaryButton ${
+            isSubmitting ? "authPrimaryButtonLoading" : ""
+          }`}
           type="submit"
           disabled={isSubmitting}
         >
-          {isSubmitting ? "Đang xác thực..." : "Đăng nhập"}
+          {isSubmitting
+            ? "Đang xác thực..."
+            : errorMessage
+              ? "Thử lại"
+              : "Đăng nhập"}
         </button>
       </form>
     </section>

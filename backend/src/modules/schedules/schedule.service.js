@@ -123,7 +123,7 @@ async function approveSchedule(id, userId) {
     return {
       ok: false,
       statusCode: 409,
-      message: 'Chỉ có thể duyệt lịch ở trạng thái draft',
+      message: 'Only draft schedules can be approved',
       current_status: schedule.entry_status
     };
   }
@@ -152,7 +152,7 @@ async function publishSchedule(id, userId) {
     return {
       ok: false,
       statusCode: 409,
-      message: 'Không thể công bố lịch chưa được duyệt',
+      message: 'Cannot publish a schedule before it is approved',
       current_status: schedule.entry_status
     };
   }
@@ -161,7 +161,7 @@ async function publishSchedule(id, userId) {
     return {
       ok: false,
       statusCode: 409,
-      message: 'Chỉ có thể công bố lịch ở trạng thái approved',
+      message: 'Only approved schedules can be published',
       current_status: schedule.entry_status
     };
   }
@@ -272,14 +272,16 @@ async function checkRoomBlocked(roomId, dayOfWeek, timeSlotId, startDate, endDat
 }
 
 async function checkHolidayBlocked(dayOfWeek, startDate, endDate) {
-  // WEEKDAY(): 0=Mon...6=Sun; day_of_week 1=Mon...7=Sun → WEEKDAY = day_of_week - 1
+  // day_of_week encoding: 1=Sun,2=Mon,...,7=Sat
+  // MySQL WEEKDAY(): 0=Mon,...,5=Sat,6=Sun
+  // Conversion: (dayOfWeek + 5) % 7
   const [rows] = await pool.query(
     `SELECT holiday_date, holiday_name FROM calendar_holidays
      WHERE holiday_date BETWEEN ? AND ?
        AND is_lab_scheduling_blocked = 1
        AND holiday_status = 'active'
        AND WEEKDAY(holiday_date) = ?`,
-    [startDate, endDate, dayOfWeek - 1]
+    [startDate, endDate, (dayOfWeek + 5) % 7]
   );
 
   const passed = rows.length === 0;
@@ -501,7 +503,7 @@ async function createDraftSchedule(input, createdByUserId) {
 }
 
 async function getScheduleList(filters = {}) {
-  const { status, room_code, lecturer_user_id, schedule_request_id } = filters;
+  const { status, room_code, lecturer_user_id, schedule_request_id, student_user_id } = filters;
   const conditions = [];
   const params = [];
 
@@ -520,6 +522,12 @@ async function getScheduleList(filters = {}) {
   if (lecturer_user_id) {
     conditions.push('entry.lecturer_user_id = ?');
     params.push(parseInt(lecturer_user_id, 10));
+  }
+  if (student_user_id) {
+    conditions.push(
+      'entry.practice_team_id IN (SELECT ptm.practice_team_id FROM practice_team_members ptm WHERE ptm.student_user_id = ?)'
+    );
+    params.push(parseInt(student_user_id, 10));
   }
 
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
@@ -541,32 +549,138 @@ async function getScheduleList(filters = {}) {
   return rows.map(formatScheduleResponse);
 }
 
-function autoArrangeScheduleStub(input) {
-  const preferredDay = input.preferred_day_of_week || 3;
-  const preferredTimeSlot = input.preferred_time_slot || '7-10';
-  const startDate = input.start_date || '2026-04-28';
-  const endDate = input.end_date || startDate;
+async function getRoomEntryCount(room_code, start_date, end_date) {
+  const [rows] = await pool.query(
+    `SELECT COUNT(*) as count FROM lab_schedule_entries entry
+     JOIN rooms r ON entry.room_id = r.id
+     WHERE r.room_code = ?
+       AND entry.entry_status IN ('draft', 'approved', 'published')
+       AND entry.start_date <= ? AND entry.end_date >= ?`,
+    [room_code, end_date, start_date]
+  );
+  return rows[0].count;
+}
 
-  const rankedOptions = ROOM_SCOPE.map((roomCode, index) => ({
-    room_code: roomCode,
-    day_of_week: preferredDay,
-    time_slot: preferredTimeSlot,
-    start_date: startDate,
-    end_date: endDate,
-    score: 90 - index * 5,
-    reasons: [
-      'In MVP room scope',
-      'Passes demo hard constraints',
-      'Ranked by simple rule-based scoring stub'
-    ]
+async function hasCourseInRoom(room_code, course_section_id) {
+  const [rows] = await pool.query(
+    `SELECT COUNT(*) as count FROM lab_schedule_entries entry
+     JOIN rooms r ON entry.room_id = r.id
+     JOIN practice_teams pt ON entry.practice_team_id = pt.id
+     WHERE r.room_code = ?
+       AND pt.course_section_id = ?
+       AND entry.entry_status IN ('approved', 'published')`,
+    [room_code, course_section_id]
+  );
+  return rows[0].count > 0;
+}
+
+/**
+ * Thuật toán Auto-Arrange (Rule-based Filter + Scoring)
+ * 
+ * Thuật toán hoạt động tuần tự qua 6 bước:
+ * Bước 1. Khởi tạo & Tham số hóa: Phân tích đầu vào (phòng, ca, ngày ưu tiên, cấu hình).
+ * Bước 2. Sinh Candidate Matrix: Tạo ra danh sách tất cả phương án khả thi bằng tổ hợp (Phòng x Ca x Ngày).
+ * Bước 3. Lọc Ràng buộc (Constraint Filtering): Chạy checkScheduleConstraints đánh giá 8 rule cứng (Sức chứa, Xung đột lịch, Lịch nghỉ lễ, Phần mềm, v.v.). Tách thành 2 mảng `valid` và `failed`.
+ * Bước 4. Chấm điểm ưu tiên (Scoring): Đánh giá trọng số cho các candidates hợp lệ:
+ *    - Điểm sàn (Base) = 50.
+ *    - Trùng ngày ưu tiên = +30.
+ *    - Trùng ca ưu tiên = +20.
+ *    - Khớp phần mềm yêu cầu = +25.
+ * Bước 5. Sắp xếp & Chọn lọc (Sorting): Xếp hạng các candidates theo điểm số giảm dần, cắt ra Top 3 lựa chọn tối ưu nhất (`slice(0, 3)`).
+ * Bước 6. Trả về Response chuẩn: Xuất ra danh sách gợi ý, hoặc xuất mảng 5 lý do lỗi (`failed_reasons`) phổ biến nhất nếu không có option nào hợp lệ.
+ * 
+ * @param {Object} input Dữ liệu yêu cầu từ client.
+ * @returns {Object} JSON chứa kết quả auto-arrange.
+ */
+
+async function autoArrangeSchedule(input) {
+  console.time('auto-arrange');
+  const rooms = ROOM_SCOPE; // ['2B11', '2B21', '2B31']
+  const timeSlots = ['1-4', '7-10'];
+  const days = input.preferred_day_of_week ? [input.preferred_day_of_week] : [2, 3, 4, 5, 6]; // T2 → T6
+
+  // Bước 2: Sinh candidate matrix
+  const candidates = [];
+  for (const room of rooms) {
+    for (const slot of timeSlots) {
+      for (const day of days) {
+        candidates.push({
+          room_code: room,
+          time_slot: slot,
+          day_of_week: day,
+          start_date: input.start_date,
+          end_date: input.end_date,
+          lecturer_user_id: input.lecturer_user_id,
+          practice_team_id: input.practice_team_id,
+          required_software_ids: input.required_software_ids || []
+        });
+      }
+    }
+  }
+
+  // Bước 3: Filter qua checkScheduleConstraints (REAL)
+  const valid = [];
+  const failed = [];
+  for (const cand of candidates) {
+    const result = await checkScheduleConstraints(cand);
+    if (result.passed) {
+      valid.push({ ...cand, constraintResult: result });
+    } else {
+      failed.push({
+        ...cand,
+        failed_rules: result.results
+          .filter(r => !r.passed)
+          .map(r => ({ code: r.code, message: r.message }))
+      });
+    }
+  }
+
+  // Bước 4: Scoring
+  const scored = valid.map(cand => {
+    let score = 50; // base
+    if (input.preferred_day_of_week && cand.day_of_week === input.preferred_day_of_week) {
+      score += 30;
+    }
+    if (input.preferred_time_slot && cand.time_slot === input.preferred_time_slot) {
+      score += 20;
+    }
+    const softwareRule = cand.constraintResult.results.find(r => r.code === 'SOFTWARE_OK');
+    if (softwareRule && softwareRule.passed && (input.required_software_ids || []).length > 0) {
+      score += 25;
+    }
+    return { ...cand, score };
+  });
+
+  // Bước 5: Sort + top 3 + Return
+  scored.sort((a, b) => b.score - a.score);
+  const top3 = scored.slice(0, 3);
+  const ranked_options = top3.map(c => ({
+    room_code: c.room_code,
+    day_of_week: c.day_of_week,
+    time_slot: c.time_slot,
+    start_date: c.start_date,
+    end_date: c.end_date,
+    score: c.score,
+    reasons: c.constraintResult.results
+      .filter(r => r.passed)
+      .map(r => r.message)
   }));
+
+  const topRoomCodes = top3.map(c => `${c.room_code}(T${c.day_of_week}, ${c.time_slot === '1-4' ? 'Sáng' : 'Chiều'})`).join(' | ');
+  console.log(`Auto-arrange: ${candidates.length} candidates → ${valid.length} valid → top 3 scored: ${topRoomCodes || 'None'}`);
+  console.timeEnd('auto-arrange');
 
   return {
     request_id: input.request_id || null,
-    auto_arrange_status: 'success',
-    selected_option: rankedOptions[0],
-    ranked_options: rankedOptions,
-    failed_reasons: []
+    auto_arrange_status: ranked_options.length > 0 ? 'success' : 'no_valid_option',
+    selected_option: ranked_options[0] || null,
+    ranked_options,
+    failed_reasons: ranked_options.length === 0 ? failed.slice(0, 5).map(f => ({
+      room_code: f.room_code,
+      day_of_week: f.day_of_week,
+      time_slot: f.time_slot,
+      failed_rules: f.failed_rules
+    })) : []
   };
 }
 
@@ -578,5 +692,5 @@ module.exports = {
   publishSchedule,
   getPublishedSchedules,
   getScheduleList,
-  autoArrangeScheduleStub
+  autoArrangeSchedule
 };
