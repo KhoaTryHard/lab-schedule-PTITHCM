@@ -426,6 +426,29 @@ function normalizeReasons(reasons) {
     .filter(Boolean);
 }
 
+function normalizeFailedReasons(reasons) {
+  if (!Array.isArray(reasons)) return [];
+
+  return reasons
+    .map((reason, index) => {
+      const code =
+        typeof reason === "string" ? "" : normalizeRuleCode(reason?.code);
+      const message =
+        typeof reason === "string"
+          ? translateBackendMessage(reason)
+          : translateBackendMessage(
+              reason?.message || reason?.detail || reason?.code || "",
+            );
+
+      return {
+        id: `${code || "FAILED_REASON"}-${index + 1}`,
+        code,
+        message,
+      };
+    })
+    .filter((reason) => reason.message || reason.code);
+}
+
 function normalizeOption(option, index) {
   const roomCode = option?.room_code || option?.roomCode || "";
   const dayOfWeek = Number(option?.day_of_week || option?.dayOfWeek || 0);
@@ -457,15 +480,18 @@ function normalizeAutoArrangeData(response) {
   const rankedOptions = Array.isArray(apiData?.ranked_options)
     ? apiData.ranked_options.map(normalizeOption).slice(0, 3)
     : [];
+  const rawStatus = String(apiData?.auto_arrange_status || "")
+    .trim()
+    .toLowerCase();
+  const autoArrangeStatus =
+    rawStatus === "no_options" || rawStatus === "no_valid_option"
+      ? "no_options"
+      : rawStatus || (rankedOptions.length > 0 ? "success" : "no_options");
 
   return {
-    auto_arrange_status:
-      apiData?.auto_arrange_status ||
-      (rankedOptions.length > 0 ? "success" : "no_valid_option"),
+    auto_arrange_status: autoArrangeStatus,
     ranked_options: rankedOptions,
-    failed_reasons: Array.isArray(apiData?.failed_reasons)
-      ? apiData.failed_reasons
-      : [],
+    failed_reasons: normalizeFailedReasons(apiData?.failed_reasons),
   };
 }
 
@@ -721,6 +747,32 @@ function ReasonsModal({ option, onClose }) {
   );
 }
 
+function FailedReasonsList({ reasons }) {
+  if (!Array.isArray(reasons) || reasons.length === 0) return null;
+
+  return (
+    <div
+      style={{
+        display: "grid",
+        gap: 8,
+        width: "min(560px, 100%)",
+        marginTop: 8,
+        textAlign: "left",
+      }}
+    >
+      <strong>Các ràng buộc thường làm phương án bị loại</strong>
+      <ul style={{ margin: 0, paddingLeft: 18, lineHeight: 1.6 }}>
+        {reasons.map((reason) => (
+          <li key={reason.id}>
+            {reason.code ? <strong>{reason.code}: </strong> : null}
+            {reason.message}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export default function AutoArrangePage() {
   const router = useRouter();
 
@@ -752,6 +804,7 @@ export default function AutoArrangePage() {
   );
 
   const rankedOptions = autoResult?.ranked_options || [];
+  const failedReasons = autoResult?.failed_reasons || [];
   const failedRows = constraintRows.filter((row) => row.passed === false);
   const passedRows = constraintRows.filter((row) => row.passed === true);
   const missingRows = constraintRows.filter((row) => row.passed === null);
@@ -1605,11 +1658,12 @@ export default function AutoArrangePage() {
               onRetry={() => {}}
               showRetry={false}
             />
-          ) : autoResult?.auto_arrange_status === "no_valid_option" ? (
+          ) : autoResult?.auto_arrange_status === "no_options" ? (
             <EmptyState
               title="Không có phương án hợp lệ"
               description="Thử đổi tuần, đổi ca, hoặc giảm sĩ số tổ thực hành."
               icon="🧩"
+              action={<FailedReasonsList reasons={failedReasons} />}
             />
           ) : rankedOptions.length > 0 ? (
             <DataTable
