@@ -90,7 +90,7 @@ export function LogoutButton({ label = "Đăng xuất", className = "" }) {
 
   return (
     <ButtonUI
-      tone="dark"
+      tone="primary"
       shape="rounded"
       className={joinClassNames("uiButtonLogout", className)}
       onClick={handleLogout}
@@ -109,7 +109,7 @@ export function RefreshButton({
 }) {
   return (
     <ButtonUI
-      tone="secondary"
+      tone="primary"
       shape="rounded"
       className={joinClassNames("uiButtonRefresh", className)}
       onClick={onClick}
