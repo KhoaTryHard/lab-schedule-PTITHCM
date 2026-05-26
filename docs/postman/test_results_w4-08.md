@@ -16,6 +16,7 @@
 
 ### 1.2 Cập nhật Postman (Testing Setup)
 - **Environment**: File `LabSchedulePTIT.local.postman_environment.json` đã được tự động thêm biến `demo_large_practice_team_id` với giá trị `999` để phục vụ test case tràn dung lượng.
+- **Seed demo**: `practice_teams.id = 999` có `planned_size = 100` để case 4.3 fail đúng rule `CAPACITY_OK`; software `1` chỉ cài ở phòng `2B11` để case 4.4 chọn đúng phòng.
 - **Collection**: File `LabSchedulePTIT.postman_collection.json` đã được chạy script để xóa các request cũ bị sai cấu trúc, và tự động thêm mới **4 Test Requests** hoàn chỉnh cho Auto Arrange:
     1. `4.1 Auto arrange - Success no preferred`
     2. `4.2 Auto arrange - Prefer day`
@@ -40,5 +41,13 @@
 | **4.1** | `Auto arrange - Success no preferred` | Không truyền preferred day/slot | `Status is success` và `Score is 50` |
 | **4.2** | `Auto arrange - Prefer day` | `preferred_day_of_week: 3` | `Status is success` và `Preferred day is selected and score is 80` |
 | **4.3** | `Auto arrange - No valid (Capacity)` | `practice_team_id: {{demo_large_practice_team_id}}` (ID: 999) | `Status is no_valid_option` và bắt được lỗi vi phạm `CAPACITY_OK` | 
-| **4.4** | `Auto arrange - Software constraint` | `required_software_ids: [1]` | `Status is success` và `Score is 75`, thông điệp `reasons` hiển thị nhận đủ phần mềm |
+| **4.4** | `Auto arrange - Software constraint` | `required_software_ids: [1]` | `Status is success`, `selected_option.room_code = 2B11`, `Score is 75`, thông điệp `reasons` hiển thị nhận đủ phần mềm |
 
+---
+
+## 4. Xác minh local
+
+- Đã import lại `database/seed_demo_final.sql` vào database `lab_schedule_ptit_v2`.
+- Đã chạy smoke test HTTP qua Express server tạm bằng Node vì máy local chưa có `newman` CLI.
+- Kết quả: 4/4 case W4-08 PASS (`4.1`, `4.2`, `4.3`, `4.4`).
+- Đã chạy `node --check` cho `schedule.service.js` và `schedule.controller.js`: PASS.

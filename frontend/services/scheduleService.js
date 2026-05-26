@@ -70,7 +70,7 @@ export function checkScheduleConstraints(payload) {
 
 /**
  * POST /api/schedules/auto-arrange
- * Lưu ý: backend hiện tại vẫn là preview stub.
+ * Backend uses real rule-based filter + scoring.
  */
 export function autoArrange(input) {
   return apiClient("/schedules/auto-arrange", {

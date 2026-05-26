@@ -116,11 +116,12 @@ INSERT INTO `student_profiles` (`user_id`, `student_code`, `cohort_id`, `intake_
 (10, 'B23DCAT001', 1, '2023', 'Đại học chính quy', 'studying');
 
 -- ─── 10. room_software_installations ─────────────────────────────────────────
--- All 3 rooms have all 3 software packages installed
+-- W4-08: software package 1 is installed only in 2B11.
+-- This keeps auto-arrange software constraint test deterministic.
 INSERT INTO `room_software_installations` (`room_id`, `software_id`, `installed_version`, `installed_on`) VALUES
 (1, 1, '1.85', '2025-09-01'), (1, 2, '3.11', '2025-09-01'), (1, 3, '8.0', '2025-09-01'),
-(2, 1, '1.85', '2025-09-01'), (2, 2, '3.11', '2025-09-01'), (2, 3, '8.0', '2025-09-01'),
-(3, 1, '1.85', '2025-09-01'), (3, 2, '3.11', '2025-09-01'), (3, 3, '8.0', '2025-09-01');
+(2, 2, '3.11', '2025-09-01'), (2, 3, '8.0', '2025-09-01'),
+(3, 2, '3.11', '2025-09-01'), (3, 3, '8.0', '2025-09-01');
 
 -- =============================================================================
 -- SECTION 2: ACADEMIC STRUCTURE
@@ -181,7 +182,8 @@ INSERT INTO `practice_teams` (`id`, `course_section_id`, `team_no`, `planned_siz
 (5, 3, 1, 29, 'ready', 2), -- INT1332/01 tổ 1 ← sv1 is a member here
 (6, 5, 1, 29, 'ready', 2), -- INT1332/04 tổ 1
 (7, 3, 2, 29, 'ready', 2), -- INT1332/01 tổ 2
-(8, 6, 1, 29, 'ready', 2); -- INT14105/01 tổ 1
+(8, 6, 1, 29, 'ready', 2), -- INT14105/01 tổ 1
+(999, 1, 99, 100, 'ready', 2); -- W4-08 capacity failure team
 
 -- ─── 18. practice_team_members ───────────────────────────────────────────────
 INSERT INTO `practice_team_members` (`practice_team_id`, `student_user_id`) VALUES

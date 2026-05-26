@@ -481,6 +481,7 @@
               "pm.test(\"Software constraint met\", function () {",
               "    var jsonData = pm.response.json();",
               "    pm.expect(jsonData.data.auto_arrange_status).to.equal(\"success\");",
+              "    pm.expect(jsonData.data.selected_option.room_code).to.equal(\"2B11\");",
               "    pm.expect(jsonData.data.selected_option.score).to.equal(75);",
               "    var hasSoftwareReason = jsonData.data.selected_option.reasons.some(r => r.includes(\"software package(s) are installed\"));",
               "    pm.expect(hasSoftwareReason).to.be.true;",
