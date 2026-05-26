@@ -3,7 +3,7 @@ const { validationResult } = require('express-validator');
 const {
   checkScheduleConstraints,
   createDraftSchedule,
-  autoArrangeScheduleStub,
+  autoArrangeSchedule,
   getScheduleList,
   approveSchedule,
   publishSchedule,
@@ -54,7 +54,7 @@ async function createSchedule(req, res) {
 }
 
 async function autoArrange(req, res) {
-  return ok(res, autoArrangeScheduleStub(req.body), 'Auto arrange preview stub');
+  return ok(res, await autoArrangeSchedule(req.body), 'Auto arrange options');
 }
 
 async function approveScheduleEntry(req, res) {

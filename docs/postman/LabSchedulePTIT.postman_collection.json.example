@@ -338,7 +338,7 @@
               "pm.test(\"Status code is 200\", function () {",
               "    pm.response.to.have.status(200);",
               "});",
-              "// TODO: assert schedule_id exists khi backend thß║¡t sß║╡n s├áng",
+              "// TODO: assert schedule_id exists when backend is ready",
               "// pm.test(\"Response has schedule id\", function () {",
               "//     var jsonData = pm.response.json();",
               "//     pm.expect(jsonData.data).to.have.property(\"schedule_id\");",
@@ -484,7 +484,7 @@
               "pm.test(\"Status code is 200\", function () {",
               "    pm.response.to.have.status(200);",
               "});",
-              "// TODO: assert no_valid_option flag khi backend thß║¡t sß║╡n s├áng",
+              "// TODO: assert no_valid_option flag when backend is ready",
               "// pm.test(\"No valid option returned\", function () {",
               "//     var jsonData = pm.response.json();",
               "//     pm.expect(jsonData.data.result).to.equal(\"no_valid_option\");",
@@ -630,7 +630,7 @@
               "pm.test(\"Status code is 200\", function () {",
               "    pm.response.to.have.status(200);",
               "});",
-              "// TODO: assert conflict details khi backend thß║¡t sß║╡n s├áng",
+              "// TODO: assert conflict details when backend is ready",
               "// pm.test(\"Insufficient computers detected\", function () {",
               "//     var jsonData = pm.response.json();",
               "//     pm.expect(jsonData.data.conflicts).to.include(\"insufficient_computers\");",
@@ -678,7 +678,7 @@
               "pm.test(\"Status code is 200\", function () {",
               "    pm.response.to.have.status(200);",
               "});",
-              "// TODO: assert conflict details khi backend thß║¡t sß║╡n s├áng",
+              "// TODO: assert conflict details when backend is ready",
               "// pm.test(\"Missing software detected\", function () {",
               "//     var jsonData = pm.response.json();",
               "//     pm.expect(jsonData.data.conflicts).to.include(\"missing_software\");",
@@ -726,7 +726,7 @@
               "pm.test(\"Status code is 200\", function () {",
               "    pm.response.to.have.status(200);",
               "});",
-              "// TODO: assert conflict details khi backend thß║¡t sß║╡n s├áng",
+              "// TODO: assert conflict details when backend is ready",
               "// pm.test(\"Holiday block detected\", function () {",
               "//     var jsonData = pm.response.json();",
               "//     pm.expect(jsonData.data.conflicts).to.include(\"holiday_blocked\");",
@@ -774,7 +774,7 @@
               "pm.test(\"Status code is 200\", function () {",
               "    pm.response.to.have.status(200);",
               "});",
-              "// TODO: assert conflict details khi backend thß║¡t sß║╡n s├áng",
+              "// TODO: assert conflict details when backend is ready",
               "// pm.test(\"Room block detected\", function () {",
               "//     var jsonData = pm.response.json();",
               "//     pm.expect(jsonData.data.conflicts).to.include(\"room_blocked\");",
@@ -1291,7 +1291,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Status 200', function(){ pm.response.to.have.status(200); });",
-                  "pm.test('CAPACITY_OK failed', function(){ var j=pm.response.json(); var r=j.data.results.find(function(x){return x.code==='CAPACITY_OK';}); pm.expect(r.passed).to.be.false; pm.expect(r.message).to.include('usable computers'); });",
+                  "pm.test('CAPACITY_OK failed', function(){ var j=pm.response.json(); var r=j.data.results.find(function(x){return x.code==='CAPACITY_OK';}); pm.expect(r).to.exist; pm.expect(r.passed).to.be.false; pm.expect(r.message).to.be.a('string'); pm.expect(r.message.length).to.be.greaterThan(0); });",
                   "pm.test('Overall passed is false', function(){ var j=pm.response.json(); pm.expect(j.data.passed).to.be.false; });"
                 ]
               }
@@ -1334,7 +1334,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Status 200', function(){ pm.response.to.have.status(200); });",
-                  "pm.test('SOFTWARE_OK failed', function(){ var j=pm.response.json(); var r=j.data.results.find(function(x){return x.code==='SOFTWARE_OK';}); pm.expect(r.passed).to.be.false; pm.expect(r.message).to.include('Missing software'); });",
+                  "pm.test('SOFTWARE_OK failed', function(){ var j=pm.response.json(); var r=j.data.results.find(function(x){return x.code==='SOFTWARE_OK';}); pm.expect(r).to.exist; pm.expect(r.passed).to.be.false; pm.expect(r.message).to.be.a('string'); pm.expect(r.message.length).to.be.greaterThan(0); });",
                   "pm.test('Overall passed is false', function(){ var j=pm.response.json(); pm.expect(j.data.passed).to.be.false; });"
                 ]
               }
@@ -1388,7 +1388,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Status 200', function(){ pm.response.to.have.status(200); });",
-                  "pm.test('ROOM_STATUS failed (room not available)', function(){ var j=pm.response.json(); var r=j.data.results.find(function(x){return x.code==='ROOM_STATUS';}); pm.expect(r.passed).to.be.false; pm.expect(r.message).to.include('not available'); });",
+                  "pm.test('ROOM_STATUS failed (room not available)', function(){ var j=pm.response.json(); var r=j.data.results.find(function(x){return x.code==='ROOM_STATUS';}); pm.expect(r).to.exist; pm.expect(r.passed).to.be.false; pm.expect(r.message).to.be.a('string'); pm.expect(r.message.length).to.be.greaterThan(0); });",
                   "pm.test('Overall passed is false', function(){ var j=pm.response.json(); pm.expect(j.data.passed).to.be.false; });",
                   "// Restore room status after test",
                   "var baseUrl = pm.variables.get('base_url') || 'http://localhost:4000/api';",

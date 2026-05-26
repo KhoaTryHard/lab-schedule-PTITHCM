@@ -18,13 +18,17 @@ export default function DataTable({
 }) {
   const [currentPage, setCurrentPage] = useState(1);
 
+  const safeRows = Array.isArray(rows) ? rows : [];
   const safePageSize = Math.max(1, Number(pageSize) || 10);
-  const totalPages = Math.max(1, Math.ceil(rows.length / safePageSize));
-  const shouldShowPagination = enablePagination && rows.length > safePageSize;
+  const totalPages = Math.max(1, Math.ceil(safeRows.length / safePageSize));
+
+  // Giữ footer phân trang luôn hiện khi bảng có dữ liệu.
+  // Nếu chỉ có 1 trang, Pagination vẫn hiển thị page 1 + meta tổng dòng.
+  const shouldShowPagination = enablePagination && safeRows.length > 0;
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [rows.length, safePageSize]);
+  }, [safeRows.length, safePageSize]);
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -33,15 +37,15 @@ export default function DataTable({
   }, [currentPage, totalPages]);
 
   const paginatedRows = useMemo(() => {
-    if (!shouldShowPagination) {
-      return rows;
+    if (!enablePagination) {
+      return safeRows;
     }
 
     const startIndex = (currentPage - 1) * safePageSize;
-    return rows.slice(startIndex, startIndex + safePageSize);
-  }, [currentPage, rows, safePageSize, shouldShowPagination]);
+    return safeRows.slice(startIndex, startIndex + safePageSize);
+  }, [currentPage, enablePagination, safeRows, safePageSize]);
 
-  const rowIndexOffset = shouldShowPagination
+  const rowIndexOffset = enablePagination
     ? (currentPage - 1) * safePageSize
     : 0;
 
@@ -53,7 +57,7 @@ export default function DataTable({
     return <ErrorState error={error} />;
   }
 
-  if (!rows.length) {
+  if (!safeRows.length) {
     return <EmptyState title={emptyTitle} description={emptyDescription} />;
   }
 
@@ -94,7 +98,7 @@ export default function DataTable({
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}
-          totalItems={rows.length}
+          totalItems={safeRows.length}
           pageSize={safePageSize}
           onPageChange={setCurrentPage}
         />

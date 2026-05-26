@@ -520,8 +520,8 @@ export default function RoomsPage() {
 
         <aside className="card roomsSecondaryPanel">
           <SectionLayout
-            title="KHAI BÁO NHANH"
-            message="Tải nhanh tệp khai báo cho phòng máy, thiết bị và phần mềm theo mẫu của khoa."
+            title="TẠO PHÒNG VÀ THIẾT BỊ"
+            message="Khai báo phòng máy thiết bị hoặc phần mềm."
             direction={1}
             className="card roomUploadPanel"
           >

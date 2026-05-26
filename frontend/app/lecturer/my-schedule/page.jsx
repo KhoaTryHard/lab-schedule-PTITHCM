@@ -1,19 +1,36 @@
 import ScheduleLookupTable from "../../../components/schedules/ScheduleLookupTable.jsx";
 
+const LECTURER_VISIBLE_COLUMNS = [
+  "course_code",
+  "course_name",
+  "group_no",
+  "practice_team",
+  "lecturer",
+  "room_code",
+  "day_of_week",
+  "time_slot",
+  "start_date",
+  "end_date",
+  "status",
+  "created_at",
+  "updated_at",
+  "planned_size",
+  "team_no",
+];
+
 export default function LecturerSchedulePage() {
   return (
     <ScheduleLookupTable
       title="Lịch dạy thực hành của giảng viên"
-      description="Giảng viên xem lịch dạy thực hành đã công bố. Frontend gọi GET /api/schedules với status=published và lecturer_user_id của tài khoản hiện tại."
-      fixedParams={{ status: "published" }}
+      usePublishedEndpoint
       currentUserIdParamName="lecturer_user_id"
-      clientSideRequiredStatus="published"
+      visibleColumnKeys={LECTURER_VISIBLE_COLUMNS}
       showStatusFilter={false}
       showCourseSectionFilter={false}
       showLecturerFilter={false}
+      showScheduleRequestFilter={false}
       emptyTitle="Chưa có lịch dạy thực hành"
-      emptyDescription="Chưa có lịch dạy thực hành phù hợp với bộ lọc hiện tại."
-      integrationNote="Frontend đã gửi status=published và lecturer_user_id theo tài khoản đang đăng nhập. Ngoài ra, UI có lớp lọc an toàn client-side để chỉ render lịch published nếu API trả dư dữ liệu. Backend develop hiện tại chưa implement role scope cho GV nên chưa thể xác nhận dữ liệu trả về đã đúng riêng giảng viên."
+      emptyDescription="Chưa có lịch dạy thực hành đã công bố phù hợp với bộ lọc hiện tại."
     />
   );
 }
