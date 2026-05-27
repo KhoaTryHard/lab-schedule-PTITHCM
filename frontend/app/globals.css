@@ -559,6 +559,34 @@ button:disabled {
   font-weight: 800;
 }
 
+.cardUITemplateLink {
+  align-self: center;
+  width: max-content;
+  max-width: 100%;
+  margin: -2px auto 0;
+  color: var(--color-primary);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition:
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.cardUITemplateLink:hover {
+  color: var(--color-primary-dark);
+  transform: translateY(-1px);
+}
+
+.cardUITemplateLink:focus-visible {
+  outline: 3px solid rgba(139, 0, 0, 0.18);
+  outline-offset: 4px;
+  border-radius: 999px;
+}
+
 .cardUIUploadActions {
   display: grid;
   width: 100%;

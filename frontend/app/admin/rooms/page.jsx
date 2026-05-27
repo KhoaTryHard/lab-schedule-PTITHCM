@@ -29,9 +29,27 @@ const roomTabItems = [{ key: "rooms", label: "Phòng máy" }];
  * Các item này dùng để render UploadCard ở panel bên phải.
  */
 const roomUploadItems = [
-  { key: "room", title: "Phòng máy", iconName: "room" },
-  { key: "device", title: "Thiết bị", iconName: "device" },
-  { key: "software", title: "Phần mềm", iconName: "software" },
+  {
+    key: "room",
+    title: "Phòng máy",
+    iconName: "room",
+    templateHref: "/api/template-download/createlab/rooms",
+    templateDownloadName: "rooms.xlsx",
+  },
+  {
+    key: "device",
+    title: "Thiết bị",
+    iconName: "device",
+    templateHref: "/api/template-download/createlab/devices",
+    templateDownloadName: "devices.xlsx",
+  },
+  {
+    key: "software",
+    title: "Phần mềm",
+    iconName: "software",
+    templateHref: "/api/template-download/createlab/softwares",
+    templateDownloadName: "softwares.xlsx",
+  },
 ];
 
 /**
@@ -583,6 +601,9 @@ export default function RoomsPage() {
                   22,
                 )}
                 title={uploadItem.title}
+                templateHref={uploadItem.templateHref}
+                templateDownloadName={uploadItem.templateDownloadName}
+                templateLabel="Tải biểu mẫu"
                 fileLabel="Excel"
                 buttonLabel="Tải"
               />

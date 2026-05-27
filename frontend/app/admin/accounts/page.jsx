@@ -114,11 +114,36 @@ const accountSummaryItems = [
 
 // Mảng cấu hình thẻ upload tạo tài khoản theo từng vai trò.
 const accountUploadItems = [
-  { icon: AdminIcon, title: "Quản trị viên" },
-  { icon: AcademicIcon, title: "Cán bộ đào tạo" },
-  { icon: TechnicianIcon, title: "Kỹ thuật viên" },
-  { icon: LecturerIcon, title: "Giảng viên" },
-  { icon: StudentIcon, title: "Sinh viên" },
+  {
+    icon: AdminIcon,
+    title: "Quản trị viên",
+    templateHref: "/api/template-download/createaccounts/admin",
+    templateDownloadName: "createadmin.xlsx",
+  },
+  {
+    icon: AcademicIcon,
+    title: "Cán bộ đào tạo",
+    templateHref: "/api/template-download/createaccounts/academic",
+    templateDownloadName: "createacademic.xlsx",
+  },
+  {
+    icon: TechnicianIcon,
+    title: "Kỹ thuật viên",
+    templateHref: "/api/template-download/createaccounts/technician",
+    templateDownloadName: "createtechnician.xlsx",
+  },
+  {
+    icon: LecturerIcon,
+    title: "Giảng viên",
+    templateHref: "/api/template-download/createaccounts/lecturer",
+    templateDownloadName: "createlecturer.xlsx",
+  },
+  {
+    icon: StudentIcon,
+    title: "Sinh viên",
+    templateHref: "/api/template-download/createaccounts/student",
+    templateDownloadName: "createstudent.xlsx",
+  },
 ];
 
 // Mảng trạng thái tài khoản để lọc ở thanh điều khiển phụ.
@@ -254,6 +279,9 @@ export default function AccountsPage() {
               key={uploadItem.title}
               icon={uploadItem.icon}
               title={uploadItem.title}
+              templateHref={uploadItem.templateHref}
+              templateDownloadName={uploadItem.templateDownloadName}
+              templateLabel="Tải biểu mẫu"
               fileLabel="File excel"
               buttonLabel="Tải"
             />
