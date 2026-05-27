@@ -75,7 +75,48 @@ function normalizeText(value) {
 function parseDateOnly(value) {
   if (!value) return null;
 
-  const [year, month, day] = String(value).slice(0, 10).split("-").map(Number);
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return null;
+
+    return new Date(
+      value.getFullYear(),
+      value.getMonth(),
+      value.getDate(),
+      12,
+      0,
+      0,
+      0,
+    );
+  }
+
+  const text = String(value).trim();
+
+  /**
+   * Backend/MySQL DATE đôi khi serialize thành ISO UTC.
+   * Ví dụ ngày VN 2025-10-01 có thể về frontend là 2025-09-30T17:00:00.000Z.
+   * Không được slice(0, 10) với ISO có timezone, vì sẽ lệch ngày và làm rớt lịch khỏi cột thứ.
+   */
+  if (text.includes("T")) {
+    const date = new Date(text);
+
+    if (Number.isNaN(date.getTime())) return null;
+
+    return new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+      12,
+      0,
+      0,
+      0,
+    );
+  }
+
+  const matchedDate = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
+
+  if (!matchedDate) return null;
+
+  const [, year, month, day] = matchedDate.map(Number);
 
   if (!year || !month || !day) return null;
 
