@@ -9,9 +9,12 @@ import RoomStatusDialog from "../../../components/common/RoomStatusDialog.jsx";
 import { ButtonUI } from "../../../components/common/buttonUI.jsx";
 import { renderRoomIcon as renderSystemRoomIcon } from "../../../components/systemIcon.jsx";
 import {
+  extractRoomScope,
   getMvpRoomCodes,
+  getRoomById,
   getRooms,
   isMvpRoom,
+  listScopeRooms,
   updateRoomById,
 } from "../../../services/roomService";
 
@@ -104,6 +107,10 @@ function getNumberValue(value) {
   return value;
 }
 
+function isRoomInScope(roomCode, scopeCodes) {
+  return Array.isArray(scopeCodes) && scopeCodes.includes(String(roomCode || "").trim().toUpperCase());
+}
+
 /**
  * Hàm nhận vào:
  * - iconName: mã icon cần hiển thị.
@@ -154,12 +161,14 @@ export default function RoomsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
 
   const [rooms, setRooms] = useState([]);
+  const [roomScopeCodes, setRoomScopeCodes] = useState(getMvpRoomCodes());
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
   const [isUpdatingRoomStatus, setIsUpdatingRoomStatus] = useState(false);
+  const [isLoadingRoomDetail, setIsLoadingRoomDetail] = useState(false);
 
   /**
    * Hàm nhận vào: không nhận tham số.
@@ -175,14 +184,27 @@ export default function RoomsPage() {
       setErrorMessage("");
 
       const roomCodeKeyword = searchKeyword.trim().toUpperCase();
+      const shouldQueryByRoomCode =
+        isRoomInScope(roomCodeKeyword, roomScopeCodes) || isMvpRoom(roomCodeKeyword);
 
-      const response = await getRooms({
-        room_status: statusFilter,
-        room_code: isMvpRoom(roomCodeKeyword) ? roomCodeKeyword : "",
-      });
+      const [scopeResponse, response] = await Promise.all([
+        listScopeRooms().catch(() => null),
+        getRooms({
+          room_status: statusFilter,
+          room_code: shouldQueryByRoomCode ? roomCodeKeyword : "",
+        }),
+      ]);
+
+      const backendScopeCodes = extractRoomScope(scopeResponse);
+      const activeScopeCodes =
+        backendScopeCodes.length > 0 ? backendScopeCodes : getMvpRoomCodes();
+
+      setRoomScopeCodes(activeScopeCodes);
 
       const apiRooms = Array.isArray(response?.data) ? response.data : [];
-      const scopedRooms = apiRooms.filter((room) => isMvpRoom(room.room_code));
+      const scopedRooms = apiRooms.filter((room) =>
+        isRoomInScope(room.room_code, activeScopeCodes),
+      );
 
       setRooms(scopedRooms);
     } catch (error) {
@@ -197,9 +219,29 @@ export default function RoomsPage() {
    * Hàm xử lý: lưu phòng đang chọn và mở popup cập nhật trạng thái.
    * Hàm trả về: không trả về dữ liệu.
    */
-  function handleOpenStatusDialog(room) {
-    setSelectedRoom(room);
-    setIsStatusDialogOpen(true);
+  async function handleOpenStatusDialog(room) {
+    if (!room?.id) {
+      setSelectedRoom(room);
+      setIsStatusDialogOpen(true);
+      return;
+    }
+
+    try {
+      setIsLoadingRoomDetail(true);
+      setErrorMessage("");
+
+      const response = await getRoomById(room.id);
+      setSelectedRoom(response?.data || room);
+    } catch (error) {
+      setSelectedRoom(room);
+      setErrorMessage(
+        error.message ||
+          "Không tải được chi tiết phòng, đang dùng dữ liệu danh sách.",
+      );
+    } finally {
+      setIsStatusDialogOpen(true);
+      setIsLoadingRoomDetail(false);
+    }
   }
 
   /**
@@ -467,9 +509,16 @@ export default function RoomsPage() {
               <p className="roomSectionText">
                 Hiển thị {roomRows.length} bản ghi theo bộ lọc hiện tại.
               </p>
+              <p className="roomSectionText">
+                Scope phòng từ backend: {roomScopeCodes.join(", ")}
+              </p>
             </div>
 
             <div className="roomFilterControls">
+              {isLoadingRoomDetail ? (
+                <span className="roomSectionText">Đang tải chi tiết phòng...</span>
+              ) : null}
+
               <ButtonUI
                 tone="secondary"
                 shape="rounded"
@@ -511,7 +560,7 @@ export default function RoomsPage() {
                 <h4>Chưa có dữ liệu phù hợp</h4>
                 <p>
                   Không tìm thấy phòng thuộc scope MVP:{" "}
-                  {getMvpRoomCodes().join(", ")}.
+                  {roomScopeCodes.join(", ")}.
                 </p>
               </div>
             )}
@@ -545,7 +594,7 @@ export default function RoomsPage() {
       <RoomStatusDialog
         room={selectedRoom}
         isOpen={isStatusDialogOpen}
-        isSubmitting={isUpdatingRoomStatus}
+        isSubmitting={isUpdatingRoomStatus || isLoadingRoomDetail}
         onClose={handleCloseStatusDialog}
         onSubmit={handleSubmitRoomStatus}
       />

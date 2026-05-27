@@ -1,6 +1,6 @@
 import { apiClient } from "../lib/apiClient";
 
-const MVP_ROOM_CODES = ["2B11", "2B21", "2B31"];
+export const DEFAULT_MVP_ROOM_CODES = ["2B11", "2B21", "2B31"];
 
 function hasValue(value) {
   return value !== undefined && value !== null && String(value).trim() !== "";
@@ -10,6 +10,12 @@ function appendParam(query, key, value) {
   if (hasValue(value) && value !== "all") {
     query.set(key, String(value).trim());
   }
+}
+
+function normalizeRoomCode(roomCode) {
+  return String(roomCode || "")
+    .trim()
+    .toUpperCase();
 }
 
 function buildRoomQueryString(params = {}) {
@@ -24,16 +30,38 @@ function buildRoomQueryString(params = {}) {
   return queryString ? `?${queryString}` : "";
 }
 
-export function getMvpRoomCodes() {
-  return [...MVP_ROOM_CODES];
+export function extractRoomScope(response) {
+  const data = response?.data;
+
+  if (!Array.isArray(data)) {
+    return [];
+  }
+
+  return data.map(normalizeRoomCode).filter(Boolean);
 }
 
-export function isMvpRoom(roomCode) {
-  return MVP_ROOM_CODES.includes(
-    String(roomCode || "")
-      .trim()
-      .toUpperCase(),
-  );
+export function getMvpRoomCodes() {
+  return [...DEFAULT_MVP_ROOM_CODES];
+}
+
+export function isMvpRoom(roomCode, roomScopeCodes = DEFAULT_MVP_ROOM_CODES) {
+  const normalizedRoomCode = normalizeRoomCode(roomCode);
+  const normalizedScope = Array.isArray(roomScopeCodes)
+    ? roomScopeCodes.map(normalizeRoomCode)
+    : DEFAULT_MVP_ROOM_CODES;
+
+  return normalizedScope.includes(normalizedRoomCode);
+}
+
+/**
+ * Hàm nhận vào: không nhận tham số.
+ * Hàm xử lý: gọi GET /api/rooms/scope để lấy danh sách mã phòng do backend trả về.
+ * Hàm trả về: response backend, response.data là mảng mã phòng.
+ */
+export function listScopeRooms() {
+  return apiClient("/rooms/scope", {
+    method: "GET",
+  });
 }
 
 /**
@@ -86,15 +114,4 @@ export function updateRoom(roomId, payload) {
  */
 export function updateRoomById(roomId, payload) {
   return updateRoom(roomId, payload);
-}
-
-/**
- * Hàm nhận vào: không nhận tham số.
- * Hàm xử lý: gọi GET /api/rooms/scope.
- * Hàm trả về: danh sách mã phòng thuộc MVP scope.
- */
-export function listScopeRooms() {
-  return apiClient("/rooms/scope", {
-    method: "GET",
-  });
 }
