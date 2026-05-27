@@ -422,35 +422,45 @@ const trainingQuickItems = [
     key: "semester",
     title: "Thêm học kỳ",
     iconName: "semester",
-    fileLabel: "Biểu mẫu HK",
+    templateHref: "/api/template-download/createcourse/semesters",
+    templateDownloadName: "semesters.xlsx",
+    fileLabel: "File excel",
     buttonLabel: "Thêm mới",
   },
   {
     key: "week",
     title: "Thêm tuần học",
     iconName: "week",
-    fileLabel: "Biểu mẫu tuần",
+    templateHref: "/api/template-download/createcourse/weeks",
+    templateDownloadName: "academic-weeks.xlsx",
+    fileLabel: "File excel",
     buttonLabel: "Thêm mới",
   },
   {
     key: "slot",
     title: "Thêm ca học",
     iconName: "slot",
-    fileLabel: "Biểu mẫu ca",
+    templateHref: "/api/template-download/createcourse/time-slots",
+    templateDownloadName: "time-slots.xlsx",
+    fileLabel: "File excel",
     buttonLabel: "Thêm mới",
   },
   {
     key: "course",
     title: "Thêm học phần",
     iconName: "course",
-    fileLabel: "Biểu mẫu HP",
+    templateHref: "/api/template-download/createcourse/courses",
+    templateDownloadName: "courses.xlsx",
+    fileLabel: "File excel",
     buttonLabel: "Thêm mới",
   },
   {
     key: "section",
     title: "Thêm lớp học phần",
     iconName: "section",
-    fileLabel: "Biểu mẫu LHP",
+    templateHref: "/api/template-download/createcourse/course-sections",
+    templateDownloadName: "course-sections.xlsx",
+    fileLabel: "File excel",
     buttonLabel: "Thêm mới",
   },
 ];
@@ -729,7 +739,7 @@ function getTrainingItemsByTab(tabKey) {
  * Hàm xử lý: dựng màn quản lý dữ liệu đào tạo cho QTV, gồm mô tả, thống kê, tab, filter, bảng, quick actions và form lớp học phần.
  * Hàm trả về: JSX của route /admin/trainingData.
  */
-export default function TrainingDataPage() {
+export default function TrainingDataPage({ showQuickDeclaration = false } = {}) {
   const [activeTab, setActiveTab] = useState("semesters");
   const [searchKeyword, setSearchKeyword] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -969,26 +979,31 @@ export default function TrainingDataPage() {
       </section>
 
       <section className="card managementAccount">
-        <SectionLayout
-          title="KHAI BÁO NHANH"
-          message="Chuẩn bị biểu mẫu và thêm nhanh học kỳ, ca học, học phần hoặc lớp học phần phục vụ xếp lịch thực hành."
-          direction={0}
-          className="card accountUploadSection"
-        >
-          {trainingQuickItems.map((quickItem) => (
-            <UploadCard
-              key={quickItem.key}
-              icon={renderTrainingIcon(
-                quickItem.iconName,
-                "uploadCardIconSvg",
-                22,
-              )}
-              title={quickItem.title}
-              fileLabel={quickItem.fileLabel}
-              buttonLabel={quickItem.buttonLabel}
-            />
-          ))}
-        </SectionLayout>
+        {showQuickDeclaration ? (
+          <SectionLayout
+            title="KHAI BÁO NHANH"
+            message="Chuẩn bị biểu mẫu và thêm nhanh học kỳ, ca học, học phần hoặc lớp học phần phục vụ xếp lịch thực hành."
+            direction={0}
+            className="card accountUploadSection"
+          >
+            {trainingQuickItems.map((quickItem) => (
+              <UploadCard
+                key={quickItem.key}
+                icon={renderTrainingIcon(
+                  quickItem.iconName,
+                  "uploadCardIconSvg",
+                  22,
+                )}
+                title={quickItem.title}
+                templateHref={quickItem.templateHref}
+                templateDownloadName={quickItem.templateDownloadName}
+                templateLabel="Tải biểu mẫu"
+                fileLabel={quickItem.fileLabel}
+                buttonLabel={quickItem.buttonLabel}
+              />
+            ))}
+          </SectionLayout>
+        ) : null}
 
         <div className="card accountsView trainingPrimaryPanel">
           <div className="card optionView roomToolbar">

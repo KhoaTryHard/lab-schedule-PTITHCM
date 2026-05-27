@@ -7,5 +7,5 @@ import AdminTrainingDataPage from "../../admin/trainingData/page";
  * Backend hiện chưa có API training-data ổn định, nên page giữ mock/layout hiện có.
  */
 export default function AcademicTrainingDataPage() {
-  return <AdminTrainingDataPage />;
+  return <AdminTrainingDataPage showQuickDeclaration />;
 }
