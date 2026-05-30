@@ -334,7 +334,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
-                  "pm.test('Returns array', function () { var j = pm.response.json(); pm.expect(j.data.data).to.be.an('array'); });"
+                  "pm.test('Returns array', function () { var j = pm.response.json(); pm.expect(j.data).to.be.an('array'); });"
                 ]
               }
             }
@@ -549,7 +549,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Fails with CAPACITY_OK', function () { var j = pm.response.json(); pm.expect(j.data.passed).to.be.false; var codes = j.data.results.map(r=>r.code); pm.expect(codes).to.include('CAPACITY_OK'); });"
+                  "pm.test('Fails with CAPACITY_OK overload', function () { var j = pm.response.json(); pm.expect(j.data.passed).to.be.false; var capacity = j.data.results.find(r=>r.code === 'CAPACITY_OK'); pm.expect(capacity).to.exist; pm.expect(capacity.passed).to.be.false; pm.expect(capacity.message).to.include('team size is 100'); });"
                 ]
               }
             }
@@ -638,7 +638,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status is success', function () { var j = pm.response.json(); pm.expect(j.data.auto_arrange_status).to.equal('success'); });"
+                  "pm.test('Status is success with ranked options', function () { var j = pm.response.json(); pm.expect(j.data.auto_arrange_status).to.equal('success'); pm.expect(j.data.ranked_options).to.be.an('array'); pm.expect(j.data.ranked_options.length).to.be.at.least(1); });"
                 ]
               }
             }
