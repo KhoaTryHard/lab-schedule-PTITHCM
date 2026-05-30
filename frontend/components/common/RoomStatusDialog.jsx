@@ -76,6 +76,35 @@ function getSubmitButtonTone(status) {
   return "primary";
 }
 
+function formatBoolean(value) {
+  return value ? "Có" : "Không";
+}
+
+function formatNullable(value) {
+  if (value === null || value === undefined || value === "") {
+    return "—";
+  }
+
+  return value;
+}
+
+function formatDateTime(value) {
+  if (!value) {
+    return "—";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("vi-VN", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(date);
+}
+
 /**
  * Component nhận vào:
  * - room: phòng đang được chọn để cập nhật.
@@ -103,7 +132,7 @@ export default function RoomStatusDialog({
   useEffect(() => {
     if (isOpen && room) {
       setSelectedStatus(normalizeRoomStatus(room.room_status));
-      setNotes("");
+      setNotes(room.notes || "");
     }
   }, [isOpen, room]);
 
@@ -151,6 +180,32 @@ export default function RoomStatusDialog({
           <p className="modalText">
             Trạng thái hiện tại: <strong>{currentStatusLabel}</strong>
           </p>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+              gap: 10,
+              padding: 12,
+              marginBottom: 14,
+              borderRadius: 14,
+              background: "#fffafa",
+              border: "1px solid rgba(139, 0, 0, 0.12)",
+              color: "#334155",
+              fontSize: 13,
+            }}
+          >
+            <span><strong>Tổng máy:</strong> {formatNullable(room.total_computers)}</span>
+            <span><strong>Máy hỏng:</strong> {formatNullable(room.broken_computers)}</span>
+            <span><strong>Máy SV dùng được:</strong> {formatNullable(room.usable_student_computers)}</span>
+            <span><strong>Máy chiếu:</strong> {formatBoolean(room.has_projector)}</span>
+            <span><strong>WiFi:</strong> {formatBoolean(room.has_wifi)}</span>
+            <span><strong>LAN:</strong> {formatBoolean(room.has_lan)}</span>
+            <span><strong>KTV phụ trách:</strong> {formatNullable(room.primary_technician_user_id)}</span>
+            <span><strong>Cập nhật trạng thái:</strong> {formatDateTime(room.last_status_updated_at)}</span>
+            <span><strong>Báo cáo tình trạng:</strong> {formatDateTime(room.last_condition_report_at)}</span>
+            <span><strong>Ghi chú hiện tại:</strong> {formatNullable(room.notes)}</span>
+          </div>
 
           <label className="label" htmlFor="room-status-select">
             Trạng thái mới

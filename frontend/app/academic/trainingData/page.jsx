@@ -1,14 +1,11 @@
-import { EmptyState } from "../../../components/common/UiState.jsx";
+"use client";
 
+import AdminTrainingDataPage from "../../admin/trainingData/page";
+
+/**
+ * Hàm xử lý: dùng lại cấu trúc giao diện dữ liệu đào tạo của admin cho CBDT.
+ * Backend hiện chưa có API training-data ổn định, nên page giữ mock/layout hiện có.
+ */
 export default function AcademicTrainingDataPage() {
-  return (
-    <div className="adminPageStack">
-      <section className="card">
-        <EmptyState
-          title="🚧 Tính năng đang phát triển — Sprint 2."
-          description="Vui lòng quay lại sau."
-        />
-      </section>
-    </div>
-  );
+  return <AdminTrainingDataPage showQuickDeclaration />;
 }

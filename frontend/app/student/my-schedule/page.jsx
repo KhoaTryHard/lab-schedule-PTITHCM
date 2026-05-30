@@ -1,34 +1,17 @@
-import ScheduleLookupTable from "../../../components/schedules/ScheduleLookupTable.jsx";
-
-const STUDENT_VISIBLE_COLUMNS = [
-  "course_code",
-  "course_name",
-  "group_no",
-  "practice_team",
-  "lecturer",
-  "room_code",
-  "day_of_week",
-  "time_slot",
-  "start_date",
-  "end_date",
-  "created_at",
-  "updated_at",
-  "planned_size",
-  "team_no",
-];
+import WeeklyScheduleTable from "../../../components/schedules/WeeklyScheduleTable.jsx";
 
 export default function StudentSchedulePage() {
   return (
-    <ScheduleLookupTable
-      title="Lịch thực hành của sinh viên"
-      usePublishedEndpoint
-      visibleColumnKeys={STUDENT_VISIBLE_COLUMNS}
-      showStatusFilter={false}
-      showCourseSectionFilter={false}
-      showLecturerFilter={false}
-      showScheduleRequestFilter={false}
+    <WeeklyScheduleTable
+      title="Thời khóa biểu sinh viên"
+      description="Lịch thực hành đã công bố của sinh viên hiện tại."
+      roleVariant="student"
+      accentTone="blue"
+      fixedParams={{ status: "published" }}
+      currentUserIdParamName="student_user_id"
+      clientSideRequiredStatus="published"
       emptyTitle="Chưa có lịch thực hành đã công bố"
-      emptyDescription="Chưa có lịch thực hành đã công bố phù hợp với bộ lọc hiện tại."
+      emptyDescription="Không có lịch thực hành đã công bố của sinh viên trong tuần đang chọn."
     />
   );
 }

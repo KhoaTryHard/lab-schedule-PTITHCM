@@ -2,13 +2,25 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { ErrorState, LoadingState } from "../../components/common/UiState.jsx";
 import ptitLogo from "../../pictures/PtitLogo.svg";
 import { login, getMe } from "../../services/authService";
+import { checkBackendHealth } from "../../services/healthService";
 import { saveToken, saveUser } from "../../lib/authStorage";
 import { getHomePathByRole } from "../../lib/roleRoutes";
+
+const SERVER_DOWN_MESSAGE = "Không kết nối được máy chủ";
+
+async function verifyBackendConnection() {
+  try {
+    const health = await checkBackendHealth();
+    return Boolean(health.ok);
+  } catch {
+    return false;
+  }
+}
 
 function AuthRetryButton({ onClick }) {
   return (
@@ -38,6 +50,25 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [serverStatusMessage, setServerStatusMessage] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function checkServerStatus() {
+      const isBackendAlive = await verifyBackendConnection();
+
+      if (isMounted) {
+        setServerStatusMessage(isBackendAlive ? "" : SERVER_DOWN_MESSAGE);
+      }
+    }
+
+    checkServerStatus();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -47,6 +78,15 @@ export default function LoginPage() {
       setErrorMessage("Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu.");
       return;
     }
+
+    const isBackendAlive = await verifyBackendConnection();
+
+    if (!isBackendAlive) {
+      setServerStatusMessage(SERVER_DOWN_MESSAGE);
+      return;
+    }
+
+    setServerStatusMessage("");
 
     try {
       setIsSubmitting(true);
@@ -70,6 +110,11 @@ export default function LoginPage() {
       saveUser(currentUser);
       router.replace(getHomePathByRole(currentUser.role_code));
     } catch (error) {
+      if (error instanceof TypeError) {
+        setServerStatusMessage(SERVER_DOWN_MESSAGE);
+        return;
+      }
+
       if (error.status === 401) {
         setErrorMessage("Tên đăng nhập hoặc mật khẩu không đúng.");
         return;
@@ -161,6 +206,21 @@ export default function LoginPage() {
             title="Đang xác thực"
             description="Hệ thống đang kiểm tra tài khoản và phân quyền."
           />
+        ) : null}
+
+        {serverStatusMessage ? (
+          <p
+            role="alert"
+            style={{
+              margin: "4px 0 0",
+              color: "#8b0000",
+              fontSize: 13,
+              fontWeight: 800,
+              textAlign: "center",
+            }}
+          >
+            {serverStatusMessage}
+          </p>
         ) : null}
 
         <button
