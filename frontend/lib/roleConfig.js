@@ -179,7 +179,6 @@ export const ROLE_LAYOUT_CONFIG = {
         icon: "settings",
         itemName: "Tình trạng phòng",
         href: "/technician/room-status",
-        badge: SOON_BADGE,
       },
       {
         icon: "person",
