@@ -19,6 +19,7 @@ import {
 import { getUser } from "../../../lib/authStorage";
 import {
   createScheduleRequest,
+  getScheduleRequestById,
   listScheduleRequests,
   submitScheduleRequest,
 } from "../../../services/scheduleRequestService";
@@ -272,6 +273,134 @@ function getApiFieldErrors(error) {
   }, {});
 }
 
+function DetailGridItem({ label, value }) {
+  return (
+    <div
+      style={{
+        display: "grid",
+        gap: 4,
+        padding: 12,
+        borderRadius: 14,
+        background: "#fffafa",
+        border: "1px solid rgba(139, 0, 0, 0.1)",
+      }}
+    >
+      <span style={{ color: "#64748b", fontSize: 12, fontWeight: 700 }}>
+        {label}
+      </span>
+      <strong style={{ color: "#183b68", fontSize: 13 }}>
+        {value ?? "—"}
+      </strong>
+    </div>
+  );
+}
+
+function ScheduleRequestDetailDialog({
+  isOpen,
+  requestDetail,
+  isLoading,
+  errorMessage,
+  onClose,
+}) {
+  if (!isOpen) {
+    return null;
+  }
+
+  const status = normalizeStatus(
+    requestDetail?.request_status || requestDetail?.status,
+  );
+
+  return (
+    <div className="modalOverlay" role="presentation">
+      <section
+        className="modalPanel scheduleRequestModalPanel"
+        role="dialog"
+        aria-modal="true"
+      >
+        <div className="modalHeader">
+          <div>
+            <p className="modalEyebrow">Chi tiết từ API</p>
+            <h3 className="modalTitle">
+              Yêu cầu xếp lịch #{requestDetail?.id || "—"}
+            </h3>
+          </div>
+
+          <button
+            type="button"
+            className="modalCloseButton"
+            onClick={onClose}
+            aria-label="Đóng popup"
+          >
+            ×
+          </button>
+        </div>
+
+        <div className="modalBody">
+          {isLoading ? (
+            <div className="commonStateBox" role="status">
+              <h3 className="commonStateTitle">Đang tải chi tiết...</h3>
+              <p className="commonStateText">
+                Frontend đang gọi GET /api/schedule-requests/:id.
+              </p>
+            </div>
+          ) : errorMessage ? (
+            <div className="commonStateBox" role="alert">
+              <h3 className="commonStateTitle">Không tải được chi tiết</h3>
+              <p className="commonStateText">{errorMessage}</p>
+            </div>
+          ) : requestDetail ? (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                gap: 10,
+              }}
+            >
+              <DetailGridItem label="ID yêu cầu" value={getDisplayValue(requestDetail.id)} />
+              <DetailGridItem label="Trạng thái" value={REQUEST_STATUS_META[status]?.label || status || "—"} />
+              <DetailGridItem label="ID lớp học phần" value={getDisplayValue(requestDetail.course_section_id)} />
+              <DetailGridItem
+                label="Học phần"
+                value={
+                  requestDetail.course_code || requestDetail.course_name
+                    ? `${requestDetail.course_code || "—"} - ${requestDetail.course_name || "—"}`
+                    : "—"
+                }
+              />
+              <DetailGridItem label="Nhóm" value={getDisplayValue(requestDetail.group_no)} />
+              <DetailGridItem label="Số tổ thực hành" value={getDisplayValue(requestDetail.requested_team_count)} />
+              <DetailGridItem label="SV / tổ" value={getDisplayValue(requestDetail.max_students_per_team)} />
+              <DetailGridItem label="Số buổi cần xếp" value={getDisplayValue(requestDetail.total_required_sessions)} />
+              <DetailGridItem label="Từ ngày ưu tiên" value={formatDate(requestDetail.preferred_week_start)} />
+              <DetailGridItem label="Đến ngày ưu tiên" value={formatDate(requestDetail.preferred_week_end)} />
+              <DetailGridItem label="Thứ ưu tiên" value={formatDayOfWeek(requestDetail.preferred_day_of_week)} />
+              <DetailGridItem label="ID ca ưu tiên" value={getDisplayValue(requestDetail.preferred_time_slot_id)} />
+              <DetailGridItem label="Người tạo" value={getDisplayValue(requestDetail.requested_by_name)} />
+              <DetailGridItem label="ID người tạo" value={getDisplayValue(requestDetail.requested_by_user_id)} />
+              <DetailGridItem label="Ghi chú" value={getDisplayValue(requestDetail.notes)} />
+              <DetailGridItem label="Tạo lúc" value={formatDateTime(requestDetail.created_at)} />
+              <DetailGridItem label="Cập nhật" value={formatDateTime(requestDetail.updated_at)} />
+            </div>
+          ) : (
+            <div className="commonStateBox">
+              <h3 className="commonStateTitle">Chưa có dữ liệu chi tiết</h3>
+              <p className="commonStateText">
+                API không trả về dữ liệu cho yêu cầu này.
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div className="modalActions">
+          <ButtonUI tone="secondary" shape="rounded" onClick={onClose}>
+            Đóng
+          </ButtonUI>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 function getFirstApiErrorMessage(error, fallbackMessage) {
   if (Array.isArray(error?.details) && error.details.length > 0) {
     return getValidationErrorText(error.details[0]);
@@ -407,6 +536,11 @@ export default function ScheduleRequestsPage() {
   const [successMessage, setSuccessMessage] = useState("");
   const [submittingRequestId, setSubmittingRequestId] = useState("");
 
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedRequestDetail, setSelectedRequestDetail] = useState(null);
+  const [isLoadingRequestDetail, setIsLoadingRequestDetail] = useState(false);
+  const [detailErrorMessage, setDetailErrorMessage] = useState("");
+
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [createForm, setCreateForm] = useState(initialCreateForm);
   const [createFieldErrors, setCreateFieldErrors] = useState({});
@@ -508,6 +642,34 @@ export default function ScheduleRequestsPage() {
     }
   }
 
+  async function handleOpenRequestDetail(requestId) {
+    if (!requestId) {
+      return;
+    }
+
+    try {
+      setIsDetailModalOpen(true);
+      setSelectedRequestDetail(null);
+      setDetailErrorMessage("");
+      setIsLoadingRequestDetail(true);
+
+      const response = await getScheduleRequestById(requestId);
+      setSelectedRequestDetail(response?.data || null);
+    } catch (error) {
+      setDetailErrorMessage(
+        getApiErrorMessage(error, "Không thể tải chi tiết yêu cầu xếp lịch."),
+      );
+    } finally {
+      setIsLoadingRequestDetail(false);
+    }
+  }
+
+  function handleCloseRequestDetail() {
+    setIsDetailModalOpen(false);
+    setSelectedRequestDetail(null);
+    setDetailErrorMessage("");
+  }
+
   const requestColumns = useMemo(
     () => [
       { key: "course_section_id", label: "ID lớp học phần" },
@@ -535,28 +697,36 @@ export default function ScheduleRequestsPage() {
       {
         key: "actions",
         label: "Thao tác",
-        render: (_, row) => {
-          if (row.request_status_code !== "draft") {
-            return "—";
-          }
-
-          return (
+        render: (_, row) => (
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <ButtonUI
-              tone="primary"
+              tone="secondary"
               shape="rounded"
               size="sm"
-              disabled={Boolean(submittingRequestId)}
-              onClick={() => handleSubmitExistingRequest(row.id)}
+              disabled={isLoadingRequestDetail}
+              onClick={() => handleOpenRequestDetail(row.id)}
             >
-              {submittingRequestId === String(row.id)
-                ? "Đang gửi..."
-                : "Gửi yêu cầu"}
+              {isLoadingRequestDetail ? "Đang tải..." : "Chi tiết"}
             </ButtonUI>
-          );
-        },
+
+            {row.request_status_code === "draft" ? (
+              <ButtonUI
+                tone="primary"
+                shape="rounded"
+                size="sm"
+                disabled={Boolean(submittingRequestId)}
+                onClick={() => handleSubmitExistingRequest(row.id)}
+              >
+                {submittingRequestId === String(row.id)
+                  ? "Đang gửi..."
+                  : "Gửi yêu cầu"}
+              </ButtonUI>
+            ) : null}
+          </div>
+        ),
       },
     ],
-    [submittingRequestId],
+    [isLoadingRequestDetail, submittingRequestId],
   );
 
   const requestRows = useMemo(
@@ -834,6 +1004,14 @@ export default function ScheduleRequestsPage() {
           </div>
         </div>
       </section>
+
+      <ScheduleRequestDetailDialog
+        isOpen={isDetailModalOpen}
+        requestDetail={selectedRequestDetail}
+        isLoading={isLoadingRequestDetail}
+        errorMessage={detailErrorMessage}
+        onClose={handleCloseRequestDetail}
+      />
 
       {isCreateModalOpen ? (
         <div className="modalOverlay" role="presentation">

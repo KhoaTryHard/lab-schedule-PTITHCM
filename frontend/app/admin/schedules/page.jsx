@@ -1,12 +1,14 @@
-import ScheduleLookupTable from "../../../components/schedules/ScheduleLookupTable.jsx";
+import WeeklyScheduleTable from "../../../components/schedules/WeeklyScheduleTable.jsx";
 
 export default function AdminSchedulesPage() {
   return (
-    <ScheduleLookupTable
-      title="Tra cứu lịch thực hành toàn hệ thống"
+    <WeeklyScheduleTable
+      title="Thời khóa biểu toàn hệ thống"
+      description="Admin xem lịch thực hành toàn hệ thống theo tuần. Không hiển thị nút thao tác."
+      roleVariant="admin"
+      accentTone="red"
       emptyTitle="Chưa có lịch thực hành"
-      emptyDescription="Chưa có lịch thực hành phù hợp với bộ lọc hiện tại."
-      showScheduleRequestFilter
+      emptyDescription="Không có lịch thực hành phù hợp trong tuần đang chọn."
     />
   );
 }

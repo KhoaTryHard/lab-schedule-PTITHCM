@@ -96,7 +96,7 @@ INSERT INTO `users` (`id`, `username`, `password_hash`, `full_name`, `email`, `r
 INSERT INTO `rooms` (`id`, `room_code`, `total_computers`, `broken_computers`, `reserved_teacher_computers`, `has_projector`, `has_wifi`, `has_lan`, `room_status`, `primary_technician_user_id`) VALUES
 (1, '2B11', 31, 1, 1, 1, 1, 1, 'available', 9),
 (2, '2B21', 31, 0, 1, 1, 1, 1, 'available', 9),
-(3, '2B31', 31, 0, 1, 1, 1, 1, 'available', 9);
+(3, '2B31', 31, 0, 1, 1, 1, 1, 'maintenance', 9);
 
 -- ─── 7. lecturer_profiles ────────────────────────────────────────────────────
 INSERT INTO `lecturer_profiles` (`user_id`, `lecturer_code`, `department_name`, `academic_rank`) VALUES

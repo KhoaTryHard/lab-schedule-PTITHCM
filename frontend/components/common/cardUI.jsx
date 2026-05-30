@@ -83,7 +83,7 @@ export function CardUI({
     <CardFrame variant="summary" className={className}>
       <div className="cardUISummaryHeader">
         {iconContent ? (
-          <span className="cardUIIconWrap" style={iconWrapperStyle}>
+          <span className="cardUIIconWrap">
             {iconContent}
           </span>
         ) : null}
@@ -120,6 +120,9 @@ export function UploadCard({
   titleSize = "15px",
   fileLabel,
   buttonLabel,
+  templateLabel = "Tải biểu mẫu",
+  templateHref = "",
+  templateDownloadName = "",
   accept,
   disabled = false,
   inputName,
@@ -152,10 +155,20 @@ export function UploadCard({
           </span>
         ) : null}
 
-        <h6 className="cardUITitle cardUIUploadTitle" style={titleStyle}>
+        <h6 className="cardUITitle cardUIUploadTitle">
           {title}
         </h6>
       </div>
+
+      {templateHref ? (
+        <a
+          className="cardUITemplateLink"
+          href={templateHref}
+          download={templateDownloadName || undefined}
+        >
+          {templateLabel}
+        </a>
+      ) : null}
 
       <div className="cardUIUploadActions">
         <ButtonUI

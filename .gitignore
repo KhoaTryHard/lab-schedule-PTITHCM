@@ -38,9 +38,16 @@ logs/
 ~$*.docx
 ~$*.xlsx
 
+<<<<<<< HEAD
 
 #AI-generated files
 CLAUDE.md
 
 backend/package-lock.json
 frontend/package-lock.json
+=======
+# AI-generated/local files
+CLAUDE.md
+backend/package-lock.json
+frontend/package-lock.json
+>>>>>>> d971df3deba44a21a388ff144f7005f33db14411

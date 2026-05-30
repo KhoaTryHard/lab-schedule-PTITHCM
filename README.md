@@ -99,7 +99,60 @@ Frontend mặc định chạy ở:
 http://localhost:3000
 ```
 
-## 4. Quy tắc phòng trong scope
+## 4. Tài khoản demo
+
+Sau khi import schema và chạy `seed_demo_final.sql`:
+
+| Vai trò | Username | Password |
+|---|---|---|
+| QTV (Admin) | admin | 123456 |
+| CBDT (Giáo vụ) | academic_officer1 | 123456 |
+| GV (Giảng viên) | lecturer_phanhy | 123456 |
+| KTV (Kỹ thuật viên) | technician_lab1 | 123456 |
+| SV (Sinh viên) | n23dccn030 | 123456 |
+
+## 5. Phạm vi MVP đã hoàn thành
+
+### Đã làm (Sprint 1 - MVP này)
+
+- ✅ Auth & RBAC cho 5 vai trò (QTV, CBDT, GV, KTV, SV)
+- ✅ Quản lý phòng (CRUD cho 3 phòng MVP: 2B11, 2B21, 2B31)
+- ✅ Tạo yêu cầu xếp lịch
+- ✅ Auto-arrange (rule-based với 8 hard constraints + scoring đơn giản)
+- ✅ Kiểm tra ràng buộc 8 rule (ROOM_SCOPE, ROOM_STATUS, ROOM_CONFLICT, LECTURER_CONFLICT, ROOM_BLOCKED, HOLIDAY_BLOCKED, CAPACITY_OK, SOFTWARE_OK)
+- ✅ Tạo lịch, duyệt (approve), công bố (publish)
+- ✅ Tra cứu lịch theo 5 vai trò với filter
+
+### Chưa làm (Sprint 2 — phát triển sau bảo vệ)
+
+- 🔄 Quản lý user (CRUD), devices, software riêng
+- 🔄 Academic data master (CRUD học kỳ, học phần, lớp học phần)
+- 🔄 Đổi/hủy/học bù
+- 🔄 Sự cố phòng, phản ánh SV
+- 🔄 Thông báo (notification), audit log
+
+### Không trong scope (Sprint 3+)
+
+- ⏸️ Dashboard nâng cao và báo cáo thống kê
+- ⏸️ Backup/Restore tự động
+- ⏸️ Tối ưu thuật toán toàn cục (constraint satisfaction)
+- ⏸️ Đồng bộ UIS thật
+
+> **Ghi chú:** Database schema đã được thiết kế đầy đủ cho cả 17 module (30 bảng + 6 view). Module Sprint 2 chỉ cần implement API layer.
+
+## 6. Quick demo flow (7 bước)
+
+Sau khi cài đặt xong và chạy seed:
+
+1. **Login CBDT** — `academic_officer1` / `123456`
+2. Vào **"Tạo yêu cầu xếp lịch"** → điền form (course_section, practice_team, số buổi) → Submit
+3. Vào **"Auto-Arrange"** → chọn request vừa tạo → set preferred (ví dụ T4, ca 7-10) → bấm "Auto Arrange" → xem 3 phương án ranked
+4. Chọn option score cao nhất → click "Use this option" → tạo lịch draft
+5. Vào **"Lịch thực hành"** → chọn lịch draft → Approve → Publish
+6. Logout → Login **SV** `n23dccn030` / `123456` → xem lịch đã công bố
+7. Logout → Login **GV** `lecturer_phanhy` / `123456` → xem lịch dạy
+
+## 7. Quy tắc phòng trong scope
 
 Mọi chức năng xếp lịch phải lọc phòng theo danh sách cố định:
 
@@ -109,7 +162,7 @@ Mọi chức năng xếp lịch phải lọc phòng theo danh sách cố định
 
 Không đưa các phòng `2A16`, `2A35`, `2A36`, `2E36`, `1A...` vào MVP.
 
-## 5. Branch workflow
+## 8. Branch workflow
 
 Branch chính:
 
@@ -139,7 +192,7 @@ Xem chi tiết tại:
 docs/git-workflow.md
 ```
 
-## 6. Definition of Done
+## 9. Definition of Done
 
 Một task chỉ được đánh dấu `Done` khi có đủ:
 
@@ -150,7 +203,7 @@ Một task chỉ được đánh dấu `Done` khi có đủ:
 5. Có ảnh/chứng cứ nếu dùng cho báo cáo.
 6. README hoặc ghi chú cập nhật nếu thay đổi cách chạy.
 
-## 7. Tài liệu quan trọng
+## 10. Tài liệu quan trọng
 
 | File | Mục đích |
 |---|---|
