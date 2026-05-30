@@ -106,10 +106,10 @@ Sau khi import schema và chạy `seed_demo_final.sql`:
 | Vai trò | Username | Password |
 |---|---|---|
 | QTV (Admin) | admin | 123456 |
-| CBDT (Giáo vụ) | academic_officer1 | 123456 |
-| GV (Giảng viên) | lecturer_phanhy | 123456 |
-| KTV (Kỹ thuật viên) | technician_lab1 | 123456 |
-| SV (Sinh viên) | n23dccn030 | 123456 |
+| CBDT (Giáo vụ) | cbdt1 | 123456 |
+| GV (Giảng viên) | gv_phthy | 123456 |
+| KTV (Kỹ thuật viên) | ktv1 | 123456 |
+| SV (Sinh viên) | sv1 | 123456 |
 
 ## 5. Phạm vi MVP đã hoàn thành
 
@@ -144,13 +144,13 @@ Sau khi import schema và chạy `seed_demo_final.sql`:
 
 Sau khi cài đặt xong và chạy seed:
 
-1. **Login CBDT** — `academic_officer1` / `123456`
+1. **Login CBDT** — `cbdt1` / `123456`
 2. Vào **"Tạo yêu cầu xếp lịch"** → điền form (course_section, practice_team, số buổi) → Submit
 3. Vào **"Auto-Arrange"** → chọn request vừa tạo → set preferred (ví dụ T4, ca 7-10) → bấm "Auto Arrange" → xem 3 phương án ranked
 4. Chọn option score cao nhất → click "Use this option" → tạo lịch draft
 5. Vào **"Lịch thực hành"** → chọn lịch draft → Approve → Publish
-6. Logout → Login **SV** `n23dccn030` / `123456` → xem lịch đã công bố
-7. Logout → Login **GV** `lecturer_phanhy` / `123456` → xem lịch dạy
+6. Logout → Login **SV** `sv1` / `123456` → xem lịch đã công bố
+7. Logout → Login **GV** `gv_phthy` / `123456` → xem lịch dạy
 
 ## 7. Quy tắc phòng trong scope
 
