@@ -37,3 +37,10 @@ logs/
 # Office temp
 ~$*.docx
 ~$*.xlsx
+
+
+#AI-generated files
+CLAUDE.md
+
+backend/package-lock.json
+frontend/package-lock.json
