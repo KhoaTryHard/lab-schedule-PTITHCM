@@ -1,5 +1,6 @@
 const { isInScopeRoom } = require('../../config/roomScope');
 const { ok, fail } = require('../../utils/apiResponse');
+const { recordAuditLog } = require('../audit/audit.service');
 const {
   findRoomById,
   getScopeRoomList,
@@ -122,6 +123,19 @@ async function updateRoomById(req, res) {
   }
 
   const updatedRoom = await updateRoom(id, updates, room);
+
+  await recordAuditLog({
+    entity_type: 'rooms',
+    entity_id: id,
+    action_type: 'update',
+    old_status: room.room_status,
+    new_status: updatedRoom.room_status,
+    action_by_user_id: req.user.id,
+    action_notes: {
+      room_code: updatedRoom.room_code,
+      changed_fields: Object.keys(updates)
+    }
+  });
 
   return ok(res, updatedRoom, 'Success');
 }

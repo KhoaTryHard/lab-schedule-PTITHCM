@@ -1,5 +1,6 @@
 const pool = require('../../config/database');
 const { ROLES } = require('../../config/roles');
+const { recordAuditLog } = require('../audit/audit.service');
 
 const CHANGE_TYPES = new Set(['reschedule', 'makeup', 'cancel']);
 const REVIEW_STATUSES = new Set(['approved', 'rejected']);
@@ -420,6 +421,18 @@ async function createChangeRequest(input, user) {
   );
 
   const created = await getChangeRequestRowById(result.insertId);
+  await recordAuditLog({
+    entity_type: 'lab_schedule_change_requests',
+    entity_id: result.insertId,
+    action_type: 'create',
+    new_status: 'submitted',
+    action_by_user_id: user.id,
+    action_notes: {
+      change_type: data.change_type,
+      lab_schedule_entry_id: data.lab_schedule_entry_id
+    }
+  });
+
   return { ok: true, changeRequest: formatChangeRequest(created) };
 }
 
@@ -467,6 +480,18 @@ async function reviewChangeRequest(id, input, user) {
   );
 
   const updated = await getChangeRequestRowById(id);
+  await recordAuditLog({
+    entity_type: 'lab_schedule_change_requests',
+    entity_id: id,
+    action_type: 'review',
+    old_status: row.request_status,
+    new_status: nextStatus,
+    action_by_user_id: user.id,
+    action_notes: {
+      review_notes: normalizeOptionalText(input.review_notes)
+    }
+  });
+
   return { ok: true, changeRequest: formatChangeRequest(updated) };
 }
 
@@ -749,6 +774,33 @@ async function implementChangeRequest(id, input, user) {
        WHERE id = ?`,
       [user.id, nextReviewNotes, id]
     );
+
+    await recordAuditLog(connection, {
+      entity_type: 'lab_schedule_change_requests',
+      entity_id: id,
+      action_type: 'implement',
+      old_status: row.request_status,
+      new_status: 'implemented',
+      action_by_user_id: user.id,
+      action_notes: {
+        change_type: row.change_type,
+        implemented_schedule_entry_id: implementationResult.scheduleEntryId,
+        review_notes: nextReviewNotes
+      }
+    });
+
+    await recordAuditLog(connection, {
+      entity_type: 'lab_schedule_entries',
+      entity_id: implementationResult.scheduleEntryId,
+      action_type: `implement_${row.change_type}`,
+      old_status: row.original_entry_status,
+      new_status: row.change_type === 'cancel' ? 'cancelled' : row.original_entry_status,
+      action_by_user_id: user.id,
+      action_notes: {
+        change_request_id: id,
+        original_schedule_entry_id: row.lab_schedule_entry_id
+      }
+    });
 
     await connection.commit();
 

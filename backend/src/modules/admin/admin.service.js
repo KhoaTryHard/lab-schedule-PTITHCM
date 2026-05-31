@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 
 const pool = require('../../config/database');
+const { recordAuditLog } = require('../audit/audit.service');
 
 class ApiError extends Error {
   constructor(statusCode, message, details = null) {
@@ -356,6 +357,26 @@ function toAccountResponse(row) {
   };
 }
 
+function getMasterStatus(resource, item) {
+  if (!item) {
+    return null;
+  }
+
+  switch (resource) {
+    case 'semesters':
+    case 'time-slots':
+      return item.is_active ? 'active' : 'inactive';
+    case 'courses':
+      return item.course_status || null;
+    case 'course-sections':
+      return item.section_status || null;
+    case 'student-cohorts':
+      return item.cohort_status || null;
+    default:
+      return null;
+  }
+}
+
 async function listAccounts(filters = {}) {
   const where = [];
   const params = [];
@@ -399,7 +420,7 @@ function normalizeAccountPayload(body, isCreate) {
   const fields = [
     { name: 'username', type: 'string', required: true, maxLength: 50 },
     { name: 'full_name', type: 'string', required: true, maxLength: 150 },
-    { name: 'email', type: 'string', maxLength: 150, nullable: true },
+    { name: 'email', type: 'string', required: true, maxLength: 150 },
     { name: 'phone_number', type: 'string', maxLength: 20, nullable: true },
     { name: 'role_code', type: 'enum', required: true, values: ROLE_CODES },
     { name: 'account_status', type: 'enum', values: ACCOUNT_STATUSES }
@@ -448,7 +469,7 @@ async function findAccountById(id) {
   return rows[0] ? toAccountResponse(rows[0]) : null;
 }
 
-async function createAccount(body) {
+async function createAccount(body, actorUserId = null) {
   const values = normalizeAccountPayload(body, true);
   const columns = Object.keys(values);
   const placeholders = columns.map(() => '?').join(', ');
@@ -460,12 +481,43 @@ async function createAccount(body) {
     params
   ));
 
-  return findAccountById(result.insertId);
+  const account = await findAccountById(result.insertId);
+
+  await recordAuditLog({
+    entity_type: 'users',
+    entity_id: account.id,
+    action_type: 'create',
+    new_status: account.account_status,
+    action_by_user_id: actorUserId,
+    action_notes: {
+      username: account.username,
+      role_code: account.role_code
+    }
+  });
+
+  return account;
 }
 
-async function updateAccount(idParam, body) {
+async function updateAccount(idParam, body, actorUserId = null) {
   const id = parseId(idParam);
+  const before = await findAccountById(id);
+
+  if (!before) {
+    throw new ApiError(404, 'Account not found');
+  }
+
   const values = normalizeAccountPayload(body, false);
+
+  if (
+    Number(actorUserId) === Number(id) &&
+    (
+      (hasOwn(values, 'account_status') && values.account_status !== 'active') ||
+      (hasOwn(values, 'role_code') && values.role_code !== 'QTV')
+    )
+  ) {
+    throw new ApiError(400, 'Cannot remove access from the current admin account');
+  }
+
   const setClauses = Object.keys(values).map((column) => `\`${column}\` = ?`);
   const params = Object.keys(values).map((column) => values[column]);
 
@@ -478,7 +530,22 @@ async function updateAccount(idParam, body) {
     throw new ApiError(404, 'Account not found');
   }
 
-  return findAccountById(id);
+  const account = await findAccountById(id);
+
+  await recordAuditLog({
+    entity_type: 'users',
+    entity_id: account.id,
+    action_type: 'update',
+    old_status: before.account_status,
+    new_status: account.account_status,
+    action_by_user_id: actorUserId,
+    action_notes: {
+      username: account.username,
+      changed_fields: Object.keys(values).filter((field) => field !== 'password_hash')
+    }
+  });
+
+  return account;
 }
 
 async function disableAccount(idParam, actorUserId) {
@@ -486,6 +553,12 @@ async function disableAccount(idParam, actorUserId) {
 
   if (Number(actorUserId) === Number(id)) {
     throw new ApiError(400, 'Cannot disable the current account');
+  }
+
+  const before = await findAccountById(id);
+
+  if (!before) {
+    throw new ApiError(404, 'Account not found');
   }
 
   const [result] = await pool.query(
@@ -497,7 +570,21 @@ async function disableAccount(idParam, actorUserId) {
     throw new ApiError(404, 'Account not found');
   }
 
-  return findAccountById(id);
+  const account = await findAccountById(id);
+
+  await recordAuditLog({
+    entity_type: 'users',
+    entity_id: account.id,
+    action_type: 'disable',
+    old_status: before.account_status,
+    new_status: account.account_status,
+    action_by_user_id: actorUserId,
+    action_notes: {
+      username: account.username
+    }
+  });
+
+  return account;
 }
 
 const MASTER_RESOURCES = {
@@ -569,7 +656,22 @@ const MASTER_RESOURCES = {
     ]
   },
   'course-sections': {
-    writable: false
+    table: 'course_sections',
+    writable: true,
+    fields: [
+      { name: 'course_id', type: 'int', required: true, min: 1 },
+      { name: 'semester_id', type: 'int', required: true, min: 1 },
+      { name: 'group_no', type: 'string', required: true, maxLength: 20 },
+      { name: 'registered_enrollment', type: 'int', min: 0 },
+      { name: 'planned_enrollment', type: 'int', min: 0, nullable: true },
+      { name: 'class_start_date', type: 'date', nullable: true },
+      { name: 'class_end_date', type: 'date', nullable: true },
+      { name: 'section_status', type: 'enum', values: SECTION_STATUSES },
+      { name: 'notes', type: 'string', maxLength: 255, nullable: true }
+    ],
+    afterNormalize(values) {
+      assertDateRange(values, 'class_start_date', 'class_end_date');
+    }
   },
   'lecturer-assignments': {
     writable: false
@@ -710,7 +812,7 @@ async function listCourseSections() {
     ...row,
     semester_code: `HK${row.semester_no}_${String(row.academic_year).replace('-', '_')}`,
     section_code: `${row.course_code}_${row.group_no}`,
-    read_only: true
+    read_only: false
   }));
 }
 
@@ -751,7 +853,7 @@ async function listLecturerAssignments() {
   }));
 }
 
-async function createMasterData(resource, body) {
+async function createMasterData(resource, body, actorUserId = null) {
   const config = getMasterResource(resource);
 
   if (!config.writable) {
@@ -774,10 +876,24 @@ async function createMasterData(resource, body) {
     params
   ));
 
-  return findMasterDataItem(resource, result.insertId);
+  const item = await findMasterDataItem(resource, result.insertId);
+
+  await recordAuditLog({
+    entity_type: config.table,
+    entity_id: item.id,
+    action_type: 'create',
+    new_status: getMasterStatus(resource, item),
+    action_by_user_id: actorUserId,
+    action_notes: {
+      resource,
+      code: item.semester_code || item.slot_code || item.course_code || item.section_code || item.cohort_code || null
+    }
+  });
+
+  return item;
 }
 
-async function updateMasterData(resource, idParam, body) {
+async function updateMasterData(resource, idParam, body, actorUserId = null) {
   const config = getMasterResource(resource);
 
   if (!config.writable) {
@@ -785,6 +901,7 @@ async function updateMasterData(resource, idParam, body) {
   }
 
   const id = parseId(idParam);
+  const before = await findMasterDataItem(resource, id);
   const values = normalizePayload(body, config.fields, false);
 
   if (config.afterNormalize) {
@@ -804,7 +921,22 @@ async function updateMasterData(resource, idParam, body) {
     throw new ApiError(404, 'Master data item not found');
   }
 
-  return findMasterDataItem(resource, id);
+  const item = await findMasterDataItem(resource, id);
+
+  await recordAuditLog({
+    entity_type: config.table,
+    entity_id: item.id,
+    action_type: 'update',
+    old_status: getMasterStatus(resource, before),
+    new_status: getMasterStatus(resource, item),
+    action_by_user_id: actorUserId,
+    action_notes: {
+      resource,
+      changed_fields: columns
+    }
+  });
+
+  return item;
 }
 
 async function findMasterDataItem(resource, id) {
@@ -879,7 +1011,7 @@ async function listDevices(filters = {}) {
   return rows;
 }
 
-async function createDevice(body) {
+async function createDevice(body, actorUserId = null) {
   const values = normalizePayload(body, DEVICE_FIELDS, true);
   const columns = Object.keys(values);
   const params = columns.map((column) => values[column]);
@@ -890,11 +1022,26 @@ async function createDevice(body) {
     params
   ));
 
-  return findDeviceById(result.insertId);
+  const device = await findDeviceById(result.insertId);
+
+  await recordAuditLog({
+    entity_type: 'devices',
+    entity_id: device.id,
+    action_type: 'create',
+    new_status: device.device_status,
+    action_by_user_id: actorUserId,
+    action_notes: {
+      device_code: device.device_code,
+      room_code: device.room_code
+    }
+  });
+
+  return device;
 }
 
-async function updateDevice(idParam, body) {
+async function updateDevice(idParam, body, actorUserId = null) {
   const id = parseId(idParam);
+  const before = await findDeviceById(id);
   const values = normalizePayload(body, DEVICE_FIELDS, false);
   const columns = Object.keys(values);
   const setClauses = columns.map((column) => `\`${column}\` = ?`);
@@ -913,7 +1060,22 @@ async function updateDevice(idParam, body) {
     throw new ApiError(404, 'Device not found');
   }
 
-  return findDeviceById(id);
+  const device = await findDeviceById(id);
+
+  await recordAuditLog({
+    entity_type: 'devices',
+    entity_id: device.id,
+    action_type: 'update',
+    old_status: before.device_status,
+    new_status: device.device_status,
+    action_by_user_id: actorUserId,
+    action_notes: {
+      device_code: device.device_code,
+      changed_fields: columns
+    }
+  });
+
+  return device;
 }
 
 async function findDeviceById(id) {
@@ -960,7 +1122,7 @@ async function listSoftwarePackages() {
   return rows;
 }
 
-async function createSoftwarePackage(body) {
+async function createSoftwarePackage(body, actorUserId = null) {
   const values = normalizePayload(body, SOFTWARE_FIELDS, true);
   const columns = Object.keys(values);
   const params = columns.map((column) => values[column]);
@@ -971,11 +1133,26 @@ async function createSoftwarePackage(body) {
     params
   ));
 
-  return findSoftwarePackageById(result.insertId);
+  const softwarePackage = await findSoftwarePackageById(result.insertId);
+
+  await recordAuditLog({
+    entity_type: 'software_packages',
+    entity_id: softwarePackage.id,
+    action_type: 'create',
+    new_status: 'active',
+    action_by_user_id: actorUserId,
+    action_notes: {
+      software_name: softwarePackage.software_name,
+      software_version: softwarePackage.software_version
+    }
+  });
+
+  return softwarePackage;
 }
 
-async function updateSoftwarePackage(idParam, body) {
+async function updateSoftwarePackage(idParam, body, actorUserId = null) {
   const id = parseId(idParam);
+  const before = await findSoftwarePackageById(id);
   const values = normalizePayload(body, SOFTWARE_FIELDS, false);
   const columns = Object.keys(values);
   const setClauses = columns.map((column) => `\`${column}\` = ?`);
@@ -990,7 +1167,22 @@ async function updateSoftwarePackage(idParam, body) {
     throw new ApiError(404, 'Software package not found');
   }
 
-  return findSoftwarePackageById(id);
+  const softwarePackage = await findSoftwarePackageById(id);
+
+  await recordAuditLog({
+    entity_type: 'software_packages',
+    entity_id: softwarePackage.id,
+    action_type: 'update',
+    old_status: before.software_version || 'active',
+    new_status: softwarePackage.software_version || 'active',
+    action_by_user_id: actorUserId,
+    action_notes: {
+      software_name: softwarePackage.software_name,
+      changed_fields: columns
+    }
+  });
+
+  return softwarePackage;
 }
 
 async function findSoftwarePackageById(id) {

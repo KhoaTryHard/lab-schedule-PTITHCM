@@ -26,7 +26,10 @@ function getSummaryValue(report, groupKey, itemKey) {
   return Number(report?.[groupKey]?.[itemKey] || 0);
 }
 
-export default function AcademicReportsPage() {
+export default function AcademicReportsPage({
+  audienceLabel = "Cán bộ đào tạo",
+  title = "Báo cáo thống kê cơ bản",
+} = {}) {
   const [report, setReport] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -79,6 +82,14 @@ export default function AcademicReportsPage() {
         source: "room_issue_reports",
       },
       {
+        label: "Thiết bị cần chú ý",
+        value:
+          getSummaryValue(report, "device_summary", "minor_issue_devices") +
+          getSummaryValue(report, "device_summary", "broken_devices") +
+          getSummaryValue(report, "device_summary", "under_repair_devices"),
+        source: "devices.device_status",
+      },
+      {
         label: "Yêu cầu đổi/hủy",
         value: getSummaryValue(
           report,
@@ -122,6 +133,17 @@ export default function AcademicReportsPage() {
     [report],
   );
 
+  const deviceRows = useMemo(
+    () =>
+      (report?.device_summary?.by_room || []).map((room) => ({
+        ...room,
+        total_devices_label: formatNumber(room.total_devices),
+        working_devices_label: formatNumber(room.working_devices),
+        attention_devices_label: formatNumber(room.attention_devices),
+      })),
+    [report],
+  );
+
   const roomUsageColumns = useMemo(
     () => [
       { key: "room_code", label: "Phòng" },
@@ -141,12 +163,22 @@ export default function AcademicReportsPage() {
     [],
   );
 
+  const deviceColumns = useMemo(
+    () => [
+      { key: "room_code", label: "Phòng" },
+      { key: "total_devices_label", label: "Tổng thiết bị" },
+      { key: "working_devices_label", label: "Hoạt động" },
+      { key: "attention_devices_label", label: "Cần chú ý" },
+    ],
+    [],
+  );
+
   return (
     <div className="academicPageStack">
       <section className="academicHero">
         <div className="academicHeroBody">
-          <p className="academicEyebrow">Cán bộ đào tạo</p>
-          <h1 className="academicHeroTitle">Báo cáo thống kê cơ bản</h1>
+          <p className="academicEyebrow">{audienceLabel}</p>
+          <h1 className="academicHeroTitle">{title}</h1>
           <p className="academicHeroText">
             Đường báo cáo tối thiểu cho demo cuối kỳ, đọc trực tiếp từ các bảng
             lịch thực hành, phòng, sự cố, yêu cầu đổi lịch và phản ánh sinh viên.
@@ -232,6 +264,26 @@ export default function AcademicReportsPage() {
             pageSize={8}
           />
         </aside>
+      </section>
+
+      <section className="academicPanel">
+        <div className="academicPanelHeader">
+          <div>
+            <p className="academicEyebrow">Thiết bị phòng máy</p>
+            <h2>Tình trạng thiết bị theo phòng</h2>
+            <p>Dữ liệu thật từ `devices`, nhóm theo phòng máy.</p>
+          </div>
+        </div>
+
+        <DataTable
+          columns={deviceColumns}
+          rows={deviceRows}
+          rowKey="room_code"
+          loading={isLoading}
+          emptyTitle="Chưa có dữ liệu thiết bị"
+          emptyDescription="API reports/basic chưa trả về dữ liệu device_summary.by_room."
+          pageSize={8}
+        />
       </section>
     </div>
   );

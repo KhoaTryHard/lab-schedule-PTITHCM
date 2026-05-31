@@ -6,6 +6,7 @@ const {
   createMasterData,
   createSoftwarePackage,
   disableAccount,
+  listAuditLogs,
   listAccounts,
   listDevices,
   listMasterData,
@@ -23,6 +24,12 @@ const asyncHandler = require('../../utils/asyncHandler');
 const router = express.Router();
 
 router.use(requireAuth);
+
+router.get(
+  '/audit-logs',
+  requireRoles(ROLES.ADMIN),
+  asyncHandler(listAuditLogs)
+);
 
 router.get(
   '/accounts',

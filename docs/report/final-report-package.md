@@ -35,6 +35,7 @@ MVP scope:
 | Schedule change request | Done | TC20, `test_results_w5-45.md` |
 | Room issue/block | Done | TC21-TC22, `test_results_w5-46.md` |
 | Feedback/notifications | Done | TC23-TC24, `test_results_w5-47.md` |
+| Admin/master CRUD + audit logs | Done | `test_results_final_demo.md` |
 | Frontend integration | Done | `test_results_w5-49.md` |
 | Basic reports | Done | TC25, `test_results_w5-50.md` |
 
@@ -69,6 +70,7 @@ Core tables:
 - `student_feedback`
 - `notifications`
 - `notification_recipients`
+- `workflow_audit_logs`
 
 ## 6. Testing Summary
 
@@ -82,6 +84,7 @@ Final status:
   - `docs/postman/test_results_w5-47.md`
   - `docs/postman/test_results_w5-49.md`
   - `docs/postman/test_results_w5-50.md`
+  - `docs/postman/test_results_final_demo.md`
 
 ## 7. Demo Package
 
@@ -102,6 +105,5 @@ Final status:
 
 - UIS synchronization.
 - Advanced dashboard and exports.
-- Audit logs for all critical changes.
 - More complete notification coverage.
 - Automated end-to-end UI tests with Playwright.

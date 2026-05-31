@@ -88,13 +88,17 @@ try {
   $baselineQuery = @"
 SELECT 'users', COUNT(*) FROM users
 UNION ALL SELECT 'rooms', COUNT(*) FROM rooms
+UNION ALL SELECT 'devices', COUNT(*) FROM devices
+UNION ALL SELECT 'software_packages', COUNT(*) FROM software_packages
+UNION ALL SELECT 'academic_weeks', COUNT(*) FROM academic_weeks
 UNION ALL SELECT 'schedule_requests', COUNT(*) FROM lab_schedule_requests
 UNION ALL SELECT 'schedule_entries', COUNT(*) FROM lab_schedule_entries
 UNION ALL SELECT 'change_requests', COUNT(*) FROM lab_schedule_change_requests
 UNION ALL SELECT 'room_issues', COUNT(*) FROM room_issue_reports
 UNION ALL SELECT 'room_blocks', COUNT(*) FROM room_block_requests
 UNION ALL SELECT 'feedback', COUNT(*) FROM student_feedback
-UNION ALL SELECT 'notifications', COUNT(*) FROM notifications;
+UNION ALL SELECT 'notifications', COUNT(*) FROM notifications
+UNION ALL SELECT 'audit_logs', COUNT(*) FROM workflow_audit_logs;
 "@
 
   Invoke-Mysql @(

@@ -1,5 +1,6 @@
 const pool = require('../../config/database');
 const { ROLES } = require('../../config/roles');
+const { recordAuditLog } = require('../audit/audit.service');
 
 const FEEDBACK_TYPES = new Set(['schedule_error', 'room_error', 'other']);
 const FEEDBACK_STATUSES = new Set(['submitted', 'under_review', 'responded', 'closed']);
@@ -338,6 +339,18 @@ async function createStudentFeedback(input, user) {
       recipient_user_ids: reviewerIds
     });
 
+    await recordAuditLog(connection, {
+      entity_type: 'student_feedback',
+      entity_id: result.insertId,
+      action_type: 'create',
+      new_status: 'submitted',
+      action_by_user_id: user.id,
+      action_notes: {
+        feedback_type: feedbackType,
+        lab_schedule_entry_id: entryId
+      }
+    });
+
     await connection.commit();
 
     const created = await getFeedbackRowById(result.insertId);
@@ -391,6 +404,18 @@ async function updateStudentFeedback(id, input, user) {
         recipient_user_ids: [current.student_user_id]
       });
     }
+
+    await recordAuditLog(connection, {
+      entity_type: 'student_feedback',
+      entity_id: id,
+      action_type: 'update',
+      old_status: current.feedback_status,
+      new_status: nextStatus,
+      action_by_user_id: user.id,
+      action_notes: {
+        response_text: responseText
+      }
+    });
 
     await connection.commit();
 
@@ -447,6 +472,15 @@ async function markNotificationRead(notificationId, user) {
          AND user_id = ?`,
       [notificationId, user.id]
     );
+
+    await recordAuditLog({
+      entity_type: 'notifications',
+      entity_id: notificationId,
+      action_type: 'read',
+      old_status: current.recipient_status,
+      new_status: 'read',
+      action_by_user_id: user.id
+    });
   }
 
   const updated = await getNotificationRowByIdForUser(notificationId, user.id);
@@ -470,6 +504,15 @@ async function acknowledgeNotification(notificationId, user) {
     [notificationId, user.id]
   );
 
+  await recordAuditLog({
+    entity_type: 'notifications',
+    entity_id: notificationId,
+    action_type: 'acknowledge',
+    old_status: current.recipient_status,
+    new_status: 'acknowledged',
+    action_by_user_id: user.id
+  });
+
   const updated = await getNotificationRowByIdForUser(notificationId, user.id);
   return { ok: true, notification: formatNotification(updated) };
 }
@@ -483,6 +526,20 @@ async function markAllNotificationsRead(user) {
        AND recipient_status = 'unread'`,
     [user.id]
   );
+
+  if (result.affectedRows > 0) {
+    await recordAuditLog({
+      entity_type: 'notification_recipients',
+      entity_id: user.id,
+      action_type: 'read_all',
+      old_status: 'unread',
+      new_status: 'read',
+      action_by_user_id: user.id,
+      action_notes: {
+        updated_count: result.affectedRows
+      }
+    });
+  }
 
   return { updated_count: result.affectedRows };
 }

@@ -1,6 +1,10 @@
 const jwt = require('jsonwebtoken');
 
 const { fail } = require('../utils/apiResponse');
+const {
+  findUserById,
+  isActiveAccount
+} = require('../modules/auth/auth.service');
 
 function requireAuth(req, res, next) {
   const authHeader = req.get('authorization');
@@ -28,13 +32,25 @@ function requireAuth(req, res, next) {
       return fail(res, 401, 'Invalid token');
     }
 
-    req.user = {
-      id: decoded.id,
-      username: decoded.username,
-      role_code: decoded.role_code
-    };
+    return findUserById(decoded.id)
+      .then((user) => {
+        if (!user) {
+          return fail(res, 401, 'User not found');
+        }
 
-    return next();
+        if (!isActiveAccount(user)) {
+          return fail(res, 403, 'Account is not active');
+        }
+
+        req.user = {
+          id: user.id,
+          username: user.username,
+          role_code: user.role_code
+        };
+
+        return next();
+      })
+      .catch(next);
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
       return fail(res, 401, 'Token expired');

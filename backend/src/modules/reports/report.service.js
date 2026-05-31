@@ -48,6 +48,40 @@ async function getRoomUsage() {
   }));
 }
 
+async function getDeviceSummary() {
+  const [rows] = await pool.query(
+    `SELECT
+       COUNT(*) AS total_devices,
+       SUM(device_status = 'working') AS working_devices,
+       SUM(device_status = 'minor_issue') AS minor_issue_devices,
+       SUM(device_status = 'broken') AS broken_devices,
+       SUM(device_status = 'under_repair') AS under_repair_devices,
+       SUM(device_status = 'replaced') AS replaced_devices
+     FROM devices`
+  );
+  const [byRoomRows] = await pool.query(
+    `SELECT
+       room.room_code,
+       COUNT(device.id) AS total_devices,
+       SUM(device.device_status = 'working') AS working_devices,
+       SUM(device.device_status IN ('minor_issue', 'broken', 'under_repair')) AS attention_devices
+     FROM rooms room
+     LEFT JOIN devices device ON device.room_id = room.id
+     GROUP BY room.id, room.room_code
+     ORDER BY room.room_code`
+  );
+
+  return {
+    ...normalizeSummary(rows[0]),
+    by_room: byRoomRows.map((row) => ({
+      room_code: row.room_code,
+      total_devices: toNumber(row.total_devices),
+      working_devices: toNumber(row.working_devices),
+      attention_devices: toNumber(row.attention_devices)
+    }))
+  };
+}
+
 async function getIssueSummary() {
   const [rows] = await pool.query(
     `SELECT
@@ -110,6 +144,7 @@ async function getBasicReport() {
   const [
     schedule_summary,
     room_usage,
+    device_summary,
     issue_summary,
     room_block_summary,
     change_request_summary,
@@ -117,6 +152,7 @@ async function getBasicReport() {
   ] = await Promise.all([
     getScheduleSummary(),
     getRoomUsage(),
+    getDeviceSummary(),
     getIssueSummary(),
     getRoomBlockSummary(),
     getChangeRequestSummary(),
@@ -127,6 +163,7 @@ async function getBasicReport() {
     generated_at: new Date().toISOString(),
     schedule_summary,
     room_usage,
+    device_summary,
     issue_summary,
     room_block_summary,
     change_request_summary,
@@ -139,6 +176,10 @@ async function getBasicReport() {
       {
         metric: 'Room usage by room',
         source: 'rooms + lab_schedule_entries'
+      },
+      {
+        metric: 'Device status by room',
+        source: 'rooms + devices'
       },
       {
         metric: 'Issue counts',

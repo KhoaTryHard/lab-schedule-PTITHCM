@@ -43,4 +43,19 @@ The following are the highest-value screenshots to refresh after the final API/U
 - `/student/notifications`
 - `docs/postman/test-cases-final.md` or Postman runner result
 
-Automated screenshot capture was not run in this CLI session because no browser automation dependency is installed in the project. These manual screenshot targets are part of the final Word/demo packaging step.
+## Refreshed QTV Screenshots
+
+The following QTV screenshots were refreshed with Chrome DevTools MCP and saved in `docs/screenshots/final/`:
+
+| File | Purpose |
+| --- | --- |
+| `01-qtv-accounts.png` | QTV account management with UTF-8 Vietnamese names and create/edit/lock actions |
+| `02-qtv-reports.png` | QTV real basic report metrics from `GET /api/reports/basic` |
+| `03-qtv-training-data.png` | QTV academic master data with `academic_weeks=22` and demo course `SHOT1001` |
+| `04-qtv-devices.png` | QTV device CRUD view with demo device `SHOT-DEVICE-001` updated to `Lỗi nhẹ` |
+| `05-qtv-software.png` | QTV software package CRUD view with demo package `Screenshot Demo Package` |
+| `06-qtv-audit-logs.png` | QTV audit evidence for account status, device, software, and course actions |
+
+The QTV screenshots used temporary `SHOT-*` demo rows. The database was reset after capture and verified back at `users=10`, `devices=4`, `software_packages=3`, `academic_weeks=22`, with generated Sprint 2 tables and audit logs at `0`.
+
+The remaining non-QTV screenshot targets should still be refreshed manually if the final Word report needs a fully current role-by-role image set.

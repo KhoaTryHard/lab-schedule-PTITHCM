@@ -23,6 +23,12 @@ export function listAdminAccounts(params = {}) {
   });
 }
 
+export function listAdminAuditLogs(params = {}) {
+  return apiClient(`/admin/audit-logs${buildQueryString(params)}`, {
+    method: "GET",
+  });
+}
+
 export function createAdminAccount(payload) {
   return apiClient("/admin/accounts", {
     method: "POST",

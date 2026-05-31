@@ -1,6 +1,7 @@
 const pool = require('../../config/database');
 const { ROLES } = require('../../config/roles');
 const { isInScopeRoom } = require('../../config/roomScope');
+const { recordAuditLog } = require('../audit/audit.service');
 
 const ISSUE_TYPES = new Set(['computer', 'network', 'projector', 'power', 'software', 'other']);
 const ISSUE_SEVERITIES = new Set(['low', 'medium', 'high', 'critical']);
@@ -443,6 +444,19 @@ async function createRoomIssue(input, user) {
   );
 
   const created = await getRoomIssueRowById(result.insertId);
+  await recordAuditLog({
+    entity_type: 'room_issue_reports',
+    entity_id: result.insertId,
+    action_type: 'create',
+    new_status: 'new',
+    action_by_user_id: user.id,
+    action_notes: {
+      room_code: room.room_code,
+      issue_type: issueType,
+      severity
+    }
+  });
+
   return { ok: true, issue: formatRoomIssue(created) };
 }
 
@@ -498,6 +512,19 @@ async function updateRoomIssue(id, input, user) {
   );
 
   const updated = await getRoomIssueRowById(id);
+  await recordAuditLog({
+    entity_type: 'room_issue_reports',
+    entity_id: id,
+    action_type: 'update',
+    old_status: current.issue_status,
+    new_status: updated.issue_status,
+    action_by_user_id: user.id,
+    action_notes: {
+      changed_fields: setClauses.map((clause) => clause.split(' = ')[0]),
+      resolution_notes: normalizeText(input.resolution_notes)
+    }
+  });
+
   return { ok: true, issue: formatRoomIssue(updated) };
 }
 
@@ -611,6 +638,20 @@ async function createRoomBlock(input, user) {
   );
 
   const created = await getRoomBlockRowById(result.insertId);
+  await recordAuditLog({
+    entity_type: 'room_block_requests',
+    entity_id: result.insertId,
+    action_type: 'create',
+    new_status: 'submitted',
+    action_by_user_id: user.id,
+    action_notes: {
+      room_code: roomResult.room.room_code,
+      block_type: blockType,
+      start_date: startDate,
+      end_date: endDate
+    }
+  });
+
   return { ok: true, block: formatRoomBlock(created) };
 }
 
@@ -648,6 +689,18 @@ async function reviewRoomBlock(id, input, user) {
   );
 
   const updated = await getRoomBlockRowById(id);
+  await recordAuditLog({
+    entity_type: 'room_block_requests',
+    entity_id: id,
+    action_type: 'review',
+    old_status: current.block_status,
+    new_status: updated.block_status,
+    action_by_user_id: user.id,
+    action_notes: {
+      review_notes: normalizeText(input.review_notes)
+    }
+  });
+
   return { ok: true, block: formatRoomBlock(updated) };
 }
 

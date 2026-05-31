@@ -126,13 +126,13 @@ Sau khi import schema và chạy `seed_demo_final.sql`:
 - ✅ Tạo lịch, duyệt (approve), công bố (publish)
 - ✅ Tra cứu lịch theo 5 vai trò với filter
 
-### Chưa làm (Sprint 2 — phát triển sau bảo vệ)
+### Đã làm (Sprint 2 — API layer và demo cuối kỳ)
 
-- 🔄 Quản lý user (CRUD), devices, software riêng
-- 🔄 Academic data master (CRUD học kỳ, học phần, lớp học phần)
-- 🔄 Đổi/hủy/học bù
-- 🔄 Sự cố phòng, phản ánh SV
-- 🔄 Thông báo (notification), audit log
+- ✅ Quản lý user (tạo, xem, cập nhật, khóa), devices và software bằng API riêng
+- ✅ Academic data master CRUD cho học kỳ, tuần học, ca học, học phần, lớp học phần và lớp hành chính
+- ✅ Đổi lịch, hủy lịch, học bù qua `lab_schedule_change_requests`
+- ✅ Sự cố phòng, yêu cầu khóa phòng và phản ánh sinh viên
+- ✅ Thông báo theo người nhận và audit log cho các thao tác nghiệp vụ chính
 
 ### Không trong scope (Sprint 3+)
 
@@ -141,7 +141,7 @@ Sau khi import schema và chạy `seed_demo_final.sql`:
 - ⏸️ Tối ưu thuật toán toàn cục (constraint satisfaction)
 - ⏸️ Đồng bộ UIS thật
 
-> **Ghi chú:** Database schema đã được thiết kế đầy đủ cho cả 17 module (30 bảng + 6 view). Module Sprint 2 chỉ cần implement API layer.
+> **Ghi chú:** Database schema đã được thiết kế đầy đủ cho cả 17 module (30 bảng + 6 view). Sprint 2 hiện đã có API layer, UI integration chính và smoke evidence trong `docs/postman/test_results_final_demo.md`.
 
 ## 6. Quick demo flow (7 bước)
 

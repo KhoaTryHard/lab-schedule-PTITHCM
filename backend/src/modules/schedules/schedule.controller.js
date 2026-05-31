@@ -16,8 +16,11 @@ async function listSchedules(req, res) {
     room_code: req.query.room_code,
     lecturer_user_id: req.query.lecturer_user_id,
     schedule_request_id: req.query.schedule_request_id,
-    student_user_id: req.query.student_user_id
-  });
+    student_user_id: req.query.student_user_id,
+    semester_id: req.query.semester_id,
+    week_no: req.query.week_no,
+    course_section_id: req.query.course_section_id
+  }, req.user);
   return ok(res, { schedules }, 'Successfully fetched schedules');
 }
 
@@ -85,8 +88,12 @@ async function listPublishedSchedules(req, res) {
   const schedules = await getPublishedSchedules({
     schedule_request_id: req.query.schedule_request_id,
     room_code: req.query.room_code,
-    lecturer_user_id: req.query.lecturer_user_id
-  });
+    lecturer_user_id: req.query.lecturer_user_id,
+    student_user_id: req.query.student_user_id,
+    semester_id: req.query.semester_id,
+    week_no: req.query.week_no,
+    course_section_id: req.query.course_section_id
+  }, req.user);
 
   return ok(res, schedules, 'Successfully fetched published schedules');
 }

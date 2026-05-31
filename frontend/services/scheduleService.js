@@ -18,6 +18,9 @@ export function buildScheduleQueryString(params = {}) {
   appendParam(query, "lecturer_user_id", params.lecturer_user_id);
   appendParam(query, "schedule_request_id", params.schedule_request_id);
   appendParam(query, "student_user_id", params.student_user_id);
+  appendParam(query, "semester_id", params.semester_id);
+  appendParam(query, "week_no", params.week_no);
+  appendParam(query, "course_section_id", params.course_section_id);
 
   const queryString = query.toString();
   return queryString ? `?${queryString}` : "";
@@ -29,6 +32,10 @@ export function buildPublishedScheduleQueryString(params = {}) {
   appendParam(query, "schedule_request_id", params.schedule_request_id);
   appendParam(query, "room_code", params.room_code);
   appendParam(query, "lecturer_user_id", params.lecturer_user_id);
+  appendParam(query, "student_user_id", params.student_user_id);
+  appendParam(query, "semester_id", params.semester_id);
+  appendParam(query, "week_no", params.week_no);
+  appendParam(query, "course_section_id", params.course_section_id);
 
   const queryString = query.toString();
   return queryString ? `?${queryString}` : "";
@@ -37,7 +44,8 @@ export function buildPublishedScheduleQueryString(params = {}) {
 /**
  * GET /api/schedules
  * Backend-supported filters:
- * status, room_code, lecturer_user_id, schedule_request_id, student_user_id.
+ * status, room_code, lecturer_user_id, schedule_request_id, student_user_id,
+ * semester_id, week_no, course_section_id.
  */
 export function listSchedules(params = {}) {
   return apiClient(`/schedules${buildScheduleQueryString(params)}`, {

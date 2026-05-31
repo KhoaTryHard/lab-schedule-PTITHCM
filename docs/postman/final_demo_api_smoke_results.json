@@ -40,6 +40,31 @@
         "Details":  "rooms=2B11,2B21,2B31"
     },
     {
+        "Name":  "Admin account CRUD",
+        "Status":  "PASS",
+        "Details":  "created/updated/disabled id=11"
+    },
+    {
+        "Name":  "Admin software CRUD",
+        "Status":  "PASS",
+        "Details":  "created/updated id=4"
+    },
+    {
+        "Name":  "Admin device CRUD",
+        "Status":  "PASS",
+        "Details":  "created/updated id=137"
+    },
+    {
+        "Name":  "Academic master CRUD",
+        "Status":  "PASS",
+        "Details":  "semester=3, course=5, section=7"
+    },
+    {
+        "Name":  "Audit log",
+        "Status":  "PASS",
+        "Details":  "course_section_logs=2"
+    },
+    {
         "Name":  "Create schedule request",
         "Status":  "PASS",
         "Details":  "id=8"
@@ -80,6 +105,11 @@
         "Details":  "SOFTWARE_OK=false for room 2B31 + software 1"
     },
     {
+        "Name":  "Software DB-derived requirements",
+        "Status":  "PASS",
+        "Details":  "SOFTWARE_OK derived from course mapping when client field is omitted"
+    },
+    {
         "Name":  "Holiday constraint fail",
         "Status":  "PASS",
         "Details":  "HOLIDAY_BLOCKED=false on 2026-05-01"
@@ -93,6 +123,16 @@
         "Name":  "SV/GV published lookup",
         "Status":  "PASS",
         "Details":  "created published schedule visible"
+    },
+    {
+        "Name":  "SV forced schedule scope",
+        "Status":  "PASS",
+        "Details":  "unscoped lookup returned published schedules for the current student only"
+    },
+    {
+        "Name":  "Schedule filters",
+        "Status":  "PASS",
+        "Details":  "semester_id/course_section_id/week_no reject non-matching values"
     },
     {
         "Name":  "Schedule change request flow",
@@ -112,7 +152,7 @@
     {
         "Name":  "Room block flow",
         "Status":  "PASS",
-        "Details":  "created/approved id=2, ROOM_BLOCKED detected"
+        "Details":  "created/approved id=1, ROOM_BLOCKED detected"
     },
     {
         "Name":  "Room block RBAC",
@@ -122,7 +162,7 @@
     {
         "Name":  "Feedback/notification flow",
         "Status":  "PASS",
-        "Details":  "feedback=1, cbdt_notification=2, sv_notification=3"
+        "Details":  "feedback=1, cbdt_notification=1, sv_notification=2"
     },
     {
         "Name":  "Feedback RBAC",
@@ -132,7 +172,7 @@
     {
         "Name":  "Basic reports API",
         "Status":  "PASS",
-        "Details":  "CBDT/QTV HTTP 200, SV HTTP 403"
+        "Details":  "CBDT/QTV HTTP 200, SV HTTP 403, device summary present"
     },
     {
         "Name":  "Frontend route /login",
@@ -211,6 +251,26 @@
     },
     {
         "Name":  "Frontend route /admin/trainingData",
+        "Status":  "PASS",
+        "Details":  "HTTP 200"
+    },
+    {
+        "Name":  "Frontend route /admin/devices",
+        "Status":  "PASS",
+        "Details":  "HTTP 200"
+    },
+    {
+        "Name":  "Frontend route /admin/software",
+        "Status":  "PASS",
+        "Details":  "HTTP 200"
+    },
+    {
+        "Name":  "Frontend route /admin/audit-logs",
+        "Status":  "PASS",
+        "Details":  "HTTP 200"
+    },
+    {
+        "Name":  "Frontend route /admin/reports",
         "Status":  "PASS",
         "Details":  "HTTP 200"
     }

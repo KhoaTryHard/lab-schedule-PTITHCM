@@ -7,7 +7,11 @@ import DataTable from "../../../components/common/DataTable.jsx";
 import SectionLayout from "../../../components/common/SectionLayout.jsx";
 import { ButtonUI } from "../../../components/common/buttonUI.jsx";
 import { renderTrainingIcon as renderSystemTrainingIcon } from "../../../components/systemIcon.jsx";
-import { listMasterData } from "../../../services/adminService";
+import {
+  createMasterData,
+  listMasterData,
+  updateMasterData,
+} from "../../../services/adminService";
 
 const trainingTabItems = [
   { key: "semesters", resource: "semesters", label: "Học kỳ" },
@@ -111,6 +115,77 @@ const trainingQuickItems = [
   },
 ];
 
+const masterFormConfigMap = {
+  semesters: [
+    { name: "academic_year", label: "Năm học", required: true },
+    { name: "semester_no", label: "Học kỳ số", type: "number", required: true },
+    { name: "semester_name", label: "Tên học kỳ", required: true },
+    { name: "start_date", label: "Ngày bắt đầu", type: "date", required: true },
+    { name: "end_date", label: "Ngày kết thúc", type: "date", required: true },
+    { name: "is_active", label: "Đang sử dụng", type: "checkbox" },
+  ],
+  weeks: [
+    { name: "semester_id", label: "Học kỳ", type: "semester", required: true },
+    { name: "week_no", label: "Tuần số", type: "number", required: true },
+    { name: "start_date", label: "Ngày bắt đầu", type: "date", required: true },
+    { name: "end_date", label: "Ngày kết thúc", type: "date", required: true },
+  ],
+  slots: [
+    { name: "slot_label", label: "Nhãn ca", required: true },
+    { name: "start_period", label: "Tiết bắt đầu", type: "number", required: true },
+    { name: "end_period", label: "Tiết kết thúc", type: "number", required: true },
+    { name: "start_time", label: "Giờ bắt đầu", type: "time", nullable: true },
+    { name: "end_time", label: "Giờ kết thúc", type: "time", nullable: true },
+    { name: "is_active", label: "Đang sử dụng", type: "checkbox" },
+  ],
+  courses: [
+    { name: "course_code", label: "Mã học phần", required: true },
+    { name: "course_name", label: "Tên học phần", required: true },
+    { name: "credits", label: "Tín chỉ", type: "number" },
+    { name: "lecture_periods", label: "Số tiết lý thuyết", type: "number" },
+    { name: "lab_periods", label: "Số tiết thực hành", type: "number" },
+    { name: "course_status", label: "Trạng thái", type: "course_status" },
+    { name: "description", label: "Mô tả", nullable: true },
+  ],
+  sections: [
+    { name: "course_id", label: "Học phần", type: "course", required: true },
+    { name: "semester_id", label: "Học kỳ", type: "semester", required: true },
+    { name: "group_no", label: "Nhóm", required: true },
+    { name: "registered_enrollment", label: "Số SV đăng ký", type: "number" },
+    { name: "planned_enrollment", label: "Số SV dự kiến", type: "number", nullable: true },
+    { name: "class_start_date", label: "Ngày bắt đầu", type: "date", nullable: true },
+    { name: "class_end_date", label: "Ngày kết thúc", type: "date", nullable: true },
+    { name: "section_status", label: "Trạng thái", type: "section_status" },
+    { name: "notes", label: "Ghi chú", nullable: true },
+  ],
+  cohorts: [
+    { name: "cohort_code", label: "Mã lớp", required: true },
+    { name: "faculty_name", label: "Khoa", nullable: true },
+    { name: "major_name", label: "Ngành", nullable: true },
+    { name: "intake_year", label: "Khóa", nullable: true },
+    { name: "cohort_status", label: "Trạng thái", type: "cohort_status" },
+  ],
+};
+
+const selectOptionMap = {
+  course_status: [
+    ["active", "Active"],
+    ["inactive", "Inactive"],
+    ["archived", "Archived"],
+  ],
+  section_status: [
+    ["draft", "Draft"],
+    ["open", "Open"],
+    ["closed", "Closed"],
+    ["cancelled", "Cancelled"],
+  ],
+  cohort_status: [
+    ["active", "Active"],
+    ["inactive", "Inactive"],
+    ["archived", "Archived"],
+  ],
+};
+
 const trainingColumnMap = {
   semesters: [
     { key: "semester_code", label: "Mã học kỳ" },
@@ -188,14 +263,22 @@ function formatDateLabel(dateValue) {
     return "—";
   }
 
-  const normalized = String(dateValue).slice(0, 10);
-  const [year, month, day] = normalized.split("-");
+  const stringValue = String(dateValue);
+  const plainDateMatch = stringValue.match(/^(\d{4})-(\d{2})-(\d{2})$/);
 
-  if (!year || !month || !day) {
-    return String(dateValue);
+  if (plainDateMatch) {
+    return `${plainDateMatch[3]}/${plainDateMatch[2]}/${plainDateMatch[1]}`;
   }
 
-  return `${day}/${month}/${year}`;
+  const date = new Date(dateValue);
+
+  if (Number.isNaN(date.getTime())) {
+    return stringValue;
+  }
+
+  return new Intl.DateTimeFormat("vi-VN", {
+    timeZone: "Asia/Ho_Chi_Minh",
+  }).format(date);
 }
 
 function formatTimeLabel(timeValue) {
@@ -298,7 +381,15 @@ function buildSearchTarget(tabKey, item) {
   }
 }
 
-function buildRows(tabKey, items) {
+function buildRows(tabKey, items, onEdit) {
+  const action = (item, readOnly = false) => (
+    readOnly ? buildScopeBadge(true) : (
+      <ButtonUI size="sm" tone="secondary" onClick={() => onEdit(item)}>
+        Sửa
+      </ButtonUI>
+    )
+  );
+
   switch (tabKey) {
     case "semesters":
       return items.map((item) => ({
@@ -309,7 +400,7 @@ function buildRows(tabKey, items) {
         start_date: formatDateLabel(item.start_date),
         end_date: formatDateLabel(item.end_date),
         status: buildTrainingStatusBadge(getStatusValue(tabKey, item)),
-        action: buildScopeBadge(false),
+        action: action(item),
       }));
     case "weeks":
       return items.map((item) => ({
@@ -318,7 +409,7 @@ function buildRows(tabKey, items) {
         semester_name: item.semester_name,
         start_date: formatDateLabel(item.start_date),
         end_date: formatDateLabel(item.end_date),
-        action: buildScopeBadge(false),
+        action: action(item),
       }));
     case "slots":
       return items.map((item) => ({
@@ -328,7 +419,7 @@ function buildRows(tabKey, items) {
         period_range: `${item.start_period}-${item.end_period}`,
         time_range: `${formatTimeLabel(item.start_time)} - ${formatTimeLabel(item.end_time)}`,
         status: buildTrainingStatusBadge(getStatusValue(tabKey, item)),
-        action: buildScopeBadge(false),
+        action: action(item),
       }));
     case "courses":
       return items.map((item) => ({
@@ -339,7 +430,7 @@ function buildRows(tabKey, items) {
         lecture_periods: item.lecture_periods,
         lab_periods: item.lab_periods,
         status: buildTrainingStatusBadge(item.course_status),
-        action: buildScopeBadge(false),
+        action: action(item),
       }));
     case "sections":
       return items.map((item) => ({
@@ -351,7 +442,7 @@ function buildRows(tabKey, items) {
         planned_enrollment: item.planned_enrollment || "—",
         registered_enrollment: item.registered_enrollment,
         status: buildTrainingStatusBadge(item.section_status),
-        action: buildScopeBadge(true),
+        action: action(item),
       }));
     case "cohorts":
       return items.map((item) => ({
@@ -361,7 +452,7 @@ function buildRows(tabKey, items) {
         major_name: item.major_name || "—",
         intake_year: item.intake_year || "—",
         status: buildTrainingStatusBadge(item.cohort_status),
-        action: buildScopeBadge(false),
+        action: action(item),
       }));
     case "lecturers":
       return items.map((item) => ({
@@ -370,11 +461,124 @@ function buildRows(tabKey, items) {
         lecturer_name: item.lecturer_name,
         lecturer_role: item.lecturer_role,
         assigned_at: formatDateLabel(item.assigned_at),
-        action: buildScopeBadge(true),
+        action: action(item, true),
       }));
     default:
       return [];
   }
+}
+
+function getDefaultForm(tabKey, trainingData) {
+  const defaults = {
+    semesters: { is_active: true },
+    weeks: { semester_id: trainingData.semesters?.[0]?.id || "" },
+    slots: { is_active: true },
+    courses: { credits: "0", lecture_periods: "0", lab_periods: "0", course_status: "active" },
+    sections: {
+      course_id: trainingData.courses?.[0]?.id || "",
+      semester_id: trainingData.semesters?.[0]?.id || "",
+      registered_enrollment: "0",
+      planned_enrollment: "",
+      section_status: "open",
+    },
+    cohorts: { cohort_status: "active" },
+  };
+
+  return masterFormConfigMap[tabKey].reduce((form, field) => ({
+    ...form,
+    [field.name]: defaults[tabKey]?.[field.name] ?? (field.type === "checkbox" ? false : ""),
+  }), {});
+}
+
+function MasterDataDialog({
+  activeTab,
+  item,
+  form,
+  trainingData,
+  error,
+  isSaving,
+  onChange,
+  onClose,
+  onSubmit,
+}) {
+  if (!form) return null;
+
+  function renderInput(field) {
+    if (field.type === "checkbox") {
+      return (
+        <input
+          type="checkbox"
+          name={field.name}
+          checked={Boolean(form[field.name])}
+          onChange={(event) => onChange(field.name, event.target.checked)}
+        />
+      );
+    }
+
+    if (field.type === "semester" || field.type === "course") {
+      const options = field.type === "semester" ? trainingData.semesters || [] : trainingData.courses || [];
+      return (
+        <select className="select" name={field.name} value={form[field.name]} onChange={(event) => onChange(field.name, event.target.value)} required={field.required}>
+          <option value="">Chọn dữ liệu</option>
+          {options.map((option) => (
+            <option key={option.id} value={option.id}>
+              {field.type === "semester" ? option.semester_name : `${option.course_code} - ${option.course_name}`}
+            </option>
+          ))}
+        </select>
+      );
+    }
+
+    if (selectOptionMap[field.type]) {
+      return (
+        <select className="select" name={field.name} value={form[field.name]} onChange={(event) => onChange(field.name, event.target.value)}>
+          {selectOptionMap[field.type].map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+        </select>
+      );
+    }
+
+    return (
+      <input
+        className="input"
+        name={field.name}
+        type={field.type || "text"}
+        value={form[field.name]}
+        onChange={(event) => onChange(field.name, event.target.value)}
+        required={field.required}
+      />
+    );
+  }
+
+  return (
+    <div className="modalOverlay" role="presentation">
+      <section className="modalPanel masterDataDialog" role="dialog" aria-modal="true" aria-labelledby="master-dialog-title">
+        <div className="modalHeader">
+          <div>
+            <p className="modalEyebrow">QTV / Dữ liệu đào tạo</p>
+            <h3 id="master-dialog-title" className="modalTitle">
+              {item ? "Cập nhật dữ liệu" : "Tạo dữ liệu"}
+            </h3>
+          </div>
+          <button type="button" className="modalCloseButton" onClick={onClose} disabled={isSaving} aria-label="Đóng">x</button>
+        </div>
+        <form onSubmit={onSubmit}>
+          <div className="modalBody masterDataGrid">
+            {error ? <p className="academicAlert academicAlert--error">{error}</p> : null}
+            {masterFormConfigMap[activeTab].map((field) => (
+              <label key={field.name} className="label">
+                {field.label}
+                {renderInput(field)}
+              </label>
+            ))}
+          </div>
+          <div className="modalActions">
+            <ButtonUI tone="secondary" onClick={onClose} disabled={isSaving}>Hủy</ButtonUI>
+            <ButtonUI type="submit" disabled={isSaving}>{isSaving ? "Đang lưu..." : "Lưu dữ liệu"}</ButtonUI>
+          </div>
+        </form>
+      </section>
+    </div>
+  );
 }
 
 export default function TrainingDataPage({ showQuickDeclaration = false } = {}) {
@@ -384,6 +588,10 @@ export default function TrainingDataPage({ showQuickDeclaration = false } = {}) 
   const [statusFilter, setStatusFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [masterForm, setMasterForm] = useState(null);
+  const [dialogError, setDialogError] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   async function loadTrainingData() {
     try {
@@ -468,10 +676,7 @@ export default function TrainingDataPage({ showQuickDeclaration = false } = {}) 
     ];
   }, [trainingData]);
 
-  const currentRows = useMemo(
-    () => buildRows(activeTab, currentItems),
-    [activeTab, currentItems],
-  );
+  const currentRows = buildRows(activeTab, currentItems, openEditDialog);
 
   const currentColumns = trainingColumnMap[activeTab] || [];
   const currentStatusOptions = statusOptionMap[activeTab] || statusOptionMap.semesters;
@@ -483,6 +688,62 @@ export default function TrainingDataPage({ showQuickDeclaration = false } = {}) 
     setActiveTab(nextTab);
     setSearchKeyword("");
     setStatusFilter("all");
+  }
+
+  function closeDialog() {
+    if (isSaving) return;
+    setSelectedItem(null);
+    setMasterForm(null);
+    setDialogError("");
+  }
+
+  function openCreateDialog() {
+    setSelectedItem(null);
+    setMasterForm(getDefaultForm(activeTab, trainingData));
+    setDialogError("");
+  }
+
+  function openEditDialog(item) {
+    const form = getDefaultForm(activeTab, trainingData);
+    masterFormConfigMap[activeTab].forEach((field) => {
+      const value = item[field.name];
+      form[field.name] = field.type === "checkbox" ? Boolean(value) : value ?? "";
+    });
+    setSelectedItem(item);
+    setMasterForm(form);
+    setDialogError("");
+  }
+
+  function updateMasterForm(field, value) {
+    setMasterForm((current) => ({ ...current, [field]: value }));
+  }
+
+  async function saveMasterData(event) {
+    event.preventDefault();
+    const resource = getTabItem(activeTab).resource;
+    const payload = {};
+
+    masterFormConfigMap[activeTab].forEach((field) => {
+      const value = masterForm[field.name];
+
+      if (field.type === "checkbox") payload[field.name] = Boolean(value);
+      else if (value !== "") payload[field.name] = field.type === "number" || ["semester", "course"].includes(field.type) ? Number(value) : value;
+      else if (field.nullable) payload[field.name] = null;
+    });
+
+    try {
+      setIsSaving(true);
+      setDialogError("");
+      if (selectedItem) await updateMasterData(resource, selectedItem.id, payload);
+      else await createMasterData(resource, payload);
+      setSelectedItem(null);
+      setMasterForm(null);
+      await loadTrainingData();
+    } catch (error) {
+      setDialogError(error.message || "Không thể lưu dữ liệu đào tạo.");
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   function handleRefresh() {
@@ -582,7 +843,7 @@ export default function TrainingDataPage({ showQuickDeclaration = false } = {}) 
               <p className="roomSectionText">
                 Hiển thị {currentRows.length} bản ghi theo bộ lọc hiện tại.
               </p>
-              {["sections", "lecturers"].includes(activeTab) ? (
+              {activeTab === "lecturers" ? (
                 <p className="roomSectionText">
                   {getTabItem(activeTab).label} là read-only trong phạm vi #48.
                 </p>
@@ -590,6 +851,9 @@ export default function TrainingDataPage({ showQuickDeclaration = false } = {}) 
             </div>
 
             <div className="roomFilterControls">
+              {activeTab !== "lecturers" ? (
+                <ButtonUI onClick={openCreateDialog}>Tạo dữ liệu</ButtonUI>
+              ) : null}
               <ButtonUI
                 tone="secondary"
                 shape="rounded"
@@ -625,6 +889,17 @@ export default function TrainingDataPage({ showQuickDeclaration = false } = {}) 
           </div>
         </div>
       </section>
+      <MasterDataDialog
+        activeTab={activeTab}
+        item={selectedItem}
+        form={masterForm}
+        trainingData={trainingData}
+        error={dialogError}
+        isSaving={isSaving}
+        onChange={updateMasterForm}
+        onClose={closeDialog}
+        onSubmit={saveMasterData}
+      />
     </div>
   );
 }

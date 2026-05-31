@@ -49,6 +49,7 @@ Verify baseline counts:
 | --- | ---: |
 | `users` | 10 |
 | `rooms` | 3 |
+| `academic_weeks` | 22 |
 | `lab_schedule_requests` | 7 |
 | `lab_schedule_entries` | 8 |
 | `lab_schedule_change_requests` | 0 |
@@ -56,6 +57,7 @@ Verify baseline counts:
 | `room_block_requests` | 0 |
 | `student_feedback` | 0 |
 | `notifications` | 0 |
+| `workflow_audit_logs` | 0 |
 
 Start services:
 
@@ -103,14 +105,18 @@ The script verifies:
 - Login success for `admin`, `cbdt1`, `gv_phthy`, `ktv1`, `sv1`.
 - Wrong password returns HTTP 401.
 - Room scope contains the three MVP rooms.
+- Admin account, device, software, semester, course, and course-section CRUD smoke.
 - Schedule request create/list.
 - Constraint pass and failures for room conflict, lecturer conflict, capacity, software, holiday, and room block.
+- Software requirements are derived from course mappings when the client omits `required_software_ids`.
 - Auto-arrange returns ranked options.
 - Draft, approve, publish, SV/GV lookup lifecycle.
+- SV unscoped schedule lookup is forced to published rows for the current student; semester, week, and course-section filters reject non-matching values.
 - Schedule change request create/review and RBAC.
 - Room issue create/resolve.
 - Room block create/review and constraint integration.
 - Student feedback submit/respond and notification read/ack/read-all.
+- Audit logs are written for audited CRUD/workflow actions.
 - Basic reports API and RBAC.
 - Key frontend routes return HTTP 200.
 
@@ -125,6 +131,11 @@ Capture or refresh these screenshots:
 | Route or artifact | Owner | Pass criteria |
 | --- | --- | --- |
 | `/academic/reports` | Khoa | Metrics load from real `GET /api/reports/basic` |
+| `/admin/accounts` | Khoa | QTV sees UTF-8 names and can create/edit/lock accounts |
+| `/admin/trainingData` | Khoa | QTV can create/edit writable master-data resources |
+| `/admin/devices` | Khoa | QTV can create/edit devices and statuses |
+| `/admin/software` | Khoa | QTV can create/edit software packages |
+| `/admin/audit-logs` | Khoa | QTV can inspect audited workflow changes |
 | `/lecturer/change-requests` | Thanh | GV sees published schedule options and form submits to API |
 | `/academic/change-requests` | Thanh | CBDT can list/review change requests |
 | `/lecturer/room-issues` | Thanh | GV can report a room issue for a taught schedule |

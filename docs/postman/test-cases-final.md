@@ -68,7 +68,7 @@ The Week 4 collection covers TC01-TC19 style core scheduling tests. Week 5 backe
 - Checklist and owner workflow: `docs/test-workflow-final.md`.
 - Local smoke script: `scripts/final-demo-smoke.ps1`.
 - Latest final demo smoke result: `docs/postman/test_results_final_demo.md`.
-- The smoke run covers login, room scope, schedule request, constraints, auto-arrange, draft/approve/publish, role lookups, change requests, room issues/blocks, feedback, notifications, reports, and frontend route HTTP 200 checks.
+- The smoke run covers login, room scope, admin CRUD, academic master CRUD, audit logs, schedule request, constraints, software requirements derived from DB mappings, forced SV schedule scope, schedule filters, auto-arrange, draft/approve/publish, role lookups, change requests, room issues/blocks, feedback, notifications, reports, and frontend route HTTP 200 checks.
 - The smoke script creates temporary rows and the database was reset after the recorded run to restore the seed baseline.
 
 ## Known Limitations

@@ -1,5 +1,6 @@
 const { created, fail, ok } = require('../../utils/apiResponse');
 const adminService = require('./admin.service');
+const { listAuditLogs: listAuditLogEntries } = require('../audit/audit.service');
 
 function handleAdminError(res, error) {
   if (error && error.statusCode) {
@@ -20,7 +21,7 @@ async function listAccounts(req, res) {
 
 async function createAccount(req, res) {
   try {
-    const account = await adminService.createAccount(req.body || {});
+    const account = await adminService.createAccount(req.body || {}, req.user.id);
     return created(res, account, 'Account created');
   } catch (error) {
     return handleAdminError(res, error);
@@ -29,7 +30,7 @@ async function createAccount(req, res) {
 
 async function updateAccount(req, res) {
   try {
-    const account = await adminService.updateAccount(req.params.id, req.body || {});
+    const account = await adminService.updateAccount(req.params.id, req.body || {}, req.user.id);
     return ok(res, account, 'Account updated');
   } catch (error) {
     return handleAdminError(res, error);
@@ -56,7 +57,7 @@ async function listMasterData(req, res) {
 
 async function createMasterData(req, res) {
   try {
-    const item = await adminService.createMasterData(req.params.resource, req.body || {});
+    const item = await adminService.createMasterData(req.params.resource, req.body || {}, req.user.id);
     return created(res, item, 'Master data item created');
   } catch (error) {
     return handleAdminError(res, error);
@@ -68,7 +69,8 @@ async function updateMasterData(req, res) {
     const item = await adminService.updateMasterData(
       req.params.resource,
       req.params.id,
-      req.body || {}
+      req.body || {},
+      req.user.id
     );
 
     return ok(res, item, 'Master data item updated');
@@ -88,7 +90,7 @@ async function listDevices(req, res) {
 
 async function createDevice(req, res) {
   try {
-    const device = await adminService.createDevice(req.body || {});
+    const device = await adminService.createDevice(req.body || {}, req.user.id);
     return created(res, device, 'Device created');
   } catch (error) {
     return handleAdminError(res, error);
@@ -97,7 +99,7 @@ async function createDevice(req, res) {
 
 async function updateDevice(req, res) {
   try {
-    const device = await adminService.updateDevice(req.params.id, req.body || {});
+    const device = await adminService.updateDevice(req.params.id, req.body || {}, req.user.id);
     return ok(res, device, 'Device updated');
   } catch (error) {
     return handleAdminError(res, error);
@@ -115,7 +117,7 @@ async function listSoftwarePackages(req, res) {
 
 async function createSoftwarePackage(req, res) {
   try {
-    const softwarePackage = await adminService.createSoftwarePackage(req.body || {});
+    const softwarePackage = await adminService.createSoftwarePackage(req.body || {}, req.user.id);
     return created(res, softwarePackage, 'Software package created');
   } catch (error) {
     return handleAdminError(res, error);
@@ -126,10 +128,20 @@ async function updateSoftwarePackage(req, res) {
   try {
     const softwarePackage = await adminService.updateSoftwarePackage(
       req.params.id,
-      req.body || {}
+      req.body || {},
+      req.user.id
     );
 
     return ok(res, softwarePackage, 'Software package updated');
+  } catch (error) {
+    return handleAdminError(res, error);
+  }
+}
+
+async function listAuditLogs(req, res) {
+  try {
+    const auditLogs = await listAuditLogEntries(req.query);
+    return ok(res, auditLogs, 'Success');
   } catch (error) {
     return handleAdminError(res, error);
   }
@@ -141,6 +153,7 @@ module.exports = {
   createMasterData,
   createSoftwarePackage,
   disableAccount,
+  listAuditLogs,
   listAccounts,
   listDevices,
   listMasterData,

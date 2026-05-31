@@ -1,5 +1,7 @@
 const pool = require('../../config/database');
 const { ROOM_SCOPE, isInScopeRoom } = require('../../config/roomScope');
+const { ROLES } = require('../../config/roles');
+const { recordAuditLog } = require('../audit/audit.service');
 
 async function getTimeSlotId(slotLabel) {
   const [rows] = await pool.query('SELECT id FROM time_slots WHERE slot_label = ?', [slotLabel]);
@@ -75,6 +77,8 @@ const SCHEDULE_LIST_SELECT = `
   u.full_name as lecturer_name,
   pt.team_no,
   pt.planned_size,
+  cs.id as course_section_id,
+  cs.semester_id,
   cs.group_no,
   c.course_code,
   c.course_name
@@ -100,6 +104,8 @@ function formatScheduleResponse(row) {
     status: row.entry_status,
     team_no: row.team_no,
     planned_size: row.planned_size,
+    course_section_id: row.course_section_id,
+    semester_id: row.semester_id,
     group_no: row.group_no,
     course_code: row.course_code,
     course_name: row.course_name,
@@ -137,6 +143,15 @@ async function approveSchedule(id, userId) {
      WHERE id = ?`,
     [userId, id]
   );
+
+  await recordAuditLog({
+    entity_type: 'lab_schedule_entries',
+    entity_id: id,
+    action_type: 'approve',
+    old_status: schedule.entry_status,
+    new_status: 'approved',
+    action_by_user_id: userId
+  });
 
   const updated = await getScheduleById(id);
   return { ok: true, schedule: formatScheduleResponse(updated) };
@@ -176,29 +191,127 @@ async function publishSchedule(id, userId) {
     [userId, id]
   );
 
+  await recordAuditLog({
+    entity_type: 'lab_schedule_entries',
+    entity_id: id,
+    action_type: 'publish',
+    old_status: schedule.entry_status,
+    new_status: 'published',
+    action_by_user_id: userId
+  });
+
   const updated = await getScheduleById(id);
   return { ok: true, schedule: formatScheduleResponse(updated) };
 }
 
-async function getPublishedSchedules(filters = {}) {
-  const { schedule_request_id, room_code, lecturer_user_id } = filters;
+function toPositiveInt(value) {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+function addPositiveIntFilter(conditions, params, value, sql) {
+  if (!value) {
+    return;
+  }
+
+  const parsed = toPositiveInt(value);
+
+  if (!parsed) {
+    conditions.push('1 = 0');
+    return;
+  }
+
+  conditions.push(sql);
+  params.push(parsed);
+}
+
+function applyScheduleFilters(conditions, params, filters = {}) {
+  if (filters.status) {
+    conditions.push('entry.entry_status = ?');
+    params.push(filters.status);
+  }
+
+  addPositiveIntFilter(
+    conditions,
+    params,
+    filters.schedule_request_id,
+    'entry.lab_schedule_request_id = ?'
+  );
+
+  if (filters.room_code) {
+    conditions.push('r.room_code = ?');
+    params.push(filters.room_code);
+  }
+
+  addPositiveIntFilter(conditions, params, filters.lecturer_user_id, 'entry.lecturer_user_id = ?');
+  addPositiveIntFilter(conditions, params, filters.course_section_id, 'cs.id = ?');
+  addPositiveIntFilter(conditions, params, filters.semester_id, 'cs.semester_id = ?');
+
+  if (filters.week_no) {
+    const weekNo = toPositiveInt(filters.week_no);
+
+    if (!weekNo) {
+      conditions.push('1 = 0');
+    } else {
+      conditions.push(
+        `EXISTS (
+           SELECT 1
+           FROM academic_weeks aw
+           WHERE aw.semester_id = cs.semester_id
+             AND aw.week_no = ?
+             AND entry.start_date <= aw.end_date
+             AND entry.end_date >= aw.start_date
+         )`
+      );
+      params.push(weekNo);
+    }
+  }
+
+  addPositiveIntFilter(
+    conditions,
+    params,
+    filters.student_user_id,
+    `entry.practice_team_id IN (
+       SELECT ptm.practice_team_id
+       FROM practice_team_members ptm
+       WHERE ptm.student_user_id = ?
+     )`
+  );
+}
+
+function applyRoleScheduleScope(conditions, params, user, { publishedOnly = false } = {}) {
+  if (!user) {
+    conditions.push('1 = 0');
+    return;
+  }
+
+  if (publishedOnly || [ROLES.LECTURER, ROLES.TECHNICIAN, ROLES.STUDENT].includes(user.role_code)) {
+    conditions.push("entry.entry_status = 'published'");
+  }
+
+  if (user.role_code === ROLES.LECTURER) {
+    conditions.push('entry.lecturer_user_id = ?');
+    params.push(user.id);
+  }
+
+  if (user.role_code === ROLES.STUDENT) {
+    conditions.push(
+      `entry.practice_team_id IN (
+         SELECT ptm.practice_team_id
+         FROM practice_team_members ptm
+         WHERE ptm.student_user_id = ?
+       )`
+    );
+    params.push(user.id);
+  }
+}
+
+async function getPublishedSchedules(filters = {}, user = null) {
   const conditions = ["entry.entry_status = 'published'"];
   const params = [];
 
-  if (schedule_request_id) {
-    conditions.push('entry.lab_schedule_request_id = ?');
-    params.push(schedule_request_id);
-  }
-
-  if (room_code) {
-    conditions.push('r.room_code = ?');
-    params.push(room_code);
-  }
-
-  if (lecturer_user_id) {
-    conditions.push('entry.lecturer_user_id = ?');
-    params.push(lecturer_user_id);
-  }
+  applyScheduleFilters(conditions, params, filters);
+  applyRoleScheduleScope(conditions, params, user);
 
   const [rows] = await pool.query(
     `SELECT ${SCHEDULE_LIST_SELECT}
@@ -407,6 +520,26 @@ async function checkSoftware(roomCode, requiredSoftwareIds) {
   };
 }
 
+async function getRequiredSoftwareIds(practiceTeamId, requestedSoftwareIds = []) {
+  const normalizedRequestedIds = (Array.isArray(requestedSoftwareIds) ? requestedSoftwareIds : [])
+    .map(toPositiveInt)
+    .filter(Boolean);
+  const [rows] = await pool.query(
+    `SELECT csr.software_id
+     FROM practice_teams pt
+     JOIN course_sections cs ON cs.id = pt.course_section_id
+     JOIN course_software_requirements csr ON csr.course_id = cs.course_id
+     WHERE pt.id = ?
+       AND csr.is_required = 1`,
+    [practiceTeamId]
+  );
+
+  return [...new Set([
+    ...rows.map((row) => Number(row.software_id)),
+    ...normalizedRequestedIds
+  ])];
+}
+
 async function checkScheduleConstraints(input) {
   const {
     room_code,
@@ -419,7 +552,11 @@ async function checkScheduleConstraints(input) {
     required_software_ids = []
   } = input;
 
-  const [roomId, timeSlotId] = await Promise.all([getRoomId(room_code), getTimeSlotId(time_slot)]);
+  const [roomId, timeSlotId, effectiveSoftwareIds] = await Promise.all([
+    getRoomId(room_code),
+    getTimeSlotId(time_slot),
+    getRequiredSoftwareIds(practice_team_id, required_software_ids)
+  ]);
 
   const results = await Promise.all([
     checkRoomScope(room_code),
@@ -429,7 +566,7 @@ async function checkScheduleConstraints(input) {
     checkRoomConflict(roomId, day_of_week, timeSlotId, start_date, end_date),
     checkLecturerConflict(lecturer_user_id, day_of_week, timeSlotId, start_date, end_date),
     checkCapacity(room_code, practice_team_id),
-    checkSoftware(room_code, required_software_ids)
+    checkSoftware(room_code, effectiveSoftwareIds)
   ]);
 
   return {
@@ -495,6 +632,19 @@ async function createDraftSchedule(input, createdByUserId) {
 
   const schedule = await getScheduleById(result.insertId);
 
+  await recordAuditLog({
+    entity_type: 'lab_schedule_entries',
+    entity_id: result.insertId,
+    action_type: 'create_draft',
+    new_status: 'draft',
+    action_by_user_id: createdByUserId,
+    action_notes: {
+      room_code,
+      practice_team_id,
+      lab_schedule_request_id
+    }
+  });
+
   return {
     created: true,
     schedule,
@@ -502,33 +652,12 @@ async function createDraftSchedule(input, createdByUserId) {
   };
 }
 
-async function getScheduleList(filters = {}) {
-  const { status, room_code, lecturer_user_id, schedule_request_id, student_user_id } = filters;
+async function getScheduleList(filters = {}, user = null) {
   const conditions = [];
   const params = [];
 
-  if (status) {
-    conditions.push('entry.entry_status = ?');
-    params.push(status);
-  }
-  if (schedule_request_id) {
-    conditions.push('entry.lab_schedule_request_id = ?');
-    params.push(parseInt(schedule_request_id, 10));
-  }
-  if (room_code) {
-    conditions.push('r.room_code = ?');
-    params.push(room_code);
-  }
-  if (lecturer_user_id) {
-    conditions.push('entry.lecturer_user_id = ?');
-    params.push(parseInt(lecturer_user_id, 10));
-  }
-  if (student_user_id) {
-    conditions.push(
-      'entry.practice_team_id IN (SELECT ptm.practice_team_id FROM practice_team_members ptm WHERE ptm.student_user_id = ?)'
-    );
-    params.push(parseInt(student_user_id, 10));
-  }
+  applyScheduleFilters(conditions, params, filters);
+  applyRoleScheduleScope(conditions, params, user);
 
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 

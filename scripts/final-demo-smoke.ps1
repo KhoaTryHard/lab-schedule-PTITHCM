@@ -133,6 +133,97 @@ $roomScope = Invoke-Api GET "/rooms/scope" $tokens["cbdt1"]
 Assert-True (($roomScope.Body.data | Measure-Object).Count -eq 3) "Room scope should include 3 MVP rooms"
 Add-Result "Room scope" "PASS" "rooms=$($roomScope.Body.data -join ',')"
 
+$suffix = "$(Get-Date -Format 'HHmmss')$((Get-Random -Minimum 100 -Maximum 999))"
+
+$account = Invoke-Api POST "/admin/accounts" $tokens["admin"] @{
+  username = "smoke_user_$suffix"
+  full_name = "Smoke User $suffix"
+  email = "smoke_user_$suffix@example.test"
+  role_code = "SV"
+  account_status = "active"
+  password = "123456"
+} @(201)
+$created.account_id = $account.Body.data.id
+Invoke-Api PATCH "/admin/accounts/$($created.account_id)" $tokens["admin"] @{
+  full_name = "Smoke User Updated $suffix"
+} | Out-Null
+Invoke-Api PATCH "/admin/accounts/$($created.account_id)/disable" $tokens["admin"] | Out-Null
+Add-Result "Admin account CRUD" "PASS" "created/updated/disabled id=$($created.account_id)"
+
+$software = Invoke-Api POST "/admin/software-packages" $tokens["admin"] @{
+  software_name = "Smoke Software $suffix"
+  software_version = "1.0"
+} @(201)
+$created.software_id = $software.Body.data.id
+Invoke-Api PATCH "/admin/software-packages/$($created.software_id)" $tokens["admin"] @{
+  software_version = "1.1"
+} | Out-Null
+Add-Result "Admin software CRUD" "PASS" "created/updated id=$($created.software_id)"
+
+$device = Invoke-Api POST "/admin/devices" $tokens["admin"] @{
+  room_id = 1
+  device_code = "SMOKE-$suffix"
+  device_name = "Smoke device $suffix"
+  device_type = "other"
+  device_status = "working"
+  notes = "final workflow smoke"
+} @(201)
+$created.device_id = $device.Body.data.id
+Invoke-Api PATCH "/admin/devices/$($created.device_id)" $tokens["admin"] @{
+  device_status = "under_repair"
+  notes = "updated by final workflow smoke"
+} | Out-Null
+Add-Result "Admin device CRUD" "PASS" "created/updated id=$($created.device_id)"
+
+$semester = Invoke-Api POST "/admin/master-data/semesters" $tokens["admin"] @{
+  academic_year = "2026-2027-$suffix"
+  semester_no = 1
+  semester_name = "Smoke semester $suffix"
+  start_date = "2026-09-01"
+  end_date = "2027-01-15"
+  is_active = $false
+} @(201)
+$created.semester_id = $semester.Body.data.id
+Invoke-Api PATCH "/admin/master-data/semesters/$($created.semester_id)" $tokens["admin"] @{
+  semester_name = "Smoke semester updated $suffix"
+} | Out-Null
+
+$course = Invoke-Api POST "/admin/master-data/courses" $tokens["admin"] @{
+  course_code = "SMK$suffix"
+  course_name = "Smoke course $suffix"
+  credits = 3
+  lecture_periods = 30
+  lab_periods = 15
+  course_status = "active"
+} @(201)
+$created.course_id = $course.Body.data.id
+Invoke-Api PATCH "/admin/master-data/courses/$($created.course_id)" $tokens["admin"] @{
+  course_name = "Smoke course updated $suffix"
+} | Out-Null
+
+$section = Invoke-Api POST "/admin/master-data/course-sections" $tokens["admin"] @{
+  course_id = $created.course_id
+  semester_id = $created.semester_id
+  group_no = "01"
+  registered_enrollment = 25
+  planned_enrollment = 25
+  class_start_date = "2026-09-10"
+  class_end_date = "2026-12-10"
+  section_status = "draft"
+  notes = "final workflow smoke"
+} @(201)
+$created.course_section_id = $section.Body.data.id
+Invoke-Api PATCH "/admin/master-data/course-sections/$($created.course_section_id)" $tokens["admin"] @{
+  section_status = "open"
+  notes = "updated by final workflow smoke"
+} | Out-Null
+Add-Result "Academic master CRUD" "PASS" "semester=$($created.semester_id), course=$($created.course_id), section=$($created.course_section_id)"
+
+$audit = Invoke-Api GET "/admin/audit-logs?entity_type=course_sections&entity_id=$($created.course_section_id)" $tokens["admin"]
+$auditRows = @($audit.Body.data)
+Assert-True ($auditRows.Count -ge 2) "Audit logs for course section CRUD are missing"
+Add-Result "Audit log" "PASS" "course_section_logs=$($auditRows.Count)"
+
 $scheduleRequest = Invoke-Api POST "/schedule-requests" $tokens["cbdt1"] @{
   course_section_id = 1
   requested_team_count = 1
@@ -225,6 +316,20 @@ $softwareFail = Invoke-Api POST "/schedules/check-constraints" $tokens["cbdt1"] 
 Assert-True (-not (($softwareFail.Body.data.results | Where-Object code -eq "SOFTWARE_OK").passed)) "Software failure was not detected"
 Add-Result "Software constraint fail" "PASS" "SOFTWARE_OK=false for room 2B31 + software 1"
 
+$derivedSoftware = Invoke-Api POST "/schedules/check-constraints" $tokens["cbdt1"] @{
+  room_code = "2B31"
+  lecturer_user_id = 3
+  practice_team_id = 5
+  day_of_week = 2
+  time_slot = "1-4"
+  start_date = "2026-07-13"
+  end_date = "2026-07-13"
+}
+$derivedSoftwareRule = $derivedSoftware.Body.data.results | Where-Object code -eq "SOFTWARE_OK"
+Assert-True $derivedSoftwareRule.passed "Software requirements were not derived from the course mapping"
+Assert-True ($derivedSoftwareRule.message -match "1 required software") "Derived software rule did not verify the mapped package"
+Add-Result "Software DB-derived requirements" "PASS" "SOFTWARE_OK derived from course mapping when client field is omitted"
+
 $holidayFail = Invoke-Api POST "/schedules/check-constraints" $tokens["cbdt1"] @{
   room_code = "2B11"
   lecturer_user_id = 3
@@ -249,6 +354,18 @@ Assert-True ((@($svSchedules.Body.data.schedules | Where-Object id -eq $created.
 $gvSchedules = Invoke-Api GET "/schedules/published?lecturer_user_id=$($users['gv_phthy'].id)" $tokens["gv_phthy"]
 Assert-True ((@($gvSchedules.Body.data | Where-Object id -eq $created.schedule_entry_id)).Count -eq 1) "GV cannot see published smoke schedule"
 Add-Result "SV/GV published lookup" "PASS" "created published schedule visible"
+
+$svUnscopedSchedules = Invoke-Api GET "/schedules" $tokens["sv1"]
+$svUnscopedRows = @($svUnscopedSchedules.Body.data.schedules)
+Assert-True (($svUnscopedRows | Where-Object entry_status -ne "published" | Measure-Object).Count -eq 0) "SV unscoped lookup leaked non-published schedules"
+Assert-True ((@($svUnscopedRows | Where-Object id -eq $created.schedule_entry_id)).Count -eq 1) "SV unscoped lookup lost the user's published schedule"
+Add-Result "SV forced schedule scope" "PASS" "unscoped lookup returned published schedules for the current student only"
+
+foreach ($filter in @("semester_id", "course_section_id", "week_no")) {
+  $filteredSchedules = Invoke-Api GET "/schedules?${filter}=999999" $tokens["admin"]
+  Assert-True ((@($filteredSchedules.Body.data.schedules)).Count -eq 0) "Schedule filter $filter did not apply"
+}
+Add-Result "Schedule filters" "PASS" "semester_id/course_section_id/week_no reject non-matching values"
 
 $change = Invoke-Api POST "/schedule-change-requests" $tokens["gv_phthy"] @{
   lab_schedule_entry_id = 1
@@ -350,7 +467,8 @@ $reportCbdt = Invoke-Api GET "/reports/basic" $tokens["cbdt1"]
 Invoke-Api GET "/reports/basic" $tokens["admin"] | Out-Null
 Invoke-Api GET "/reports/basic" $tokens["sv1"] $null @(403) | Out-Null
 Assert-True ([bool]$reportCbdt.Body.data.schedule_summary) "Report summary is missing"
-Add-Result "Basic reports API" "PASS" "CBDT/QTV HTTP 200, SV HTTP 403"
+Assert-True ([bool]$reportCbdt.Body.data.device_summary) "Device report summary is missing"
+Add-Result "Basic reports API" "PASS" "CBDT/QTV HTTP 200, SV HTTP 403, device summary present"
 
 foreach ($route in @(
   "/login",
@@ -368,7 +486,11 @@ foreach ($route in @(
   "/technician/issues",
   "/technician/notifications",
   "/admin/accounts",
-  "/admin/trainingData"
+  "/admin/trainingData",
+  "/admin/devices",
+  "/admin/software",
+  "/admin/audit-logs",
+  "/admin/reports"
 )) {
   Invoke-FrontendRoute $route
   Add-Result "Frontend route $route" "PASS" "HTTP 200"

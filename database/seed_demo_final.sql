@@ -24,6 +24,13 @@ USE `lab_schedule_ptit_v2`;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- ─── CLEANUP (reverse dependency order) ──────────────────────────────────────
+TRUNCATE TABLE `workflow_audit_logs`;
+TRUNCATE TABLE `notification_recipients`;
+TRUNCATE TABLE `notifications`;
+TRUNCATE TABLE `student_feedback`;
+TRUNCATE TABLE `room_block_requests`;
+TRUNCATE TABLE `room_issue_reports`;
+TRUNCATE TABLE `lab_schedule_change_requests`;
 TRUNCATE TABLE `lab_schedule_entries`;
 TRUNCATE TABLE `lab_schedule_requests`;
 TRUNCATE TABLE `calendar_holidays`;
@@ -42,6 +49,7 @@ TRUNCATE TABLE `student_cohorts`;
 TRUNCATE TABLE `technician_profiles`;
 TRUNCATE TABLE `lecturer_profiles`;
 TRUNCATE TABLE `room_software_installations`;
+TRUNCATE TABLE `devices`;
 TRUNCATE TABLE `software_packages`;
 TRUNCATE TABLE `rooms`;
 TRUNCATE TABLE `users`;
@@ -63,6 +71,31 @@ INSERT INTO `time_slots` (`id`, `slot_label`, `start_period`, `end_period`, `sta
 INSERT INTO `semesters` (`id`, `academic_year`, `semester_no`, `semester_name`, `start_date`, `end_date`, `is_active`) VALUES
 (1, '2025-2026', 1, 'HK1 2025-2026', '2025-09-01', '2026-01-15', 0),
 (2, '2025-2026', 2, 'HK2 2025-2026', '2026-02-01', '2026-06-30', 1);
+
+-- 2b. academic_weeks for the active demo semester
+INSERT INTO `academic_weeks` (`semester_id`, `week_no`, `start_date`, `end_date`) VALUES
+(2,  1, '2026-02-02', '2026-02-08'),
+(2,  2, '2026-02-09', '2026-02-15'),
+(2,  3, '2026-02-16', '2026-02-22'),
+(2,  4, '2026-02-23', '2026-03-01'),
+(2,  5, '2026-03-02', '2026-03-08'),
+(2,  6, '2026-03-09', '2026-03-15'),
+(2,  7, '2026-03-16', '2026-03-22'),
+(2,  8, '2026-03-23', '2026-03-29'),
+(2,  9, '2026-03-30', '2026-04-05'),
+(2, 10, '2026-04-06', '2026-04-12'),
+(2, 11, '2026-04-13', '2026-04-19'),
+(2, 12, '2026-04-20', '2026-04-26'),
+(2, 13, '2026-04-27', '2026-05-03'),
+(2, 14, '2026-05-04', '2026-05-10'),
+(2, 15, '2026-05-11', '2026-05-17'),
+(2, 16, '2026-05-18', '2026-05-24'),
+(2, 17, '2026-05-25', '2026-05-31'),
+(2, 18, '2026-06-01', '2026-06-07'),
+(2, 19, '2026-06-08', '2026-06-14'),
+(2, 20, '2026-06-15', '2026-06-21'),
+(2, 21, '2026-06-22', '2026-06-28'),
+(2, 22, '2026-06-29', '2026-06-30');
 
 -- ─── 3. software_packages ────────────────────────────────────────────────────
 INSERT INTO `software_packages` (`id`, `software_name`, `software_version`) VALUES
@@ -100,6 +133,15 @@ INSERT INTO `rooms` (`id`, `room_code`, `total_computers`, `broken_computers`, `
 (1, '2B11', 31, 1, 1, 1, 1, 1, 'available', 9),
 (2, '2B21', 31, 0, 1, 1, 1, 1, 'available', 9),
 (3, '2B31', 31, 0, 1, 1, 1, 1, 'maintenance', 9);
+
+-- ─── 6b. devices ───────────────────────────────────────────────────────────────
+INSERT INTO `devices`
+  (`id`, `room_id`, `device_code`, `device_name`, `device_type`, `spec_or_version`, `device_status`, `last_updated_at`, `notes`)
+VALUES
+(1, 1, '2B11-PC-01', 'Máy tính thực hành 2B11-01', 'computer', 'Core i5, 16GB RAM', 'working',      '2026-02-01 08:00:00', 'Thiết bị baseline demo'),
+(2, 1, '2B11-PROJ',  'Máy chiếu phòng 2B11',       'projector', 'Epson EB-X49',     'working',      '2026-02-01 08:00:00', 'Thiết bị baseline demo'),
+(3, 2, '2B21-PC-01', 'Máy tính thực hành 2B21-01', 'computer',  'Core i5, 16GB RAM', 'working',      '2026-02-01 08:00:00', 'Thiết bị baseline demo'),
+(4, 3, '2B31-LAN',   'Switch mạng phòng 2B31',     'network',   'Cisco SG350',       'under_repair', '2026-02-01 08:00:00', 'Thiết bị baseline demo');
 
 -- ─── 7. lecturer_profiles ────────────────────────────────────────────────────
 INSERT INTO `lecturer_profiles` (`user_id`, `lecturer_code`, `department_name`, `academic_rank`) VALUES

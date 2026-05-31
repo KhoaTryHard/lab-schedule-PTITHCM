@@ -46,6 +46,16 @@ export const ROLE_LAYOUT_CONFIG = {
         href: "/admin/rooms",
       },
       {
+        icon: "equipment",
+        itemName: "Danh mục thiết bị",
+        href: "/admin/devices",
+      },
+      {
+        icon: "settings",
+        itemName: "Danh mục phần mềm",
+        href: "/admin/software",
+      },
+      {
         icon: "school",
         itemName: "Dữ liệu đào tạo",
         href: "/admin/trainingData",
@@ -64,6 +74,11 @@ export const ROLE_LAYOUT_CONFIG = {
         icon: "chart",
         itemName: "Thống kê & báo cáo",
         href: "/admin/reports",
+      },
+      {
+        icon: "search",
+        itemName: "Nhật ký thao tác",
+        href: "/admin/audit-logs",
       },
       {
         icon: "settings",
