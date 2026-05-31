@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import DataTable from "../../../components/common/DataTable.jsx";
 import { ButtonUI } from "../../../components/common/buttonUI.jsx";
@@ -11,66 +11,10 @@ import {
   getRooms,
   listScopeRooms,
 } from "../../../services/roomService";
-
-const MOCK_ROOM_ISSUES = [
-  {
-    id: "mock-1",
-    room_code: "2B21",
-    device_id: "PC-2B21-08",
-    lab_schedule_entry_id: 9,
-    issue_type: "computer",
-    severity: "high",
-    issue_title: "Máy sinh viên không khởi động",
-    issue_description:
-      "Máy số 08 không lên nguồn trong ca thực hành. Cần kiểm tra nguồn và RAM.",
-    reported_by_user_id: 3,
-    reported_by_name: "Giảng viên phụ trách",
-    assigned_to_user_id: 9,
-    assigned_to_name: "Kỹ thuật viên",
-    issue_status: "new",
-    detected_at: "2026-04-28T08:10:00",
-    resolved_at: null,
-    resolution_notes: "",
-  },
-  {
-    id: "mock-2",
-    room_code: "2B11",
-    device_id: null,
-    lab_schedule_entry_id: 10,
-    issue_type: "network",
-    severity: "medium",
-    issue_title: "Mạng LAN chập chờn",
-    issue_description:
-      "Một số máy mất kết nối nội bộ trong lúc thực hành, cần kiểm tra switch.",
-    reported_by_user_id: 8,
-    reported_by_name: "Sinh viên",
-    assigned_to_user_id: 9,
-    assigned_to_name: "Kỹ thuật viên",
-    issue_status: "in_progress",
-    detected_at: "2026-04-28T13:35:00",
-    resolved_at: null,
-    resolution_notes: "Đang kiểm tra dây mạng và switch phòng.",
-  },
-  {
-    id: "mock-3",
-    room_code: "2B31",
-    device_id: null,
-    lab_schedule_entry_id: null,
-    issue_type: "software",
-    severity: "low",
-    issue_title: "Thiếu phần mềm thực hành",
-    issue_description:
-      "Một số máy chưa có phiên bản phần mềm cần dùng cho buổi thực hành tiếp theo.",
-    reported_by_user_id: 9,
-    reported_by_name: "Kỹ thuật viên",
-    assigned_to_user_id: 9,
-    assigned_to_name: "Kỹ thuật viên",
-    issue_status: "resolved",
-    detected_at: "2026-04-27T15:20:00",
-    resolved_at: "2026-04-27T17:10:00",
-    resolution_notes: "Đã cài bổ sung phần mềm trên các máy còn thiếu.",
-  },
-];
+import {
+  createRoomBlockRequest,
+  listRoomIssues,
+} from "../../../services/roomOperationService";
 
 const ISSUE_TYPE_OPTIONS = [
   { value: "all", label: "Tất cả loại sự cố" },
@@ -213,6 +157,15 @@ function extractRooms(response) {
   return Array.isArray(response?.data) ? response.data : [];
 }
 
+function extractItems(response) {
+  const data = response?.data;
+
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.items)) return data.items;
+
+  return [];
+}
+
 function buildBlockPayload(formState, currentUser) {
   return {
     room_code: formState.room_code,
@@ -232,6 +185,7 @@ function buildBlockPayload(formState, currentUser) {
 export default function TechnicianIssuesPage() {
   const [rooms, setRooms] = useState([]);
   const [roomScopeCodes, setRoomScopeCodes] = useState(getMvpRoomCodes());
+  const [issues, setIssues] = useState([]);
   const [issueTypeFilter, setIssueTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchKeyword, setSearchKeyword] = useState("");
@@ -240,37 +194,60 @@ export default function TechnicianIssuesPage() {
   const [successMessage, setSuccessMessage] = useState(null);
   const [lastPayload, setLastPayload] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
+  const [isLoadingIssues, setIsLoadingIssues] = useState(true);
+  const [isSubmittingBlock, setIsSubmittingBlock] = useState(false);
+  const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
     setCurrentUser(getUser());
 
-    async function loadRoomsForForm() {
-      const scopeResponse = await listScopeRooms().catch(() => null);
-      const backendScopeCodes = extractRoomScope(scopeResponse);
-      const activeScopeCodes =
-        backendScopeCodes.length > 0 ? backendScopeCodes : getMvpRoomCodes();
+    async function loadPageData() {
+      try {
+        setIsLoadingIssues(true);
+        setLoadError("");
 
-      const response = await getRooms();
-      const apiRooms = extractRooms(response);
-      const scopedRooms = apiRooms.filter((room) =>
-        activeScopeCodes.includes(
-          String(room.room_code || "")
-            .trim()
-            .toUpperCase(),
-        ),
-      );
+        const [scopeResponse, roomResponse, issueResponse] = await Promise.all([
+          listScopeRooms().catch(() => null),
+          getRooms(),
+          listRoomIssues(),
+        ]);
 
-      setRoomScopeCodes(activeScopeCodes);
-      setRooms(scopedRooms);
-      setBlockForm((current) => ({
-        ...current,
-        room_code: current.room_code || String(scopedRooms[0]?.room_code || ""),
-      }));
+        const backendScopeCodes = extractRoomScope(scopeResponse);
+        const activeScopeCodes =
+          backendScopeCodes.length > 0 ? backendScopeCodes : getMvpRoomCodes();
+
+        const apiRooms = extractRooms(roomResponse);
+        const scopedRooms = apiRooms.filter((room) =>
+          activeScopeCodes.includes(
+            String(room.room_code || "")
+              .trim()
+              .toUpperCase(),
+          ),
+        );
+        const apiIssues = extractItems(issueResponse);
+
+        setRoomScopeCodes(activeScopeCodes);
+        setRooms(scopedRooms);
+        setIssues(apiIssues);
+        setBlockForm((current) => ({
+          ...current,
+          room_code:
+            current.room_code ||
+            String(apiIssues[0]?.room_code || scopedRooms[0]?.room_code || ""),
+        }));
+      } catch (error) {
+        setRooms([]);
+        setIssues([]);
+        setLoadError(
+          error?.message ||
+            "Không thể tải danh sách sự cố phòng máy từ API.",
+        );
+      } finally {
+        setIsLoadingIssues(false);
+      }
     }
 
-    loadRoomsForForm().catch(() => {
-      setRooms([]);
-    });
+    loadPageData();
   }, []);
 
   function updateBlockForm(fieldName, value) {
@@ -280,7 +257,7 @@ export default function TechnicianIssuesPage() {
     }));
   }
 
-  function openBlockForm(issue = null) {
+  const openBlockForm = useCallback((issue = null) => {
     setSuccessMessage(null);
     setLastPayload(null);
     setIsBlockFormOpen(true);
@@ -295,13 +272,13 @@ export default function TechnicianIssuesPage() {
         ? `Đề xuất khóa phòng do sự cố: ${issue.issue_title}`
         : "",
     });
-  }
+  }, [rooms]);
 
   function closeBlockForm() {
     setIsBlockFormOpen(false);
   }
 
-  function handleSubmitBlockRequest(event) {
+  async function handleSubmitBlockRequest(event) {
     event.preventDefault();
 
     if (
@@ -330,18 +307,34 @@ export default function TechnicianIssuesPage() {
 
     const payload = buildBlockPayload(blockForm, currentUser);
 
-    setLastPayload(payload);
-    setSuccessMessage({
-      type: "success",
-      title: "Đã gửi đề xuất thành công",
-      text: "Đề xuất khóa phòng đã được tạo trên giao diện. Backend hiện thiếu API ghi room_block_requests nên dữ liệu chưa lưu vào database.",
-    });
+    try {
+      setIsSubmittingBlock(true);
+      const response = await createRoomBlockRequest(payload);
+      const createdBlock = response?.data || payload;
+
+      setLastPayload(createdBlock);
+      setSuccessMessage({
+        type: "success",
+        title: "Đã gửi đề xuất thành công",
+        text: `Đề xuất #${createdBlock.id || ""} đã được lưu với trạng thái ${createdBlock.block_status || "submitted"}.`,
+      });
+    } catch (error) {
+      setSuccessMessage({
+        type: "error",
+        title: "Không thể gửi đề xuất",
+        text:
+          error?.message ||
+          "API room-block-requests từ chối đề xuất khóa phòng.",
+      });
+    } finally {
+      setIsSubmittingBlock(false);
+    }
   }
 
   const visibleIssues = useMemo(() => {
     const normalizedKeyword = normalizeText(searchKeyword);
 
-    return MOCK_ROOM_ISSUES.filter((issue) => {
+    return issues.filter((issue) => {
       const matchedType =
         issueTypeFilter === "all" || issue.issue_type === issueTypeFilter;
       const matchedStatus =
@@ -361,7 +354,7 @@ export default function TechnicianIssuesPage() {
 
       return matchedType && matchedStatus && matchedKeyword;
     });
-  }, [issueTypeFilter, searchKeyword, statusFilter]);
+  }, [issueTypeFilter, issues, searchKeyword, statusFilter]);
 
   const rows = useMemo(
     () =>
@@ -419,7 +412,7 @@ export default function TechnicianIssuesPage() {
         ),
       },
     ],
-    [rooms],
+    [openBlockForm],
   );
 
   return (
@@ -444,14 +437,12 @@ export default function TechnicianIssuesPage() {
         </ButtonUI>
       </section>
 
-      <section className="technicianAlert technicianAlert--warning">
-        <h3>Thiếu API room_issue_reports / room_block_requests</h3>
-        <p>
-          Backend chưa có endpoint đọc sự cố hoặc gửi yêu cầu khóa phòng. Dữ
-          liệu sự cố bên dưới là mock để chốt UI, riêng danh sách phòng trong
-          form lấy từ API thật /api/rooms.
-        </p>
-      </section>
+      {loadError ? (
+        <section className="technicianAlert technicianAlert--error" role="alert">
+          <h3>Không tải được dữ liệu sự cố</h3>
+          <p>{loadError}</p>
+        </section>
+      ) : null}
 
       <section className="technicianPanel">
         <div className="technicianPanelHeader">
@@ -675,8 +666,12 @@ export default function TechnicianIssuesPage() {
             </label>
 
             <div className="technicianFormActions technicianFieldFull">
-              <ButtonUI type="submit" className="technicianPrimaryButton">
-                Xác nhận gửi đi
+              <ButtonUI
+                type="submit"
+                className="technicianPrimaryButton"
+                disabled={isSubmittingBlock}
+              >
+                {isSubmittingBlock ? "Đang gửi..." : "Xác nhận gửi đi"}
               </ButtonUI>
 
               <ButtonUI
@@ -692,7 +687,7 @@ export default function TechnicianIssuesPage() {
 
           {lastPayload ? (
             <div className="technicianPayloadPreview">
-              <h3>Payload đã chuẩn bị</h3>
+              <h3>Đề xuất API vừa ghi nhận</h3>
               <pre>{JSON.stringify(lastPayload, null, 2)}</pre>
             </div>
           ) : null}
@@ -704,6 +699,7 @@ export default function TechnicianIssuesPage() {
           columns={columns}
           rows={rows}
           rowKey="id"
+          loading={isLoadingIssues}
           emptyTitle="Chưa có sự cố phù hợp"
           emptyDescription="Không có báo cáo sự cố phù hợp bộ lọc hiện tại."
           pageSize={8}

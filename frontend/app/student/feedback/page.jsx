@@ -5,6 +5,10 @@ import { useEffect, useMemo, useState } from "react";
 import { ButtonUI } from "../../../components/common/buttonUI.jsx";
 import { getUser } from "../../../lib/authStorage";
 import { listSchedules } from "../../../services/scheduleService";
+import {
+  createStudentFeedback,
+  listStudentFeedback,
+} from "../../../services/feedbackNotificationService";
 
 const FEEDBACK_TYPE_OPTIONS = [
   { value: "schedule_error", label: "Sai thông tin lịch thực hành" },
@@ -71,6 +75,23 @@ function formatDate(value) {
   }).format(date);
 }
 
+function formatDateTime(value) {
+  if (!value) {
+    return "—";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("vi-VN", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(date);
+}
+
 function formatDayOfWeek(value) {
   const dayMap = {
     1: "Chủ nhật",
@@ -83,6 +104,25 @@ function formatDayOfWeek(value) {
   };
 
   return dayMap[value] || value || "—";
+}
+
+function translateFeedbackStatus(value) {
+  const map = {
+    submitted: "Đã gửi",
+    under_review: "Đang xử lý",
+    responded: "Đã phản hồi",
+    closed: "Đã đóng",
+  };
+
+  return map[value] || value || "—";
+}
+
+function translateFeedbackType(value) {
+  return (
+    FEEDBACK_TYPE_OPTIONS.find((option) => option.value === value)?.label ||
+    value ||
+    "—"
+  );
 }
 
 function buildPracticeSessionName(schedule) {
@@ -143,7 +183,7 @@ function isValidContactInfo(value) {
   const normalizedValue = String(value || "").trim();
 
   if (!normalizedValue) {
-    return false;
+    return true;
   }
 
   const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedValue);
@@ -153,25 +193,22 @@ function isValidContactInfo(value) {
   return isEmail || isPhone;
 }
 
-function buildFeedbackPayload({ formState, selectedSchedule, currentUser }) {
+function buildFeedbackPayload(formState) {
   return {
-    student_user_id: currentUser?.id || null,
     lab_schedule_entry_id: Number(formState.lab_schedule_entry_id),
-    room_code: selectedSchedule?.room_code || "",
-    practice_session_name: buildPracticeSessionName(selectedSchedule),
-    lecturer_name: selectedSchedule?.lecturer_name || "",
     feedback_type: formState.feedback_type,
     content: formState.content.trim(),
-    contact_info: formState.contact_info.trim(),
+    contact_info: formState.contact_info.trim() || null,
   };
 }
 
 export default function StudentFeedbackPage() {
-  const [currentUser, setCurrentUser] = useState(null);
   const [schedules, setSchedules] = useState([]);
+  const [feedbackItems, setFeedbackItems] = useState([]);
   const [formState, setFormState] = useState(INITIAL_FORM_STATE);
   const [lastDraftPayload, setLastDraftPayload] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadError, setLoadError] = useState(null);
   const [statusMessage, setStatusMessage] = useState(null);
 
@@ -192,21 +229,25 @@ export default function StudentFeedbackPage() {
       try {
         setIsLoading(true);
         setLoadError(null);
-        setCurrentUser(user);
 
-        const response = await listSchedules({
-          status: "published",
-          student_user_id: user?.id,
-        });
+        const [scheduleResponse, feedbackResponse] = await Promise.all([
+          listSchedules({
+            status: "published",
+            student_user_id: user?.id,
+          }),
+          listStudentFeedback().catch(() => ({ data: { items: [] } })),
+        ]);
 
         const publishedSchedules =
-          extractScheduleItems(response).filter(isPublishedSchedule);
+          extractScheduleItems(scheduleResponse).filter(isPublishedSchedule);
+        const apiFeedbackItems = extractScheduleItems(feedbackResponse);
 
         if (!isMounted) {
           return;
         }
 
         setSchedules(publishedSchedules);
+        setFeedbackItems(apiFeedbackItems);
         setFormState((current) => ({
           ...current,
           lab_schedule_entry_id:
@@ -219,6 +260,7 @@ export default function StudentFeedbackPage() {
         }
 
         setSchedules([]);
+        setFeedbackItems([]);
         setLoadError(error);
       } finally {
         if (isMounted) {
@@ -251,7 +293,7 @@ export default function StudentFeedbackPage() {
     });
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
     if (!selectedSchedule) {
@@ -281,18 +323,36 @@ export default function StudentFeedbackPage() {
       return;
     }
 
-    const draftPayload = buildFeedbackPayload({
-      formState,
-      selectedSchedule,
-      currentUser,
-    });
+    const payload = buildFeedbackPayload(formState);
 
-    setLastDraftPayload(draftPayload);
-    setStatusMessage({
-      type: "warning",
-      title: "Thiếu API gửi phản ánh",
-      text: "Frontend đã gom đúng dữ liệu từ lịch thật, nhưng backend hiện chưa có endpoint ghi bảng student_feedback nên chưa thể lưu phản ánh vào database.",
-    });
+    try {
+      setIsSubmitting(true);
+      const response = await createStudentFeedback(payload);
+      const createdFeedback = response?.data || payload;
+
+      setLastDraftPayload(createdFeedback);
+      setFeedbackItems((currentItems) => [createdFeedback, ...currentItems]);
+      setStatusMessage({
+        type: "success",
+        title: "Đã gửi phản ánh thành công",
+        text: `Phản ánh #${createdFeedback.id || ""} đã được lưu với trạng thái ${createdFeedback.feedback_status || "submitted"}.`,
+      });
+      setFormState((current) => ({
+        ...current,
+        content: "",
+        contact_info: "",
+      }));
+    } catch (error) {
+      setStatusMessage({
+        type: "error",
+        title: "Không thể gửi phản ánh",
+        text:
+          error?.message ||
+          "API student-feedback từ chối phản ánh. Vui lòng kiểm tra buổi học đã chọn.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -309,7 +369,7 @@ export default function StudentFeedbackPage() {
           </p>
         </div>
 
-        <span className="studentApiBadge">Thiếu API gửi phản ánh</span>
+        <span className="studentApiBadge">API student_feedback</span>
       </section>
 
       {loadError ? (
@@ -441,9 +501,9 @@ export default function StudentFeedbackPage() {
             <ButtonUI
               type="submit"
               className="studentActionButton"
-              disabled={isLoading || schedules.length === 0}
+              disabled={isSubmitting || isLoading || schedules.length === 0}
             >
-              Xác nhận gửi
+              {isSubmitting ? "Đang gửi..." : "Xác nhận gửi"}
             </ButtonUI>
 
             <ButtonUI
@@ -532,11 +592,42 @@ export default function StudentFeedbackPage() {
 
           {lastDraftPayload ? (
             <div className="studentPayloadPreview">
-              <h3>Payload frontend đã chuẩn bị</h3>
+              <h3>Phản ánh API vừa ghi nhận</h3>
               <pre>{JSON.stringify(lastDraftPayload, null, 2)}</pre>
             </div>
           ) : null}
         </aside>
+      </section>
+
+      <section className="studentInfoCard">
+        <div className="studentCardHeader">
+          <p className="studentEyebrow">Phản ánh đã gửi</p>
+          <h2>Lịch sử phản ánh của sinh viên</h2>
+          <p>Danh sách được tải từ API student_feedback theo tài khoản hiện tại.</p>
+        </div>
+
+        {feedbackItems.length === 0 ? (
+          <div className="studentEmptyBox">
+            <h2>Chưa có phản ánh</h2>
+            <p>Sau khi gửi thành công, phản ánh sẽ xuất hiện tại đây.</p>
+          </div>
+        ) : (
+          <div className="studentInfoGrid">
+            {feedbackItems.map((feedback) => (
+              <div key={feedback.id} className="studentInfoItem">
+                <span>
+                  #{feedback.id} - {translateFeedbackType(feedback.feedback_type)}
+                </span>
+                <strong>{translateFeedbackStatus(feedback.feedback_status)}</strong>
+                <p>{feedback.content}</p>
+                <small>Gửi lúc: {formatDateTime(feedback.created_at)}</small>
+                {feedback.response_text ? (
+                  <small>Phản hồi: {feedback.response_text}</small>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );

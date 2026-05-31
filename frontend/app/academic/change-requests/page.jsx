@@ -4,9 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 
 import DataTable from "../../../components/common/DataTable.jsx";
 import { ButtonUI } from "../../../components/common/buttonUI.jsx";
-import { getUser } from "../../../lib/authStorage";
 import { listSchedules } from "../../../services/scheduleService";
-import { getRooms } from "../../../services/roomService";
+import {
+  implementScheduleChangeRequest,
+  listScheduleChangeRequests,
+  reviewScheduleChangeRequest,
+} from "../../../services/scheduleChangeRequestService";
 
 const CHANGE_TYPE_OPTIONS = [
   { value: "all", label: "Tất cả loại yêu cầu" },
@@ -144,89 +147,8 @@ function buildTypeBadge(type) {
   );
 }
 
-function buildMockChangeRequests(schedules, rooms) {
-  const [firstSchedule, secondSchedule, thirdSchedule] = schedules;
-  const [firstRoom, secondRoom] = rooms;
-
-  const baseItems = [
-    {
-      id: "mock-cr-1",
-      schedule: firstSchedule,
-      change_type: "reschedule",
-      proposed_start_date: "2026-05-06",
-      proposed_end_date: "2026-05-06",
-      proposed_day_of_week: 4,
-      proposed_time_slot_id: 2,
-      proposed_room_id: secondRoom?.id || firstSchedule?.room_id || null,
-      proposed_room_code:
-        secondRoom?.room_code || firstSchedule?.room_code || "—",
-      reason_text:
-        "Giảng viên bận công tác đột xuất, đề xuất chuyển sang ca khác trong cùng tuần.",
-      request_status: "submitted",
-      requested_by_user_id: firstSchedule?.lecturer_user_id || 4,
-      requested_by_name: firstSchedule?.lecturer_name || "Giảng viên phụ trách",
-      implemented_by_user_id: null,
-      implemented_by_name: null,
-      reviewed_at: null,
-      implemented_at: null,
-      review_notes: "",
-      created_at: "2026-04-28T08:30:00",
-    },
-    {
-      id: "mock-cr-2",
-      schedule: secondSchedule || firstSchedule,
-      change_type: "makeup",
-      proposed_start_date: "2026-05-09",
-      proposed_end_date: "2026-05-09",
-      proposed_day_of_week: 7,
-      proposed_time_slot_id: 1,
-      proposed_room_id: firstRoom?.id || secondSchedule?.room_id || null,
-      proposed_room_code:
-        firstRoom?.room_code || secondSchedule?.room_code || "—",
-      reason_text:
-        "Buổi học bị ảnh hưởng do sự cố mạng, giảng viên đề xuất tổ chức học bù.",
-      request_status: "approved",
-      requested_by_user_id: secondSchedule?.lecturer_user_id || 5,
-      requested_by_name:
-        secondSchedule?.lecturer_name || "Giảng viên phụ trách",
-      implemented_by_user_id: null,
-      implemented_by_name: null,
-      reviewed_at: "2026-04-28T09:15:00",
-      implemented_at: null,
-      review_notes: "Đã kiểm tra phòng đề xuất, chờ cập nhật lịch chính thức.",
-      created_at: "2026-04-28T08:45:00",
-    },
-    {
-      id: "mock-cr-3",
-      schedule: thirdSchedule || firstSchedule,
-      change_type: "cancel",
-      proposed_start_date: null,
-      proposed_end_date: null,
-      proposed_day_of_week: null,
-      proposed_time_slot_id: null,
-      proposed_room_id: null,
-      proposed_room_code: null,
-      reason_text:
-        "Nội dung thực hành đã được gộp vào buổi trước, giảng viên đề xuất hủy buổi còn lại.",
-      request_status: "implemented",
-      requested_by_user_id: thirdSchedule?.lecturer_user_id || 6,
-      requested_by_name: thirdSchedule?.lecturer_name || "Giảng viên phụ trách",
-      implemented_by_user_id: 2,
-      implemented_by_name: "Cán bộ đào tạo HVCS",
-      reviewed_at: "2026-04-28T10:20:00",
-      implemented_at: "2026-04-28T10:45:00",
-      review_notes: "Đã cập nhật lịch và ghi chú lý do hủy.",
-      created_at: "2026-04-28T09:40:00",
-    },
-  ];
-
-  return baseItems.filter((item) => item.schedule);
-}
-
 export default function AcademicChangeRequestsPage() {
-  const [currentUser, setCurrentUser] = useState(null);
   const [schedules, setSchedules] = useState([]);
-  const [rooms, setRooms] = useState([]);
   const [requests, setRequests] = useState([]);
   const [selectedRequestId, setSelectedRequestId] = useState("");
   const [changeTypeFilter, setChangeTypeFilter] = useState("all");
@@ -236,21 +158,20 @@ export default function AcademicChangeRequestsPage() {
   const [reviewNotes, setReviewNotes] = useState("");
   const [uiMessage, setUiMessage] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMutating, setIsMutating] = useState(false);
   const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
     let isMounted = true;
 
     async function loadPageData() {
-      setCurrentUser(getUser());
-
       try {
         setIsLoading(true);
         setLoadError("");
 
-        const [scheduleResponse, roomResponse] = await Promise.all([
-          listSchedules({ status: "published" }),
-          getRooms().catch(() => ({ data: [] })),
+        const [changeRequestResponse, scheduleResponse] = await Promise.all([
+          listScheduleChangeRequests(),
+          listSchedules({ status: "published" }).catch(() => ({ data: [] })),
         ]);
 
         const publishedSchedules = extractItems(scheduleResponse).filter(
@@ -259,28 +180,22 @@ export default function AcademicChangeRequestsPage() {
               schedule.entry_status || schedule.status || "",
             ).toLowerCase() === "published",
         );
-        const roomItems = extractItems(roomResponse);
-        const mockRequests = buildMockChangeRequests(
-          publishedSchedules,
-          roomItems,
-        );
+        const apiRequests = extractItems(changeRequestResponse);
 
         if (!isMounted) return;
 
         setSchedules(publishedSchedules);
-        setRooms(roomItems);
-        setRequests(mockRequests);
-        setSelectedRequestId(String(mockRequests[0]?.id || ""));
-        setReviewNotes(mockRequests[0]?.review_notes || "");
+        setRequests(apiRequests);
+        setSelectedRequestId(String(apiRequests[0]?.id || ""));
+        setReviewNotes(apiRequests[0]?.review_notes || "");
       } catch (error) {
         if (!isMounted) return;
 
         setLoadError(
           error?.message ||
-            "Không thể tải dữ liệu lịch/phòng thật để dựng danh sách yêu cầu.",
+            "Không thể tải danh sách yêu cầu đổi/bù/hủy lịch từ API.",
         );
         setSchedules([]);
-        setRooms([]);
         setRequests([]);
       } finally {
         if (isMounted) setIsLoading(false);
@@ -345,11 +260,12 @@ export default function AcademicChangeRequestsPage() {
             : "—",
         proposed_day: formatDayOfWeek(request.proposed_day_of_week),
         proposed_time_slot:
-          request.proposed_time_slot_id === 1
+          request.proposed_time_slot ||
+          (request.proposed_time_slot_id === 1
             ? "Tiết 1-4"
             : request.proposed_time_slot_id === 2
               ? "Tiết 7-10"
-              : "—",
+              : "—"),
         proposed_room: formatFallback(request.proposed_room_code),
         request_status_label: request.request_status,
         reviewed_at_label: formatDateTime(request.reviewed_at),
@@ -408,7 +324,21 @@ export default function AcademicChangeRequestsPage() {
     [],
   );
 
-  function mockReview(nextStatus) {
+  function updateRequestInList(updatedRequest) {
+    if (!updatedRequest) return;
+
+    setRequests((currentRequests) =>
+      currentRequests.map((request) =>
+        String(request.id) === String(updatedRequest.id)
+          ? updatedRequest
+          : request,
+      ),
+    );
+    setSelectedRequestId(String(updatedRequest.id));
+    setReviewNotes(updatedRequest.review_notes || "");
+  }
+
+  async function handleReview(nextStatus) {
     if (!selectedRequest) {
       setUiMessage({
         type: "error",
@@ -418,38 +348,39 @@ export default function AcademicChangeRequestsPage() {
       return;
     }
 
-    const nextImplementedAt =
-      nextStatus === "implemented"
-        ? new Date().toISOString()
-        : selectedRequest.implemented_at;
+    try {
+      setIsMutating(true);
 
-    setRequests((currentRequests) =>
-      currentRequests.map((request) => {
-        if (request.id !== selectedRequest.id) return request;
+      const response =
+        nextStatus === "implemented"
+          ? await implementScheduleChangeRequest(selectedRequest.id, {
+              review_notes: reviewNotes,
+            })
+          : await reviewScheduleChangeRequest(selectedRequest.id, {
+              request_status: nextStatus,
+              review_notes: reviewNotes,
+            });
 
-        return {
-          ...request,
-          request_status: nextStatus,
-          reviewed_at: request.reviewed_at || new Date().toISOString(),
-          implemented_at: nextImplementedAt,
-          implemented_by_user_id:
-            nextStatus === "implemented"
-              ? currentUser?.id || request.implemented_by_user_id
-              : request.implemented_by_user_id,
-          implemented_by_name:
-            nextStatus === "implemented"
-              ? currentUser?.full_name || "Cán bộ đào tạo"
-              : request.implemented_by_name,
-          review_notes: reviewNotes,
-        };
-      }),
-    );
+      const updatedRequest =
+        response?.data?.change_request || response?.data || selectedRequest;
 
-    setUiMessage({
-      type: "success",
-      title: "Đã cập nhật trên UI mock",
-      text: "Backend hiện thiếu API lab_schedule_change_requests nên thao tác duyệt/chỉnh trạng thái chưa ghi xuống database.",
-    });
+      updateRequestInList(updatedRequest);
+      setUiMessage({
+        type: "success",
+        title: "Đã cập nhật yêu cầu",
+        text: `Yêu cầu #${updatedRequest.id} đang ở trạng thái ${updatedRequest.request_status}.`,
+      });
+    } catch (error) {
+      setUiMessage({
+        type: "error",
+        title: "Không thể cập nhật yêu cầu",
+        text:
+          error?.message ||
+          "API schedule-change-requests từ chối thao tác hiện tại.",
+      });
+    } finally {
+      setIsMutating(false);
+    }
   }
 
   return (
@@ -460,12 +391,12 @@ export default function AcademicChangeRequestsPage() {
           <h1 className="academicHeroTitle">Yêu cầu đổi / bù / hủy lịch</h1>
           <p className="academicHeroText">
             Theo dõi các đề xuất từ giảng viên. Lịch gốc và phòng máy được lấy
-            từ API thật, còn bảng yêu cầu đang mock vì backend chưa có endpoint.
+            từ API thật, bảng yêu cầu được tải trực tiếp từ backend.
           </p>
         </div>
 
         <span className="academicDataBadge academicDataBadge--warning">
-          Thiếu API lab_schedule_change_requests
+          API lab_schedule_change_requests
         </span>
       </section>
 
@@ -579,7 +510,7 @@ export default function AcademicChangeRequestsPage() {
             <div>
               <p className="academicEyebrow">Chi tiết xử lý</p>
               <h2>Thông tin yêu cầu</h2>
-              <p>CBDT/QTV xem chi tiết và ghi chú duyệt trên UI mock.</p>
+              <p>CBDT/QTV xem chi tiết, duyệt và cập nhật trạng thái bằng API thật.</p>
             </div>
           </div>
 
@@ -648,16 +579,18 @@ export default function AcademicChangeRequestsPage() {
                 <ButtonUI
                   type="button"
                   className="academicPrimaryButton"
-                  onClick={() => mockReview("approved")}
+                  onClick={() => handleReview("approved")}
+                  disabled={isMutating || selectedRequest.request_status !== "submitted"}
                 >
-                  Duyệt yêu cầu
+                  {isMutating ? "Đang xử lý..." : "Duyệt yêu cầu"}
                 </ButtonUI>
 
                 <ButtonUI
                   type="button"
                   tone="outline"
                   className="academicGhostButton"
-                  onClick={() => mockReview("rejected")}
+                  onClick={() => handleReview("rejected")}
+                  disabled={isMutating || selectedRequest.request_status !== "submitted"}
                 >
                   Từ chối
                 </ButtonUI>
@@ -666,7 +599,8 @@ export default function AcademicChangeRequestsPage() {
                   type="button"
                   tone="outline"
                   className="academicGhostButton"
-                  onClick={() => mockReview("implemented")}
+                  onClick={() => handleReview("implemented")}
+                  disabled={isMutating || selectedRequest.request_status !== "approved"}
                 >
                   Đánh dấu đã cập nhật lịch
                 </ButtonUI>

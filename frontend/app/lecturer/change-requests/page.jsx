@@ -6,6 +6,7 @@ import { ButtonUI } from "../../../components/common/buttonUI.jsx";
 import { getUser } from "../../../lib/authStorage";
 import { listSchedules } from "../../../services/scheduleService";
 import { getRooms } from "../../../services/roomService";
+import { createScheduleChangeRequest } from "../../../services/scheduleChangeRequestService";
 
 const INITIAL_FORM_STATE = {
   course_key: "",
@@ -156,49 +157,30 @@ function isPublishedSchedule(schedule) {
   );
 }
 
-function buildChangeRequestPayload(
-  formState,
-  selectedSchedule,
-  currentUser,
-  rooms,
-) {
+function buildChangeRequestPayload(formState, rooms) {
   const selectedRoom = rooms.find(
     (room) => String(room.id) === String(formState.proposed_room_id),
   );
 
-  return {
+  const payload = {
     lab_schedule_entry_id: Number(formState.lab_schedule_entry_id),
     change_type: formState.change_type,
-    proposed_start_date: formState.proposed_start_date || null,
-    proposed_end_date: formState.proposed_end_date || null,
-    proposed_day_of_week: formState.proposed_day_of_week
-      ? Number(formState.proposed_day_of_week)
-      : null,
-    proposed_time_slot_id: formState.proposed_time_slot_id
-      ? Number(formState.proposed_time_slot_id)
-      : null,
-    proposed_room_id: formState.proposed_room_id
-      ? Number(formState.proposed_room_id)
-      : null,
-    proposed_room_code:
-      selectedRoom?.room_code || formState.proposed_room_code || null,
     reason_text: formState.reason_text.trim(),
-    request_status: "draft",
-    requested_by_user_id: currentUser?.id || null,
-    lecturer_name: currentUser?.full_name || null,
-    original_schedule_snapshot: selectedSchedule
-      ? {
-          id: selectedSchedule.id,
-          course_code: selectedSchedule.course_code,
-          course_name: selectedSchedule.course_name,
-          room_code: selectedSchedule.room_code,
-          day_of_week: selectedSchedule.day_of_week,
-          time_slot: selectedSchedule.time_slot,
-          start_date: selectedSchedule.start_date,
-          end_date: selectedSchedule.end_date,
-        }
-      : null,
   };
+
+  if (formState.change_type !== "cancel") {
+    payload.proposed_start_date = formState.proposed_start_date;
+    payload.proposed_end_date = formState.proposed_end_date;
+    payload.proposed_day_of_week = Number(formState.proposed_day_of_week);
+    payload.proposed_time_slot_id = Number(formState.proposed_time_slot_id);
+    payload.proposed_room_id = formState.proposed_room_id
+      ? Number(formState.proposed_room_id)
+      : null;
+    payload.proposed_room_code =
+      selectedRoom?.room_code || formState.proposed_room_code || null;
+  }
+
+  return payload;
 }
 
 export default function LecturerChangeRequestsPage() {
@@ -211,6 +193,7 @@ export default function LecturerChangeRequestsPage() {
   const [roomError, setRoomError] = useState("");
   const [statusMessage, setStatusMessage] = useState(null);
   const [lastPayload, setLastPayload] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -405,7 +388,7 @@ export default function LecturerChangeRequestsPage() {
     }));
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
     if (!selectedSchedule) {
@@ -451,19 +434,30 @@ export default function LecturerChangeRequestsPage() {
       }
     }
 
-    const payload = buildChangeRequestPayload(
-      formState,
-      selectedSchedule,
-      currentUser,
-      rooms,
-    );
+    const payload = buildChangeRequestPayload(formState, rooms);
 
-    setLastPayload(payload);
-    setStatusMessage({
-      type: "success",
-      title: "Đã gửi yêu cầu thành công",
-      text: "Frontend đã tạo đúng payload theo bảng lab_schedule_change_requests. Backend hiện thiếu API ghi yêu cầu nên dữ liệu chưa lưu vào database.",
-    });
+    try {
+      setIsSubmitting(true);
+      const response = await createScheduleChangeRequest(payload);
+      const createdRequest = response?.data || payload;
+
+      setLastPayload(createdRequest);
+      setStatusMessage({
+        type: "success",
+        title: "Đã gửi yêu cầu thành công",
+        text: `Yêu cầu #${createdRequest.id || ""} đã được lưu với trạng thái ${createdRequest.request_status || "submitted"}.`,
+      });
+    } catch (error) {
+      setStatusMessage({
+        type: "error",
+        title: "Không thể gửi yêu cầu",
+        text:
+          error?.message ||
+          "API schedule-change-requests từ chối yêu cầu. Vui lòng kiểm tra dữ liệu đầu vào.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -475,12 +469,12 @@ export default function LecturerChangeRequestsPage() {
           <p className="lecturerHeroText">
             Chọn học phần, lớp/tổ thực hành và ca đang bị ảnh hưởng từ lịch đã
             công bố của giảng viên. Form chỉ chuẩn bị yêu cầu ở trạng thái
-            draft.
+            submitted.
           </p>
         </div>
 
         <span className="lecturerDataBadge lecturerDataBadge--warning">
-          Thiếu API change-requests
+          API change-requests
         </span>
       </section>
 
@@ -505,8 +499,8 @@ export default function LecturerChangeRequestsPage() {
               <p className="lecturerEyebrow">Phiếu yêu cầu</p>
               <h2>Thông tin đổi / bù / hủy</h2>
               <p>
-                Dữ liệu lịch gốc lấy từ API thật. Các trường lưu yêu cầu mới chỉ
-                mock do thiếu API ghi bảng.
+                Dữ liệu lịch gốc lấy từ API thật. Phiếu sau khi xác nhận sẽ
+                gửi trực tiếp đến backend.
               </p>
             </div>
           </div>
@@ -525,7 +519,7 @@ export default function LecturerChangeRequestsPage() {
               <span>Trạng thái mặc định</span>
               <input
                 className="lecturerControl lecturerReadonlyControl"
-                value="draft"
+                value="submitted"
                 readOnly
               />
             </label>
@@ -734,9 +728,9 @@ export default function LecturerChangeRequestsPage() {
             <ButtonUI
               type="submit"
               className="lecturerPrimaryButton"
-              disabled={isLoadingSchedules || schedules.length === 0}
+              disabled={isSubmitting || isLoadingSchedules || schedules.length === 0}
             >
-              Xác nhận gửi đi
+              {isSubmitting ? "Đang gửi..." : "Xác nhận gửi đi"}
             </ButtonUI>
 
             <ButtonUI
@@ -801,7 +795,7 @@ export default function LecturerChangeRequestsPage() {
 
           {lastPayload ? (
             <div className="lecturerPayloadPreview">
-              <h3>Payload frontend đã chuẩn bị</h3>
+              <h3>Yêu cầu API vừa ghi nhận</h3>
               <pre>{JSON.stringify(lastPayload, null, 2)}</pre>
             </div>
           ) : null}
