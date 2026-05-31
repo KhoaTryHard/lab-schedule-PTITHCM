@@ -133,3 +133,23 @@ docs/postman/test_results.md
 ```
 
 Nếu API chưa implement thật, ghi rõ là stub hoặc chưa pass thay vì đánh dấu pass.
+
+## Final Week 5 Evidence
+
+Final TC01-TC25 status is summarized in:
+
+```text
+docs/postman/test-cases-final.md
+```
+
+Week 5 endpoint-specific smoke evidence is recorded in:
+
+```text
+docs/postman/test_results_w5-45.md
+docs/postman/test_results_w5-46.md
+docs/postman/test_results_w5-47.md
+docs/postman/test_results_w5-49.md
+docs/postman/test_results_w5-50.md
+```
+
+The original Postman collection/environment remain importable. Week 5 endpoints that are not in the Week 4 collection are documented with local smoke results instead of being marked as Postman-run without evidence.
