@@ -1,0 +1,217 @@
+﻿[
+    {
+        "Name":  "Health check",
+        "Status":  "PASS",
+        "Details":  "GET /api/health HTTP 200"
+    },
+    {
+        "Name":  "Login admin",
+        "Status":  "PASS",
+        "Details":  "role=QTV"
+    },
+    {
+        "Name":  "Login cbdt1",
+        "Status":  "PASS",
+        "Details":  "role=CBDT"
+    },
+    {
+        "Name":  "Login gv_phthy",
+        "Status":  "PASS",
+        "Details":  "role=GV"
+    },
+    {
+        "Name":  "Login ktv1",
+        "Status":  "PASS",
+        "Details":  "role=KTV"
+    },
+    {
+        "Name":  "Login sv1",
+        "Status":  "PASS",
+        "Details":  "role=SV"
+    },
+    {
+        "Name":  "Login wrong password",
+        "Status":  "PASS",
+        "Details":  "HTTP 401"
+    },
+    {
+        "Name":  "Room scope",
+        "Status":  "PASS",
+        "Details":  "rooms=2B11,2B21,2B31"
+    },
+    {
+        "Name":  "Create schedule request",
+        "Status":  "PASS",
+        "Details":  "id=8"
+    },
+    {
+        "Name":  "List schedule requests",
+        "Status":  "PASS",
+        "Details":  "created request visible to CBDT"
+    },
+    {
+        "Name":  "Constraint pass",
+        "Status":  "PASS",
+        "Details":  "valid slot passed all rules"
+    },
+    {
+        "Name":  "Auto-arrange success",
+        "Status":  "PASS",
+        "Details":  "ranked_options=2"
+    },
+    {
+        "Name":  "Create draft schedule",
+        "Status":  "PASS",
+        "Details":  "id=9"
+    },
+    {
+        "Name":  "Room/Lecturer conflict",
+        "Status":  "PASS",
+        "Details":  "ROOM_CONFLICT,LECTURER_CONFLICT"
+    },
+    {
+        "Name":  "Capacity constraint fail",
+        "Status":  "PASS",
+        "Details":  "CAPACITY_OK=false for team 999"
+    },
+    {
+        "Name":  "Software constraint fail",
+        "Status":  "PASS",
+        "Details":  "SOFTWARE_OK=false for room 2B31 + software 1"
+    },
+    {
+        "Name":  "Holiday constraint fail",
+        "Status":  "PASS",
+        "Details":  "HOLIDAY_BLOCKED=false on 2026-05-01"
+    },
+    {
+        "Name":  "Approve/publish lifecycle",
+        "Status":  "PASS",
+        "Details":  "schedule=9"
+    },
+    {
+        "Name":  "SV/GV published lookup",
+        "Status":  "PASS",
+        "Details":  "created published schedule visible"
+    },
+    {
+        "Name":  "Schedule change request flow",
+        "Status":  "PASS",
+        "Details":  "created/rejected id=1"
+    },
+    {
+        "Name":  "Schedule change RBAC",
+        "Status":  "PASS",
+        "Details":  "SV forbidden HTTP 403"
+    },
+    {
+        "Name":  "Room issue flow",
+        "Status":  "PASS",
+        "Details":  "created/resolved id=1"
+    },
+    {
+        "Name":  "Room block flow",
+        "Status":  "PASS",
+        "Details":  "created/approved id=2, ROOM_BLOCKED detected"
+    },
+    {
+        "Name":  "Room block RBAC",
+        "Status":  "PASS",
+        "Details":  "SV forbidden HTTP 403"
+    },
+    {
+        "Name":  "Feedback/notification flow",
+        "Status":  "PASS",
+        "Details":  "feedback=1, cbdt_notification=2, sv_notification=3"
+    },
+    {
+        "Name":  "Feedback RBAC",
+        "Status":  "PASS",
+        "Details":  "KTV forbidden HTTP 403"
+    },
+    {
+        "Name":  "Basic reports API",
+        "Status":  "PASS",
+        "Details":  "CBDT/QTV HTTP 200, SV HTTP 403"
+    },
+    {
+        "Name":  "Frontend route /login",
+        "Status":  "PASS",
+        "Details":  "HTTP 200"
+    },
+    {
+        "Name":  "Frontend route /academic/schedule-requests",
+        "Status":  "PASS",
+        "Details":  "HTTP 200"
+    },
+    {
+        "Name":  "Frontend route /academic/auto-arrange",
+        "Status":  "PASS",
+        "Details":  "HTTP 200"
+    },
+    {
+        "Name":  "Frontend route /academic/schedules",
+        "Status":  "PASS",
+        "Details":  "HTTP 200"
+    },
+    {
+        "Name":  "Frontend route /academic/change-requests",
+        "Status":  "PASS",
+        "Details":  "HTTP 200"
+    },
+    {
+        "Name":  "Frontend route /academic/reports",
+        "Status":  "PASS",
+        "Details":  "HTTP 200"
+    },
+    {
+        "Name":  "Frontend route /lecturer/my-schedule",
+        "Status":  "PASS",
+        "Details":  "HTTP 200"
+    },
+    {
+        "Name":  "Frontend route /lecturer/change-requests",
+        "Status":  "PASS",
+        "Details":  "HTTP 200"
+    },
+    {
+        "Name":  "Frontend route /lecturer/room-issues",
+        "Status":  "PASS",
+        "Details":  "HTTP 200"
+    },
+    {
+        "Name":  "Frontend route /student/my-schedule",
+        "Status":  "PASS",
+        "Details":  "HTTP 200"
+    },
+    {
+        "Name":  "Frontend route /student/feedback",
+        "Status":  "PASS",
+        "Details":  "HTTP 200"
+    },
+    {
+        "Name":  "Frontend route /student/notifications",
+        "Status":  "PASS",
+        "Details":  "HTTP 200"
+    },
+    {
+        "Name":  "Frontend route /technician/issues",
+        "Status":  "PASS",
+        "Details":  "HTTP 200"
+    },
+    {
+        "Name":  "Frontend route /technician/notifications",
+        "Status":  "PASS",
+        "Details":  "HTTP 200"
+    },
+    {
+        "Name":  "Frontend route /admin/accounts",
+        "Status":  "PASS",
+        "Details":  "HTTP 200"
+    },
+    {
+        "Name":  "Frontend route /admin/trainingData",
+        "Status":  "PASS",
+        "Details":  "HTTP 200"
+    }
+]

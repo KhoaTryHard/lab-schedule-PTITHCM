@@ -63,6 +63,14 @@ The Week 4 collection covers TC01-TC19 style core scheduling tests. Week 5 backe
 - Evidence: `docs/postman/test_results_w5-49.md`.
 - Automated screenshots were not captured in this CLI run because browser automation is not installed. Manual screenshots are tracked for the final demo package in #52.
 
+## Final Demo Workflow Evidence
+
+- Checklist and owner workflow: `docs/test-workflow-final.md`.
+- Local smoke script: `scripts/final-demo-smoke.ps1`.
+- Latest final demo smoke result: `docs/postman/test_results_final_demo.md`.
+- The smoke run covers login, room scope, schedule request, constraints, auto-arrange, draft/approve/publish, role lookups, change requests, room issues/blocks, feedback, notifications, reports, and frontend route HTTP 200 checks.
+- The smoke script creates temporary rows and the database was reset after the recorded run to restore the seed baseline.
+
 ## Known Limitations
 
 - The Week 4 Postman collection does not contain every Week 5 endpoint. Week 5 endpoint evidence is captured through local smoke runs and Markdown records.
