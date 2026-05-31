@@ -3,51 +3,7 @@
 import { useMemo, useState } from "react";
 
 import { ButtonUI } from "../../../components/common/buttonUI.jsx";
-
-const MOCK_LECTURER_NOTIFICATIONS = [
-  {
-    id: 1,
-    notification_type: "schedule_published",
-    title: "Lịch thực hành đã được công bố",
-    message_body:
-      "Lịch thực hành của giảng viên đã được công bố. Vui lòng kiểm tra lịch giảng viên để chuẩn bị buổi dạy.",
-    related_entity_type: "lab_schedule_entries",
-    related_entity_id: null,
-    created_by_user_id: 2,
-    created_at: "2026-04-28 07:35:00",
-    recipient_status: "unread",
-    read_at: null,
-    acknowledged_at: null,
-  },
-  {
-    id: 2,
-    notification_type: "change_request_reviewed",
-    title: "Yêu cầu đổi lịch đã được tiếp nhận",
-    message_body:
-      "CBDT đã tiếp nhận yêu cầu đổi/bù/hủy lịch. Trạng thái xử lý sẽ được cập nhật khi backend có API.",
-    related_entity_type: "lab_schedule_change_requests",
-    related_entity_id: 1,
-    created_by_user_id: 2,
-    created_at: "2026-04-27 16:20:00",
-    recipient_status: "read",
-    read_at: "2026-04-27 16:35:00",
-    acknowledged_at: null,
-  },
-  {
-    id: 3,
-    notification_type: "room_issue_updated",
-    title: "Sự cố phòng máy đã được kỹ thuật viên cập nhật",
-    message_body:
-      "Báo cáo sự cố phòng máy đã chuyển sang trạng thái đang xử lý. Vui lòng theo dõi trước buổi thực hành tiếp theo.",
-    related_entity_type: "room_issue_reports",
-    related_entity_id: 1,
-    created_by_user_id: 9,
-    created_at: "2026-04-27 10:05:00",
-    recipient_status: "acknowledged",
-    read_at: "2026-04-27 10:12:00",
-    acknowledged_at: "2026-04-27 10:15:00",
-  },
-];
+import { useNotifications } from "../../../hooks/useNotifications";
 
 const FILTER_OPTIONS = [
   { value: "all", label: "Tất cả" },
@@ -138,10 +94,6 @@ function getRelatedHref(notification) {
   return "";
 }
 
-function getNowIsoString() {
-  return new Date().toISOString();
-}
-
 function filterNotifications(notifications, activeFilter) {
   if (activeFilter === "all") {
     return notifications;
@@ -159,9 +111,14 @@ function filterNotifications(notifications, activeFilter) {
 }
 
 export default function LecturerNotificationsPage() {
-  const [notifications, setNotifications] = useState(
-    MOCK_LECTURER_NOTIFICATIONS,
-  );
+  const {
+    acknowledge,
+    isLoading,
+    loadError,
+    markAllAsRead: markAllAsReadApi,
+    markAsRead: markAsReadApi,
+    notifications,
+  } = useNotifications();
   const [activeFilter, setActiveFilter] = useState("all");
   const [uiMessage, setUiMessage] = useState("");
 
@@ -178,62 +135,33 @@ export default function LecturerNotificationsPage() {
     [notifications],
   );
 
-  function markAsRead(notificationId) {
-    setUiMessage("Chỉ cập nhật trạng thái trên UI mock vì backend thiếu API.");
-
-    setNotifications((currentNotifications) =>
-      currentNotifications.map((notification) => {
-        if (
-          notification.id !== notificationId ||
-          notification.recipient_status !== "unread"
-        ) {
-          return notification;
-        }
-
-        return {
-          ...notification,
-          recipient_status: "read",
-          read_at: getNowIsoString(),
-        };
-      }),
-    );
+  async function markAsRead(notificationId) {
+    try {
+      await markAsReadApi(notificationId);
+      setUiMessage("Đã đánh dấu thông báo là đã đọc.");
+    } catch (error) {
+      setUiMessage(error?.message || "Không thể đánh dấu đã đọc.");
+    }
   }
 
-  function acknowledgeNotification(notificationId) {
-    setUiMessage("Đã xác nhận trên UI mock. Chưa ghi notification_recipients.");
-
-    setNotifications((currentNotifications) =>
-      currentNotifications.map((notification) => {
-        if (notification.id !== notificationId) {
-          return notification;
-        }
-
-        return {
-          ...notification,
-          recipient_status: "acknowledged",
-          read_at: notification.read_at || getNowIsoString(),
-          acknowledged_at: getNowIsoString(),
-        };
-      }),
-    );
+  async function acknowledgeNotification(notificationId) {
+    try {
+      await acknowledge(notificationId);
+      setUiMessage("Đã xác nhận thông báo.");
+    } catch (error) {
+      setUiMessage(error?.message || "Không thể xác nhận thông báo.");
+    }
   }
 
-  function markAllAsRead() {
-    setUiMessage("Đã đánh dấu tất cả là đã đọc trên UI mock.");
-
-    setNotifications((currentNotifications) =>
-      currentNotifications.map((notification) => {
-        if (notification.recipient_status !== "unread") {
-          return notification;
-        }
-
-        return {
-          ...notification,
-          recipient_status: "read",
-          read_at: getNowIsoString(),
-        };
-      }),
-    );
+  async function markAllAsRead() {
+    try {
+      const result = await markAllAsReadApi();
+      setUiMessage(
+        `Đã đánh dấu ${result?.updated_count ?? unreadCount} thông báo là đã đọc.`,
+      );
+    } catch (error) {
+      setUiMessage(error?.message || "Không thể đánh dấu tất cả đã đọc.");
+    }
   }
 
   return (
@@ -250,27 +178,26 @@ export default function LecturerNotificationsPage() {
 
         <div className="lecturerHeroActions">
           <span className="lecturerDataBadge lecturerDataBadge--warning">
-            Thiếu API notifications
+            API notifications
           </span>
 
           <ButtonUI
             type="button"
             className="lecturerPrimaryButton"
             onClick={markAllAsRead}
-            disabled={unreadCount === 0}
+            disabled={isLoading || unreadCount === 0}
           >
             Đánh dấu tất cả đã đọc
           </ButtonUI>
         </div>
       </section>
 
-      <section className="lecturerAlert lecturerAlert--warning">
-        <h3>Thiếu API notifications / notification_recipients</h3>
-        <p>
-          Backend chưa có endpoint lấy thông báo theo giảng viên và cập nhật
-          trạng thái đọc/xác nhận. Danh sách bên dưới là mock để hoàn thiện UI.
-        </p>
-      </section>
+      {loadError ? (
+        <section className="lecturerAlert lecturerAlert--error" role="alert">
+          <h3>Không tải được thông báo</h3>
+          <p>{loadError}</p>
+        </section>
+      ) : null}
 
       {uiMessage ? (
         <section className="lecturerAlert lecturerAlert--info" role="status">
@@ -305,7 +232,14 @@ export default function LecturerNotificationsPage() {
       </section>
 
       <section className="lecturerNotificationList">
-        {visibleNotifications.length === 0 ? (
+        {isLoading ? (
+          <div className="lecturerEmptyBox">
+            <h2>Đang tải thông báo</h2>
+            <p>Hệ thống đang lấy danh sách thông báo của tài khoản hiện tại.</p>
+          </div>
+        ) : null}
+
+        {!isLoading && visibleNotifications.length === 0 ? (
           <div className="lecturerEmptyBox">
             <h2>Không có thông báo</h2>
             <p>Không có thông báo phù hợp bộ lọc hiện tại.</p>

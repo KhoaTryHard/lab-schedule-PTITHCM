@@ -6,6 +6,10 @@ import DataTable from "../../../components/common/DataTable.jsx";
 import { ButtonUI } from "../../../components/common/buttonUI.jsx";
 import { getUser } from "../../../lib/authStorage";
 import { listSchedules } from "../../../services/scheduleService";
+import {
+  createRoomIssue,
+  listRoomIssues,
+} from "../../../services/roomOperationService";
 
 const INITIAL_FORM_STATE = {
   lab_schedule_entry_id: "",
@@ -30,43 +34,6 @@ const SEVERITY_OPTIONS = [
   { value: "medium", label: "Trung bình" },
   { value: "high", label: "Cao" },
   { value: "critical", label: "Nghiêm trọng" },
-];
-
-const MOCK_REPORTS = [
-  {
-    id: "mock-1",
-    room_code: "2B11",
-    device_id: "PC-2B11-14",
-    lab_schedule_entry_id: 4,
-    issue_type: "computer",
-    severity: "high",
-    issue_title: "Máy không khởi động trong giờ thực hành",
-    issue_description:
-      "Máy sinh viên số 14 không lên nguồn, ảnh hưởng đến quá trình làm bài.",
-    reported_by_name: "Giảng viên",
-    assigned_to_name: "Kỹ thuật viên",
-    issue_status: "new",
-    detected_at: "2026-04-28T08:20:00",
-    resolved_at: null,
-    resolution_notes: "",
-  },
-  {
-    id: "mock-2",
-    room_code: "2B21",
-    device_id: null,
-    lab_schedule_entry_id: 5,
-    issue_type: "network",
-    severity: "medium",
-    issue_title: "Mạng LAN không ổn định",
-    issue_description:
-      "Một nhóm máy bị mất kết nối tới máy chủ nội bộ trong ca thực hành.",
-    reported_by_name: "Giảng viên",
-    assigned_to_name: "Kỹ thuật viên",
-    issue_status: "in_progress",
-    detected_at: "2026-04-27T13:15:00",
-    resolved_at: null,
-    resolution_notes: "KTV đang kiểm tra switch và dây mạng.",
-  },
 ];
 
 function extractScheduleItems(response) {
@@ -221,12 +188,13 @@ function buildIssuePayload(formState, selectedSchedule, currentUser) {
 export default function LecturerRoomIssuesPage() {
   const [currentUser, setCurrentUser] = useState(null);
   const [schedules, setSchedules] = useState([]);
-  const [reports, setReports] = useState(MOCK_REPORTS);
+  const [reports, setReports] = useState([]);
   const [formState, setFormState] = useState(INITIAL_FORM_STATE);
   const [isLoadingSchedules, setIsLoadingSchedules] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [statusMessage, setStatusMessage] = useState(null);
   const [lastPayload, setLastPayload] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -239,17 +207,22 @@ export default function LecturerRoomIssuesPage() {
         setIsLoadingSchedules(true);
         setLoadError("");
 
-        const response = await listSchedules({
-          status: "published",
-          lecturer_user_id: user?.id,
-        });
+        const [scheduleResponse, issueResponse] = await Promise.all([
+          listSchedules({
+            status: "published",
+            lecturer_user_id: user?.id,
+          }),
+          listRoomIssues().catch(() => ({ data: { items: [] } })),
+        ]);
 
         const publishedSchedules =
-          extractScheduleItems(response).filter(isPublishedSchedule);
+          extractScheduleItems(scheduleResponse).filter(isPublishedSchedule);
+        const apiReports = extractScheduleItems(issueResponse);
 
         if (!isMounted) return;
 
         setSchedules(publishedSchedules);
+        setReports(apiReports);
         setFormState((current) => ({
           ...current,
           lab_schedule_entry_id:
@@ -260,6 +233,7 @@ export default function LecturerRoomIssuesPage() {
         if (!isMounted) return;
 
         setSchedules([]);
+        setReports([]);
         setLoadError(
           error?.message ||
             "Không thể tải lịch thực hành đã công bố của giảng viên.",
@@ -346,7 +320,7 @@ export default function LecturerRoomIssuesPage() {
     setLastPayload(null);
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
     if (!selectedSchedule) {
@@ -369,21 +343,29 @@ export default function LecturerRoomIssuesPage() {
 
     const payload = buildIssuePayload(formState, selectedSchedule, currentUser);
 
-    setLastPayload(payload);
-    setReports((currentReports) => [
-      {
-        id: `local-${Date.now()}`,
-        ...payload,
-        reported_by_name: currentUser?.full_name || "Giảng viên",
-        assigned_to_name: "Chưa phân công",
-      },
-      ...currentReports,
-    ]);
-    setStatusMessage({
-      type: "success",
-      title: "Đã gửi báo cáo thành công",
-      text: "Frontend đã tạo báo cáo theo cấu trúc room_issue_reports. Backend hiện thiếu API ghi sự cố nên dữ liệu chỉ lưu tạm trên UI.",
-    });
+    try {
+      setIsSubmitting(true);
+      const response = await createRoomIssue(payload);
+      const createdIssue = response?.data || payload;
+
+      setLastPayload(createdIssue);
+      setReports((currentReports) => [createdIssue, ...currentReports]);
+      setStatusMessage({
+        type: "success",
+        title: "Đã gửi báo cáo thành công",
+        text: `Báo cáo #${createdIssue.id || ""} đã được lưu với trạng thái ${createdIssue.issue_status || "new"}.`,
+      });
+    } catch (error) {
+      setStatusMessage({
+        type: "error",
+        title: "Không thể gửi báo cáo",
+        text:
+          error?.message ||
+          "API room-issues từ chối báo cáo. Vui lòng kiểm tra ca thực hành và nội dung sự cố.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -399,7 +381,7 @@ export default function LecturerRoomIssuesPage() {
         </div>
 
         <span className="lecturerDataBadge lecturerDataBadge--warning">
-          Thiếu API room_issue_reports
+          API room_issue_reports
         </span>
       </section>
 
@@ -566,9 +548,9 @@ export default function LecturerRoomIssuesPage() {
             <ButtonUI
               type="submit"
               className="lecturerPrimaryButton"
-              disabled={isLoadingSchedules || schedules.length === 0}
+              disabled={isSubmitting || isLoadingSchedules || schedules.length === 0}
             >
-              Xác nhận gửi đi
+              {isSubmitting ? "Đang gửi..." : "Xác nhận gửi đi"}
             </ButtonUI>
 
             <ButtonUI
@@ -632,7 +614,7 @@ export default function LecturerRoomIssuesPage() {
 
           {lastPayload ? (
             <div className="lecturerPayloadPreview">
-              <h3>Payload frontend đã chuẩn bị</h3>
+              <h3>Báo cáo API vừa ghi nhận</h3>
               <pre>{JSON.stringify(lastPayload, null, 2)}</pre>
             </div>
           ) : null}
@@ -642,11 +624,10 @@ export default function LecturerRoomIssuesPage() {
       <section className="lecturerPanel">
         <div className="lecturerPanelHeader">
           <div>
-            <p className="lecturerEyebrow">Mock UI</p>
+            <p className="lecturerEyebrow">API thật</p>
             <h2>Báo cáo sự cố gần đây</h2>
             <p>
-              Chưa có API đọc/ghi room_issue_reports nên bảng dưới là dữ liệu
-              mock và báo cáo vừa gửi chỉ lưu tạm trên UI.
+              Danh sách dưới đây được tải từ room_issue_reports theo quyền của giảng viên.
             </p>
           </div>
         </div>
@@ -655,6 +636,7 @@ export default function LecturerRoomIssuesPage() {
           columns={columns}
           rows={rows}
           rowKey="id"
+          loading={isLoadingSchedules}
           emptyTitle="Chưa có báo cáo sự cố"
           emptyDescription="Không có báo cáo sự cố phù hợp."
           pageSize={8}
