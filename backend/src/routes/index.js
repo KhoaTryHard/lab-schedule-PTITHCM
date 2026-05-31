@@ -1,6 +1,7 @@
 const express = require('express');
 
 const adminRoutes = require('../modules/admin/admin.routes');
+const feedbackNotificationRoutes = require('../modules/feedback-notifications/feedbackNotification.routes');
 const healthRoutes = require('../modules/health/health.routes');
 const authRoutes = require('../modules/auth/auth.routes');
 const roomRoutes = require('../modules/rooms/room.routes');
@@ -14,6 +15,7 @@ const router = express.Router();
 router.use('/health', healthRoutes);
 router.use('/auth', authRoutes);
 router.use('/admin', adminRoutes);
+router.use('/', feedbackNotificationRoutes);
 router.use('/rooms', roomRoutes);
 router.use('/', roomOperationRoutes);
 router.use('/schedule-change-requests', scheduleChangeRequestRoutes);
