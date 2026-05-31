@@ -51,17 +51,20 @@ CREATE DATABASE lab_schedule_ptit_v2 CHARACTER SET utf8mb4 COLLATE utf8mb4_unico
 
 Import schema:
 
-```bash
-mysql -u root -p lab_schedule_ptit_v2 < database/Dump20260428.sql
+```powershell
+.\scripts\reset-demo-db.ps1
 ```
+
+Script này import `Dump20260428.sql` và `seed_demo_final.sql` bằng MySQL `SOURCE` với UTF-8. Không import qua `Get-Content | mysql` trong PowerShell vì cách đó có thể làm hỏng tiếng Việt thành `???`.
 
 Nếu dùng MySQL Workbench hoặc XAMPP phpMyAdmin, mở file:
 
 ```text
 database/Dump20260428.sql
+database/seed_demo_final.sql
 ```
 
-và chạy toàn bộ script.
+và chạy toàn bộ script theo đúng thứ tự.
 
 ### 3.2 Backend
 

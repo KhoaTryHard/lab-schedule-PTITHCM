@@ -60,7 +60,7 @@ JWT_EXPIRES_IN=1d
 2. Đảm bảo database đã được import từ dump:
 
 ```powershell
-mysql -u root -p lab_schedule_ptit_v2 < database/Dump20260428.sql
+.\scripts\reset-demo-db.ps1
 ```
 
 3. Tạo bcrypt hash cho mật khẩu demo. Ví dụ dùng password `123456`:

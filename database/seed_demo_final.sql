@@ -10,7 +10,10 @@
 --   SV    : sv1           (sees 2 published entries via practice team membership)
 --
 -- Run:
---   mysql -u root -p lab_schedule_ptit_v2 < database/seed_demo_final.sql
+--   .\scripts\reset-demo-db.ps1
+--
+-- Do not import through PowerShell Get-Content | mysql. Let mysql read this
+-- UTF-8 file directly, otherwise Vietnamese text may become question marks.
 --
 -- Regenerate password hash (bcryptjs, cost 10):
 --   cd backend && node -e "const b=require('bcryptjs');console.log(b.hashSync('123456',10));"

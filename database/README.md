@@ -16,9 +16,11 @@ lab_schedule_ptit_v2
 
 ## Import bằng terminal
 
-```bash
-mysql -u root -p lab_schedule_ptit_v2 < database/Dump20260428.sql
+```powershell
+.\scripts\reset-demo-db.ps1
 ```
+
+Script reset dùng MySQL `SOURCE` với `--default-character-set=utf8mb4` để giữ nguyên dữ liệu tiếng Việt. Tránh `Get-Content | mysql` trong PowerShell vì có thể biến Unicode thành dấu `?`.
 
 ## Quy tắc database trong MVP
 

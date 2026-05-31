@@ -38,10 +38,10 @@ If old services are in an unknown state, stop them and restart after DB reset.
 Reset database from the project dump and seed:
 
 ```powershell
-mysql -u root -p -e "DROP DATABASE IF EXISTS lab_schedule_ptit_v2; CREATE DATABASE lab_schedule_ptit_v2 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-mysql -u root -p lab_schedule_ptit_v2 < database/Dump20260428.sql
-mysql -u root -p lab_schedule_ptit_v2 < database/seed_demo_final.sql
+.\scripts\reset-demo-db.ps1
 ```
+
+The reset script preserves UTF-8 Vietnamese seed text. Avoid `Get-Content | mysql` in PowerShell; it can turn Vietnamese names into `???`.
 
 Verify baseline counts:
 
