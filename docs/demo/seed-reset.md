@@ -11,10 +11,10 @@ lab_schedule_ptit_v2
 Reset from schema/dump:
 
 ```powershell
-mysql -u root -p -e "DROP DATABASE IF EXISTS lab_schedule_ptit_v2; CREATE DATABASE lab_schedule_ptit_v2 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-mysql -u root -p lab_schedule_ptit_v2 < database/Dump20260428.sql
-mysql -u root -p lab_schedule_ptit_v2 < database/seed_demo_final.sql
+.\scripts\reset-demo-db.ps1
 ```
+
+The reset script uses MySQL `SOURCE` with `--default-character-set=utf8mb4`. Do not import the SQL files through `Get-Content | mysql` in PowerShell because that can corrupt Vietnamese text into `???`.
 
 If the database already exists and only demo data needs refreshing, prefer a full reset. The Week 5 smoke scripts create and clean temporary rows, but a full reset is safer before a final demo.
 
