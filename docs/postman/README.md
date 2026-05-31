@@ -152,4 +152,12 @@ docs/postman/test_results_w5-49.md
 docs/postman/test_results_w5-50.md
 ```
 
+Final demo workflow smoke evidence is recorded in:
+
+```text
+docs/test-workflow-final.md
+docs/postman/test_results_final_demo.md
+scripts/final-demo-smoke.ps1
+```
+
 The original Postman collection/environment remain importable. Week 5 endpoints that are not in the Week 4 collection are documented with local smoke results instead of being marked as Postman-run without evidence.
