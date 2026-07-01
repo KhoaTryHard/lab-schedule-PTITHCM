@@ -1,0 +1,1030 @@
+{
+  "info": {
+    "name": "Lab-Schedule-Week4-Final",
+    "description": "End-to-End Demo for Week 4 (Issue W3-08)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Auth",
+      "item": [
+        {
+          "name": "1.1 Login Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Response has token', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('token');",
+                  "    pm.environment.set('admin_token', jsonData.data.token);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.2 Login CBDT",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"cbdt1\",\n  \"password\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Response has token', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('token');",
+                  "    pm.environment.set('cbdt_token', jsonData.data.token);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.3 Login GV",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"gv_phthy\",\n  \"password\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Response has token', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('token');",
+                  "    pm.environment.set('gv_token', jsonData.data.token);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.4 Login KTV",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"ktv1\",\n  \"password\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Response has token', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('token');",
+                  "    pm.environment.set('ktv_token', jsonData.data.token);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.5 Login SV",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"sv1\",\n  \"password\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Response has token', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('token');",
+                  "    pm.environment.set('sv_token', jsonData.data.token);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.6 Login Wrong",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"wrong\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 401', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Schedule Request",
+      "item": [
+        {
+          "name": "2.1 POST Schedule Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{cbdt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/schedule-requests",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "schedule-requests"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"course_section_id\": 1,\n  \"requested_team_count\": 1,\n  \"total_required_sessions\": 3\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('Save request ID', function () { var j = pm.response.json(); pm.environment.set('schedule_request_id', j.data.id); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.2 GET Schedule Requests",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{cbdt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/schedule-requests",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "schedule-requests"
+              ],
+              "query": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Returns array', function () { var j = pm.response.json(); pm.expect(j.data).to.be.an('array'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Check Constraint",
+      "item": [
+        {
+          "name": "3.1 PASS case",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{cbdt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/schedules/check-constraints",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "schedules",
+                "check-constraints"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"room_code\": \"2B11\",\n  \"lecturer_user_id\": 3,\n  \"practice_team_id\": 1,\n  \"day_of_week\": 6,\n  \"time_slot\": \"1-4\",\n  \"start_date\": \"2026-05-20\",\n  \"end_date\": \"2026-05-20\",\n  \"required_software_ids\": []\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 and passed', function () { var j = pm.response.json(); pm.response.to.have.status(200); pm.expect(j.data.passed).to.be.true; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.2 ROOM_CONFLICT",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{cbdt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/schedules/check-constraints",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "schedules",
+                "check-constraints"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"room_code\": \"2B31\",\n  \"lecturer_user_id\": 3,\n  \"practice_team_id\": 1,\n  \"day_of_week\": 4,\n  \"time_slot\": \"7-10\",\n  \"start_date\": \"2025-09-17\",\n  \"end_date\": \"2025-09-17\",\n  \"required_software_ids\": []\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Fails with ROOM_CONFLICT', function () { var j = pm.response.json(); pm.expect(j.data.passed).to.be.false; var codes = j.data.results.map(r=>r.code); pm.expect(codes).to.include('ROOM_CONFLICT'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.3 LECTURER_CONFLICT",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{cbdt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/schedules/check-constraints",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "schedules",
+                "check-constraints"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"room_code\": \"2B11\",\n  \"lecturer_user_id\": 6,\n  \"practice_team_id\": 1,\n  \"day_of_week\": 4,\n  \"time_slot\": \"7-10\",\n  \"start_date\": \"2025-09-17\",\n  \"end_date\": \"2025-09-17\",\n  \"required_software_ids\": []\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Fails with LECTURER_CONFLICT', function () { var j = pm.response.json(); pm.expect(j.data.passed).to.be.false; var codes = j.data.results.map(r=>r.code); pm.expect(codes).to.include('LECTURER_CONFLICT'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.4 ROOM_STATUS",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{cbdt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/schedules/check-constraints",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "schedules",
+                "check-constraints"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"room_code\": \"2B31\",\n  \"lecturer_user_id\": 3,\n  \"practice_team_id\": 1,\n  \"day_of_week\": 2,\n  \"time_slot\": \"1-4\",\n  \"start_date\": \"2026-05-20\",\n  \"end_date\": \"2026-05-20\",\n  \"required_software_ids\": []\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Fails with ROOM_STATUS', function () { var j = pm.response.json(); pm.expect(j.data.passed).to.be.false; var codes = j.data.results.map(r=>r.code); pm.expect(codes).to.include('ROOM_STATUS'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.5 CAPACITY",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{cbdt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/schedules/check-constraints",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "schedules",
+                "check-constraints"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"room_code\": \"2B11\",\n  \"lecturer_user_id\": 3,\n  \"practice_team_id\": 999,\n  \"day_of_week\": 2,\n  \"time_slot\": \"1-4\",\n  \"start_date\": \"2026-05-20\",\n  \"end_date\": \"2026-05-20\",\n  \"required_software_ids\": []\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Fails with CAPACITY_OK overload', function () { var j = pm.response.json(); pm.expect(j.data.passed).to.be.false; var capacity = j.data.results.find(r=>r.code === 'CAPACITY_OK'); pm.expect(capacity).to.exist; pm.expect(capacity.passed).to.be.false; pm.expect(capacity.message).to.include('team size is 100'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.6 HOLIDAY_BLOCKED",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{cbdt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/schedules/check-constraints",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "schedules",
+                "check-constraints"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"room_code\": \"2B11\",\n  \"lecturer_user_id\": 3,\n  \"practice_team_id\": 1,\n  \"day_of_week\": 6,\n  \"time_slot\": \"1-4\",\n  \"start_date\": \"2026-05-01\",\n  \"end_date\": \"2026-05-01\",\n  \"required_software_ids\": []\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Fails with HOLIDAY_BLOCKED', function () { var j = pm.response.json(); pm.expect(j.data.passed).to.be.false; var codes = j.data.results.map(r=>r.code); pm.expect(codes).to.include('HOLIDAY_BLOCKED'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Auto-Arrange",
+      "item": [
+        {
+          "name": "4.1 Success case",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{cbdt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/schedules/auto-arrange",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "schedules",
+                "auto-arrange"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"practice_team_id\": 1,\n  \"start_date\": \"2026-05-20\",\n  \"end_date\": \"2026-05-20\",\n  \"lecturer_user_id\": 3\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is success with ranked options', function () { var j = pm.response.json(); pm.expect(j.data.auto_arrange_status).to.equal('success'); pm.expect(j.data.ranked_options).to.be.an('array'); pm.expect(j.data.ranked_options.length).to.be.at.least(1); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4.2 No valid case",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{cbdt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/schedules/auto-arrange",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "schedules",
+                "auto-arrange"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"practice_team_id\": 999,\n  \"start_date\": \"2026-05-20\",\n  \"end_date\": \"2026-05-20\",\n  \"lecturer_user_id\": 3\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is no_valid_option', function () { var j = pm.response.json(); pm.expect(j.data.auto_arrange_status).to.equal('no_valid_option'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4.3 With preferred_day",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{cbdt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/schedules/auto-arrange",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "schedules",
+                "auto-arrange"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"practice_team_id\": 1,\n  \"preferred_day_of_week\": 3,\n  \"start_date\": \"2026-05-20\",\n  \"end_date\": \"2026-05-20\",\n  \"lecturer_user_id\": 3\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Score is 80 and preferred day selected', function () { var j = pm.response.json(); pm.expect(j.data.selected_option.score).to.equal(80); pm.expect(j.data.selected_option.day_of_week).to.equal(3); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "5. Schedule Lifecycle",
+      "item": [
+        {
+          "name": "5.1 POST Draft",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{cbdt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/schedules",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "schedules"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lab_schedule_request_id\": \"{{schedule_request_id}}\",\n  \"practice_team_id\": 1,\n  \"room_code\": \"2B11\",\n  \"lecturer_user_id\": 3,\n  \"day_of_week\": 6,\n  \"time_slot\": \"7-10\",\n  \"start_date\": \"2026-05-22\",\n  \"end_date\": \"2026-05-22\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('Save schedule_id', function () { var j = pm.response.json(); pm.environment.set('schedule_id', j.data.schedule.id); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.2 PATCH Publish when draft",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{cbdt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/schedules/{{schedule_id}}/publish",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "schedules",
+                "{{schedule_id}}",
+                "publish"
+              ],
+              "query": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 409 Conflict', function () { pm.response.to.have.status(409); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.3 PATCH Approve",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{cbdt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/schedules/{{schedule_id}}/approve",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "schedules",
+                "{{schedule_id}}",
+                "approve"
+              ],
+              "query": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 Approved', function () { pm.response.to.have.status(200); var j = pm.response.json(); pm.expect(j.data.entry_status).to.equal('approved'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.4 PATCH Publish when approved",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{cbdt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/schedules/{{schedule_id}}/publish",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "schedules",
+                "{{schedule_id}}",
+                "publish"
+              ],
+              "query": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 Published', function () { pm.response.to.have.status(200); var j = pm.response.json(); pm.expect(j.data.entry_status).to.equal('published'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "6. Schedule Lookup",
+      "item": [
+        {
+          "name": "6.1 GET Student Schedule",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sv_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/schedules?student_user_id=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "schedules"
+              ],
+              "query": [
+                {
+                  "key": "student_user_id",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); var j = pm.response.json(); pm.expect(j.data.schedules).to.be.an('array'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.2 GET Lecturer Schedule",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{gv_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/schedules?lecturer_user_id=6",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "schedules"
+              ],
+              "query": [
+                {
+                  "key": "lecturer_user_id",
+                  "value": "6"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); var j = pm.response.json(); pm.expect(j.data.schedules).to.be.an('array'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.3 GET Room Published Schedule",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ktv_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/schedules/published?room_code=2B11",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "schedules",
+                "published"
+              ],
+              "query": [
+                {
+                  "key": "room_code",
+                  "value": "2B11"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); var j = pm.response.json(); pm.expect(j.data).to.be.an('array'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

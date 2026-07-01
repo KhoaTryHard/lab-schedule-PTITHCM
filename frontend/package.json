@@ -1,0 +1,23 @@
+{
+  "name": "lab-schedule-ptit-frontend",
+  "version": "0.1.0",
+  "description": "Next.js frontend for PTIT lab schedule MVP",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "next": "^16.2.6",
+    "postcss": "^8.5.10",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "eslint": "^9.39.4",
+    "eslint-config-next": "^16.2.6"
+  }
+}
