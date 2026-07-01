@@ -1,6 +1,7 @@
 # Lab Schedule PTIT - MVP phân công lịch thực hành phòng máy
 
-**Trưởng nhóm:** Nguyễn Đăng Khoa  
+**Nhóm:** 24 (Hai4)
+**Thành viên nhóm:** Nguyễn Đăng Khoa - N23DCCN030 (Trưởng nhóm), Bùi Huỳnh Tuấn Thành - N23DCAT065, Phạm Khánh Duy - N23DCCN152
 **Ngày khởi tạo repo:** 28/04/2026  
 **Phạm vi MVP:** quản lý và tự động sắp xếp lịch thực hành cho 3 phòng máy `2B11`, `2B21`, `2B31`.
 
