@@ -17,12 +17,19 @@ http://localhost:4000/api
 
 ## Auth/RBAC local test notes
 
-The current SQL dump defines the `users` table schema but does not include demo
-`INSERT INTO users` rows. To test login, use a local `users` row that has a
-valid bcrypt `password_hash` and one of these `role_code` values: `QTV`, `CBDT`,
-`GV`, `KTV`, `SV`.
+File SQL hiện tại ở `database/Nhom24_PhanMenPhanCongLichThucHanhTaiHVCS_Database.sql`
+đã tạo bảng `users` và seed sẵn tài khoản demo cho 5 vai trò `QTV`, `CBDT`,
+`GV`, `KTV`, `SV`. Các tài khoản chính có thể dùng để test nhanh:
 
-Set `JWT_SECRET` in `backend/.env` before running the API.
+| Vai trò | Username | Password |
+|---|---|---|
+| QTV | `admin` | `123456` |
+| CBDT | `cbdt1` | `123456` |
+| GV | `gv_ntbnguyen` | `123456` |
+| KTV | `ktv1` | `123456` |
+| SV | `sv1` | `123456` |
+
+Set `JWT_SECRET` trong `backend/.env` trước khi chạy API.
 
 ```bash
 # Login success. Response must include token and public user fields only.
